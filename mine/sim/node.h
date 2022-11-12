@@ -2,9 +2,10 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <queue>
 #include <unordered_set>
 
-static inline size_t node_for_key(key_t k) {
+static inline size_t node_for_key(db_key_t k) {
 	return k % N_NODES;
 }
 
@@ -27,7 +28,8 @@ struct txn_wrap_t {
 	size_t node_mask;
 	size_t thrs[N_NODES];
 
-	txn_wrap_t(txn t);
+	txn_wrap_t() {}
+	txn_wrap_t(txn_t t);
 };
 
 struct nthread_t {
@@ -40,23 +42,24 @@ struct nthread_t {
 	size_t wait_time;
 	node_t* node;
 
-	nthread_t() : state(IDLE) {}
-	nthread_t(node_t* n) : state(IDLE), node(n) {}
+	nthread_t() : state(STG_IDLE) {}
+	nthread_t(node_t* n) : state(STG_IDLE), lock_acq_prog(0), ready_ct(0), 
+												 commit(false), wait_time(0), node(n) {}
 };
 
-void nthread_step(nthread& nthr);
+void nthread_step(nthread_t& nthr);
 
 struct node_t {
 	size_t id;
 	std::queue<txn_wrap_t> tq;
 	nthread_t thrs[N_THREADS];
-	std::unordered_set<key_t> locks; // lock queue is represented by thread order
+	std::unordered_set<db_key_t> locks; // lock queue is represented by thread order
 
 	node_t(size_t id) : id(id) {
 		for (size_t i = 0; i<N_THREADS; ++i) {
 			thrs[i].node = this;
 		}
 	}
-}
+};
 
 #endif
