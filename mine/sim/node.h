@@ -42,9 +42,19 @@ struct nthread_t {
 	size_t wait_time;
 	node_t* node;
 
+	void reset() {
+		state = STG_IDLE;
+		lock_acq_prog = 0;
+		ready_ct = 0;
+		commit = false;
+		wait_time = 0;
+	}
+
 	nthread_t() : state(STG_IDLE) {}
-	nthread_t(node_t* n) : state(STG_IDLE), lock_acq_prog(0), ready_ct(0), 
-												 commit(false), wait_time(0), node(n) {}
+	
+	nthread_t(node_t* n) : node(n) {
+		reset();
+	}
 };
 
 void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes);

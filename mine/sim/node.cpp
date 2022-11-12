@@ -76,13 +76,14 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 						nodes[i].thrs[nthr.work.thrs[i]].commit = true;
 					}
 				}
-				nthr.state = STG_IDLE;
+				nthr.reset();
 				for (size_t i = 0; i<TXN_SIZE; ++i) {
 					db_key_t k = nthr.work.t.ops[i];
 					if (node_for_key(k) == nthr.node->id) {
 						nthr.node->locks.erase(k);
 					}
 				}
+
 			} else {
 				// keep waiting for acks.
 			}
@@ -101,7 +102,7 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 		case STG_COMMIT: {
 			if (nthr.commit) {
 				// done!
-				nthr.state = STG_IDLE;
+				nthr.reset();
 				for (size_t i = 0; i<TXN_SIZE; ++i) {
 					db_key_t k = nthr.work.t.ops[i];
 					if (node_for_key(k) == nthr.node->id) {

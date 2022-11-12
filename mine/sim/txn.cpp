@@ -11,7 +11,13 @@ static db_key_t rand_key() {
 }
 
 txn_t::txn_t() {
+	unsigned bloom = 0;
 	for (size_t i = 0; i<TXN_SIZE; ++i) {
-		ops[i] = rand_key();
+		db_key_t k;
+		do {
+			k = rand_key();
+		} while (bloom & (1 << (k % 32)));
+		bloom |= 1 << (k % 32);
+		ops[i] = k;
 	}
 }
