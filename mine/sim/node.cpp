@@ -4,7 +4,7 @@
 #include "node.h"
 
 size_t get_coord(const txn_t& txn) {
-	unsigned ctrs[N_NODES];
+	unsigned ctrs[N_NODES] = {0};
 	for (size_t i = 0; i<TXN_SIZE; ++i) {
 		ctrs[node_for_key(txn.ops[i])] += 1;
 	}
@@ -41,8 +41,10 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 				switch (nthr.state) {
 					case STG_COORD_ACQ:
 						nthr.state = STG_PREPARE;
+						break;
 					case STG_PARTIC_ACQ:
 						nthr.state = STG_READY;
+						break;
 				}
 			} else {
 				// acquire next lock
@@ -52,6 +54,7 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 					nthr.lock_acq_prog += 1;
 				}
 			}
+			break;
 		}
 		case STG_PREPARE: {
 			if (nthr.wait_time > 0) {
@@ -83,6 +86,7 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 			} else {
 				// keep waiting for acks.
 			}
+			break;
 		}
 		case STG_READY: {
 			if (nthr.wait_time > 0) {
@@ -92,6 +96,7 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 				nodes[nthr.work.coord].thrs[nthr.work.thrs[nthr.work.coord]].ready_ct += 1;
 			}
 			nthr.state = STG_COMMIT;
+			break;
 		}
 		case STG_COMMIT: {
 			if (nthr.commit) {
@@ -104,6 +109,7 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 					}
 				}
 			}
+			break;
 		}
 	}
 

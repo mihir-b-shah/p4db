@@ -24,17 +24,12 @@ int main() {
 	for (size_t i = 0; i<N_NODES; ++i) {
 		nodes.emplace_back(i);
 	}
-	/*
-	for (size_t n = 0; n<N_NODES; ++n) {
-		for (size_t t = 0; t<N_THREADS; ++t) {
-			printf("n: %lu, t: %lu, state: %d\n", n, t, nodes[t].thrs[t].state);
-		}
-	}
-	*/
 
 	// simulation
 	for (size_t s = 0; s<N_STEPS; ++s) {
-		step_spray_txns(nodes);
+		if (s == 0) {
+			step_spray_txns(nodes);
+		}
 
 		for (size_t n = 0; n<N_NODES; ++n) {
 			// assume no contention-aware scheduling.
@@ -51,17 +46,12 @@ int main() {
 						// I am the peer
 						nodes[n].thrs[t].state = STG_PARTIC_ACQ;
 					}
+				} else {
+					nthread_step(nodes[n].thrs[t], nodes);
 				}
+				printf("s: %lu, n: %lu, t: %lu, state: %d\n", s, n, t, nodes[n].thrs[t].state);
 			}
 		}
-
-		/*
-		for (size_t n = 0; n<N_NODES; ++n) {
-			for (size_t t = 0; t<N_THREADS; ++t) {
-				printf("s: %lu, n: %lu, t: %lu, state: %d\n", s, n, t, nodes[t].thrs[t].state);
-			}
-		}
-		*/
 	}
 
 	return 0;
