@@ -9,8 +9,7 @@
 
 void step_spray_txns(std::vector<node_t>& nodes) {
 	for (size_t i = 0; i<TXNS_PER_STEP; ++i) {
-		// insert a random txn (zero-args constructor for txn)
-		nodes[get_coord(txn)].tq.emplace();
+		nodes[get_coord(txn)].tq.emplace(txn());
 	}
 }
 
@@ -36,7 +35,7 @@ int main() {
 				if (!nodes[n].thrs[t].busy) {
 					nodes[n].thrs[t].work = nodes[n].tq.front();
 					nodes[n].tq.pop();
-					nodes[n].thrs[t].busy = true;
+					nodes[n].thrs[t].state = STG_IDLE;
 				}
 			}
 		}
