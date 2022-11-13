@@ -3,7 +3,7 @@
 #define NODE_H
 
 #include <queue>
-#include <unordered_set>
+#include <unordered_map>
 
 static inline size_t node_for_key(db_key_t k) {
 	return k % N_NODES;
@@ -67,7 +67,8 @@ struct node_t {
 	size_t id;
 	std::queue<txn_wrap_t> tq;
 	nthread_t thrs[N_THREADS];
-	std::unordered_set<db_key_t> locks; // lock queue is represented by thread order
+	// map from key to txn id of holder
+	std::unordered_map<db_key_t, size_t> locks;
 
 	node_t(size_t id) : id(id) {
 		for (size_t i = 0; i<N_THREADS; ++i) {

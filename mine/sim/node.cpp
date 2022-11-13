@@ -54,13 +54,13 @@ void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes) {
 				// acquire next lock
 				db_key_t k = nthr.work.t.ops[nthr.lock_acq_prog];
 				if (nthr.node->locks.find(k) == nthr.node->locks.end()) {
-					printf("TXN %lu at step %lu acquired lock for %lu on %s %lu, p=%lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id, nthr.lock_acq_prog);
+					printf("TXN %lu at step %lu acquired lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
 
 					nthr.work.thrs[nthr.node->id] = nthr.id;
-					nthr.node->locks.insert(k);
+					nthr.node->locks[k] = nthr.work.t.tid;
 					nthr.lock_acq_prog += 1;
 				} else {
-					printf("TXN %lu at step %lu contended for lock for %lu on %s %lu, p=%lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id, nthr.lock_acq_prog);
+					printf("TXN %lu at step %lu contended for lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
 				}
 			}
 			break;
@@ -74,7 +74,6 @@ void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes) {
 				size_t mask = nthr.work.node_mask;
 				for (size_t i = 0; mask>0; ++i, mask >>= 1) {
 					if ((mask & 1) && i != nthr.work.coord) {
-						printf("TXN %lu at step %lu pushed to queue %lu.\n", nthr.work.t.tid, s, i);
 						nodes[i].tq.push(nthr.work);
 					}
 				}
@@ -91,7 +90,6 @@ void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes) {
 				size_t mask = nthr.work.node_mask;
 				for (size_t i = 0; mask>0; ++i, mask >>= 1) {
 					if ((mask & 1) && i != nthr.work.coord) {
-						printf("TXN %lu at step %lu sent commit to peer %lu at thread %lu.\n", nthr.work.t.tid, s, i, nthr.work.thrs[i]);
 						nodes[i].thrs[nthr.work.thrs[i]].commit = true;
 					}
 				}
@@ -114,6 +112,7 @@ void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes) {
 			} else {
 				printf("TXN %lu at step %lu sent READY to coord at node %lu, thread %lu. I am node %lu, thread %lu\n", nthr.work.t.tid, s, nthr.work.coord, nthr.work.thrs[nthr.work.coord], nthr.node->id, nthr.id);
 				// respond back to my coordinator.
+				nodes[nthr.work.coord].thrs[nthr.work.thrs[nthr.work.coord]].work.thrs[nthr.node->id] = nthr.id;
 				nodes[nthr.work.coord].thrs[nthr.work.thrs[nthr.work.coord]].ready_ct += 1;
 				nthr.state = STG_COMMIT;
 			}
