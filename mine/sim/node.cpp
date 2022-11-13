@@ -25,7 +25,13 @@ txn_wrap_t::txn_wrap_t(txn_t t) : t(t), node_mask(0ULL) {
 	}
 }
 
-void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes) {
+void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
+	if (sys.aborted.find(nthr.work.t.tid) != sys.aborted.end()) {
+		printf("RAARIG\n");
+		nthr.reset();
+		return;
+	}
+
 	switch (nthr.state) {
 		// idle is stepped outside, by providing a txn.
 		case STG_IDLE:
@@ -60,7 +66,33 @@ void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes) {
 					nthr.node->locks[k] = nthr.work.t.tid;
 					nthr.lock_acq_prog += 1;
 				} else {
-					printf("TXN %lu at step %lu contended for lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
+					if (WAIT_LOCK && nthr.node->locks[k] > nthr.work.t.tid) {
+						// WAIT_DIE CC protocol, where the holder is younger than me.
+						printf("TXN %lu at step %lu contended for lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
+					} else {
+						/*
+						Abort.
+						1) Reset all participating threads' state.
+							(a) this is hard, since I don't know the threads due to the dynamic pulling from queue.
+									hence, just mark it as aborted. before entering step(), check. If we are, just kill
+									state. all locks are guaranteed to have been freed beforehand.
+						2) Release all locks (across all nodes)
+						3) Re-queue the txn with a delay.
+						*/
+						for (size_t i = 0; i<TXN_SIZE; ++i) {
+							db_key_t k = nthr.work.t.ops[i];
+							if (nthr.node->locks[k] == nthr.work.t.tid) {
+								nthr.node->locks.erase(k);
+							}
+						}
+						sys.aborted.insert(nthr.work.t.tid);
+						txn_wrap_t& to_append = nthr.work;
+						for (size_t i = 0; i<N_NODES; ++i) {
+							to_append.thrs[i] = 0;
+						}
+						to_append.t.tid = new_tid();
+						sys.retry.emplace(s + ABORT_DELAY, to_append);
+					}
 				}
 			}
 			break;
@@ -74,7 +106,7 @@ void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes) {
 				size_t mask = nthr.work.node_mask;
 				for (size_t i = 0; mask>0; ++i, mask >>= 1) {
 					if ((mask & 1) && i != nthr.work.coord) {
-						nodes[i].tq.push(nthr.work);
+						sys.nodes[i].tq.push(nthr.work);
 					}
 				}
 				nthr.ready_ct += 1;
@@ -90,7 +122,7 @@ void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes) {
 				size_t mask = nthr.work.node_mask;
 				for (size_t i = 0; mask>0; ++i, mask >>= 1) {
 					if ((mask & 1) && i != nthr.work.coord) {
-						nodes[i].thrs[nthr.work.thrs[i]].commit = true;
+						sys.nodes[i].thrs[nthr.work.thrs[i]].commit = true;
 					}
 				}
 				nthr.reset();
@@ -112,8 +144,8 @@ void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes) {
 			} else {
 				printf("TXN %lu at step %lu sent READY to coord at node %lu, thread %lu. I am node %lu, thread %lu\n", nthr.work.t.tid, s, nthr.work.coord, nthr.work.thrs[nthr.work.coord], nthr.node->id, nthr.id);
 				// respond back to my coordinator.
-				nodes[nthr.work.coord].thrs[nthr.work.thrs[nthr.work.coord]].work.thrs[nthr.node->id] = nthr.id;
-				nodes[nthr.work.coord].thrs[nthr.work.thrs[nthr.work.coord]].ready_ct += 1;
+				sys.nodes[nthr.work.coord].thrs[nthr.work.thrs[nthr.work.coord]].work.thrs[nthr.node->id] = nthr.id;
+				sys.nodes[nthr.work.coord].thrs[nthr.work.thrs[nthr.work.coord]].ready_ct += 1;
 				nthr.state = STG_COMMIT;
 			}
 			break;

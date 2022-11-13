@@ -11,5 +11,7 @@ static constexpr size_t N_THREADS = 32;
 static constexpr size_t N_KEYS = 10;
 static constexpr size_t TXNS_PER_STEP = 1;
 static constexpr size_t NETWORK_DELAY = 1;
+static constexpr size_t ABORT_DELAY = 5;
+static constexpr bool WAIT_LOCK = false;
 
 #endif

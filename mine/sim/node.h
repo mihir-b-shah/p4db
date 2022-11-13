@@ -2,7 +2,10 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <utility>
+#include <vector>
 #include <queue>
+#include <unordered_set>
 #include <unordered_map>
 
 static inline size_t node_for_key(db_key_t k) {
@@ -61,8 +64,6 @@ struct nthread_t {
 	}
 };
 
-void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes);
-
 struct node_t {
 	size_t id;
 	std::queue<txn_wrap_t> tq;
@@ -77,5 +78,21 @@ struct node_t {
 		}
 	}
 };
+
+struct system_t {
+	std::vector<node_t> nodes;
+	std::unordered_set<size_t> aborted;
+	std::queue<std::pair<size_t, txn_wrap_t>> retry;
+
+	system_t() {
+		nodes.reserve(N_NODES);
+		for (size_t i = 0; i<N_NODES; ++i) {
+			nodes.emplace_back(i);
+		}
+	}
+};
+
+void nthread_step(size_t s, nthread_t& nthr, system_t& sys);
+
 
 #endif

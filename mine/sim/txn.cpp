@@ -10,10 +10,13 @@ static db_key_t rand_key() {
 	return ((high32 << 32) | low32) % N_KEYS;
 }
 
-static size_t glob_tid = 0;
+size_t new_tid() {
+	static size_t glob_tid = 0;
+	return glob_tid++;
+}
 
 txn_t::txn_t() {
-	tid = glob_tid++;
+	tid = new_tid();
 	unsigned bloom = 0;
 	for (size_t i = 0; i<TXN_SIZE; ++i) {
 		db_key_t k;

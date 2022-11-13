@@ -13,4 +13,6 @@ struct txn_t {
 	txn_t();
 };
 
+size_t new_tid();
+
 #endif
