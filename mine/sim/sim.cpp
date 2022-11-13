@@ -27,7 +27,7 @@ int main() {
 
 	// simulation
 	for (size_t s = 0; s<N_STEPS; ++s) {
-		if (s % 15 == 0) step_spray_txns(nodes);
+		step_spray_txns(nodes);
 
 		for (size_t n = 0; n<N_NODES; ++n) {
 			// assume no contention-aware scheduling.

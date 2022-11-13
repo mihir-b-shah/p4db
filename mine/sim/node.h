@@ -33,6 +33,7 @@ struct txn_wrap_t {
 };
 
 struct nthread_t {
+	size_t id;
 	exec_stage_e state;
 	txn_wrap_t work;
 	/* Some misc state */
@@ -50,7 +51,10 @@ struct nthread_t {
 		wait_time = 0;
 	}
 
-	nthread_t() : state(STG_IDLE) {}
+	nthread_t() {
+		reset();
+		node = nullptr;
+	}
 	
 	nthread_t(node_t* n) : node(n) {
 		reset();
@@ -67,6 +71,7 @@ struct node_t {
 
 	node_t(size_t id) : id(id) {
 		for (size_t i = 0; i<N_THREADS; ++i) {
+			thrs[i].id = i;
 			thrs[i].node = this;
 		}
 	}
