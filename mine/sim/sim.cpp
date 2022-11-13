@@ -27,7 +27,7 @@ int main() {
 
 	// simulation
 	for (size_t s = 0; s<N_STEPS; ++s) {
-		if (s % 10 == 0) step_spray_txns(nodes);
+		if (s % 15 == 0) step_spray_txns(nodes);
 
 		for (size_t n = 0; n<N_NODES; ++n) {
 			// assume no contention-aware scheduling.
@@ -45,9 +45,9 @@ int main() {
 						nodes[n].thrs[t].state = STG_PARTIC_ACQ;
 					}
 				} else {
-					nthread_step(nodes[n].thrs[t], nodes);
+					nthread_step(s, nodes[n].thrs[t], nodes);
 				}
-				printf("s: %lu, n: %lu, t: %lu, state: %d\n", s, n, t, nodes[n].thrs[t].state);
+				//printf("s: %lu, n: %lu, t: %lu, state: %d\n", s, n, t, nodes[n].thrs[t].state);
 			}
 		}
 	}

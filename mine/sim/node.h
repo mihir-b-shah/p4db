@@ -57,7 +57,7 @@ struct nthread_t {
 	}
 };
 
-void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes);
+void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes);
 
 struct node_t {
 	size_t id;

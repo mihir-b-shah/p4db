@@ -24,7 +24,7 @@ txn_wrap_t::txn_wrap_t(txn_t t) : t(t), node_mask(0ULL) {
 	}
 }
 
-void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
+void nthread_step(size_t s, nthread_t& nthr, std::vector<node_t>& nodes) {
 	switch (nthr.state) {
 		// idle is stepped outside, by providing a txn.
 		case STG_IDLE:
@@ -37,6 +37,7 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 			}
 			if (nthr.lock_acq_prog == TXN_SIZE) {
 				// change state
+				printf("TXN %lu at step %lu finished lock acquisition on %s.\n", nthr.work.t.tid, s, nthr.state == STG_COORD_ACQ ? "coord" : "peer");
 				nthr.wait_time = NETWORK_DELAY;
 				switch (nthr.state) {
 					case STG_COORD_ACQ:
@@ -50,14 +51,18 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 				// acquire next lock
 				db_key_t k = nthr.work.t.ops[nthr.lock_acq_prog];
 				if (nthr.node->locks.find(k) == nthr.node->locks.end()) {
+					printf("TXN %lu at step %lu acquired lock for %lu on %s.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer");
 					nthr.node->locks.insert(k);
 					nthr.lock_acq_prog += 1;
+				} else {
+					//printf("TXN %lu at step %lu contended for lock for %lu on %s.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer");
 				}
 			}
 			break;
 		}
 		case STG_PREPARE: {
 			if (nthr.wait_time > 0) {
+				printf("TXN %lu at step %lu sent PREPARE to %d peers, waiting.\n", nthr.work.t.tid, s, __builtin_popcountll(nthr.work.node_mask)-1);
 				nthr.wait_time -= 1;
 			} else if (nthr.ready_ct == 0) {
 				// get a thread responding to my msg, asap.
@@ -70,6 +75,7 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 				nthr.ready_ct += 1;
 			} else if (nthr.ready_ct == __builtin_popcountll(nthr.work.node_mask)) {
 				// done- send the commit!
+				printf("TXN %lu at step %lu sent COMMIT to peers.\n", nthr.work.t.tid, s);
 				size_t mask = nthr.work.node_mask;
 				for (size_t i = 0; mask>0; ++i, mask >>= 1) {
 					if ((mask & 1) && i != nthr.work.coord) {
@@ -91,16 +97,18 @@ void nthread_step(nthread_t& nthr, std::vector<node_t>& nodes) {
 		}
 		case STG_READY: {
 			if (nthr.wait_time > 0) {
+				printf("TXN %lu at step %lu sent READY to coord, wait_time: %lu.\n", nthr.work.t.tid, s, nthr.wait_time);
 				nthr.wait_time -= 1;
 			} else {
 				// respond back to my coordinator.
 				nodes[nthr.work.coord].thrs[nthr.work.thrs[nthr.work.coord]].ready_ct += 1;
+				nthr.state = STG_COMMIT;
 			}
-			nthr.state = STG_COMMIT;
 			break;
 		}
 		case STG_COMMIT: {
 			if (nthr.commit) {
+				printf("TXN %lu at step %lu received COMMIT at peer.\n", nthr.work.t.tid, s);
 				// done!
 				nthr.reset();
 				for (size_t i = 0; i<TXN_SIZE; ++i) {
