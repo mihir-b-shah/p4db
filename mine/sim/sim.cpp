@@ -7,10 +7,14 @@
 #include "txn.h"
 #include "node.h"
 
-void step_spray_txns(std::vector<node_t>& nodes) {
+void step_spray_txns(system_t& sys) {
 	for (size_t i = 0; i<TXNS_PER_STEP; ++i) {
 		txn_t t;
-		nodes[get_coord(t)].tq.emplace(t);
+		if (sys.nodes[get_coord(t)].tq.size() < MAX_QUEUE_SIZE) {
+			sys.nodes[get_coord(t)].tq.emplace_back(t);
+		} else {
+			sys.dropped += 1;
+		}
 	}
 }
 
@@ -22,10 +26,10 @@ int main() {
 
 	// simulation
 	for (size_t s = 0; s<N_STEPS; ++s) {
-		step_spray_txns(sys.nodes);
+		step_spray_txns(sys);
 		while (!sys.retry.empty() && sys.retry.front().first < s) {
 			txn_wrap_t tw = sys.retry.front().second;
-			sys.nodes[tw.coord].tq.push(tw);
+			sys.nodes[tw.coord].tq.push_front(tw);
 			sys.retry.pop();
 		}
 
@@ -36,7 +40,7 @@ int main() {
 
 				if (sys.nodes[n].thrs[t].state == STG_IDLE && !sys.nodes[n].tq.empty()) {
 					sys.nodes[n].thrs[t].work = sys.nodes[n].tq.front();
-					sys.nodes[n].tq.pop();
+					sys.nodes[n].tq.pop_front();
 					if (sys.nodes[n].thrs[t].work.coord == n) {
 						// I am the coordinator
 						sys.nodes[n].thrs[t].state = STG_COORD_ACQ;
@@ -51,6 +55,15 @@ int main() {
 			}
 		}
 	}
+
+	size_t ttl_queue_size = 0;
+	for (size_t i = 0; i<N_NODES; ++i) {
+		ttl_queue_size += sys.nodes[i].tq.size();
+	}
+
+	printf("Txns completed in %lu steps: %lu\n", N_STEPS, sys.completed);
+	printf("Txns dropped in %lu steps: %lu\n", N_STEPS, sys.dropped);
+	printf("Txn queue sum: %lu\n", sys.retry.size() + ttl_queue_size);
 
 	return 0;
 }

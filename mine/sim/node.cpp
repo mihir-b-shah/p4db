@@ -27,7 +27,6 @@ txn_wrap_t::txn_wrap_t(txn_t t) : t(t), node_mask(0ULL) {
 
 void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 	if (sys.aborted.find(nthr.work.t.tid) != sys.aborted.end()) {
-		printf("RAARIG\n");
 		nthr.reset();
 		return;
 	}
@@ -70,6 +69,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 						// WAIT_DIE CC protocol, where the holder is younger than me.
 						printf("TXN %lu at step %lu contended for lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
 					} else {
+						printf("TXN %lu at step %lu aborted.\n", nthr.work.t.tid, s);
 						/*
 						Abort.
 						1) Reset all participating threads' state.
@@ -106,7 +106,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 				size_t mask = nthr.work.node_mask;
 				for (size_t i = 0; mask>0; ++i, mask >>= 1) {
 					if ((mask & 1) && i != nthr.work.coord) {
-						sys.nodes[i].tq.push(nthr.work);
+						sys.nodes[i].tq.push_back(nthr.work);
 					}
 				}
 				nthr.ready_ct += 1;
@@ -125,6 +125,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 						sys.nodes[i].thrs[nthr.work.thrs[i]].commit = true;
 					}
 				}
+				sys.completed += 1;
 				nthr.reset();
 				for (size_t i = 0; i<TXN_SIZE; ++i) {
 					db_key_t k = nthr.work.t.ops[i];
@@ -132,9 +133,9 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 						nthr.node->locks.erase(k);
 					}
 				}
-
 			} else {
 				// keep waiting for acks.
+				printf("TXN %lu at step %lu waiting for ready msgs.\n", nthr.work.t.tid, s);
 			}
 			break;
 		}

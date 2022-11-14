@@ -4,6 +4,7 @@
 
 #include <utility>
 #include <vector>
+#include <deque>
 #include <queue>
 #include <unordered_set>
 #include <unordered_map>
@@ -66,7 +67,7 @@ struct nthread_t {
 
 struct node_t {
 	size_t id;
-	std::queue<txn_wrap_t> tq;
+	std::deque<txn_wrap_t> tq;
 	nthread_t thrs[N_THREADS];
 	// map from key to txn id of holder
 	std::unordered_map<db_key_t, size_t> locks;
@@ -83,8 +84,10 @@ struct system_t {
 	std::vector<node_t> nodes;
 	std::unordered_set<size_t> aborted;
 	std::queue<std::pair<size_t, txn_wrap_t>> retry;
+	size_t completed;
+	size_t dropped;
 
-	system_t() {
+	system_t() : completed(0), dropped(0) {
 		nodes.reserve(N_NODES);
 		for (size_t i = 0; i<N_NODES; ++i) {
 			nodes.emplace_back(i);
