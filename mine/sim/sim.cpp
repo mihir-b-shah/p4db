@@ -62,6 +62,7 @@ int main() {
 	}
 
 	printf("Txns completed in %lu steps: %lu\n", N_STEPS, sys.completed);
+	printf("Txns aborted in %lu steps: %lu\n", N_STEPS, sys.aborted.size());
 	printf("Txns dropped in %lu steps: %lu\n", N_STEPS, sys.dropped);
 	printf("Txn queue sum: %lu\n", sys.retry.size() + ttl_queue_size);
 

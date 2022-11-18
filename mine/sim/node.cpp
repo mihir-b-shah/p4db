@@ -44,7 +44,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 			if (nthr.lock_acq_prog == TXN_SIZE) {
 				// change state
 				printf("TXN %lu at step %lu finished lock acquisition on %s.\n", nthr.work.t.tid, s, nthr.state == STG_COORD_ACQ ? "coord" : "peer");
-				nthr.wait_time = NETWORK_DELAY;
+				nthr.wait_time = __builtin_popcountll(nthr.work.node_mask) > 1 ? COORD_DELAY : 0;
 				switch (nthr.state) {
 					case STG_COORD_ACQ:
 						nthr.state = STG_PREPARE;
@@ -69,7 +69,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 						// WAIT_DIE CC protocol, where the holder is younger than me.
 						printf("TXN %lu at step %lu contended for lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
 					} else {
-						printf("TXN %lu at step %lu aborted.\n", nthr.work.t.tid, s);
+						printf("TXN %lu at step %lu aborted trying for lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
 						/*
 						Abort.
 						1) Reset all participating threads' state.
@@ -101,7 +101,9 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 			if (nthr.wait_time > 0 && nthr.ready_ct == 0) {
 				nthr.wait_time -= 1;
 			} else if (nthr.ready_ct == 0) {
-				printf("TXN %lu at step %lu sent PREPARE to %d peers, waiting.\n", nthr.work.t.tid, s, __builtin_popcountll(nthr.work.node_mask)-1);
+				if (__builtin_popcountll(nthr.work.node_mask) > 1) {
+					printf("TXN %lu at step %lu sent PREPARE to %d peers, waiting.\n", nthr.work.t.tid, s, __builtin_popcountll(nthr.work.node_mask)-1);
+				}
 				// get a thread responding to my msg, asap.
 				size_t mask = nthr.work.node_mask;
 				for (size_t i = 0; mask>0; ++i, mask >>= 1) {
@@ -112,7 +114,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 				nthr.ready_ct += 1;
 			} else if (nthr.ready_ct == (unsigned) __builtin_popcountll(nthr.work.node_mask)) {
 				assert(nthr.wait_time == 0);
-				nthr.wait_time = NETWORK_DELAY;
+				nthr.wait_time = __builtin_popcountll(nthr.work.node_mask) > 1 ? PARTIC_DELAY : 0;
 				nthr.ready_ct += 1; // signal that phase is done
 			} else if (nthr.wait_time > 0 && nthr.ready_ct == 1+ ((unsigned) __builtin_popcountll(nthr.work.node_mask))) {
 				nthr.wait_time -= 1;
@@ -135,7 +137,6 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 				}
 			} else {
 				// keep waiting for acks.
-				printf("TXN %lu at step %lu waiting for ready msgs.\n", nthr.work.t.tid, s);
 			}
 			break;
 		}
