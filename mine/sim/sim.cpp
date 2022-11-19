@@ -2,6 +2,7 @@
 #include <vector>
 #include <queue>
 #include <cstdlib>
+#include <cassert>
 
 #include "consts.h"
 #include "txn.h"
@@ -61,10 +62,20 @@ int main() {
 		ttl_queue_size += sys.nodes[i].tq.size();
 	}
 
-	printf("Txns completed in %lu steps: %lu\n", N_STEPS, sys.completed);
+	printf("Txns committed in %lu steps: %lu\n", N_STEPS, sys.committed);
 	printf("Txns aborted in %lu steps: %lu\n", N_STEPS, sys.aborted.size());
 	printf("Txns dropped in %lu steps: %lu\n", N_STEPS, sys.dropped);
 	printf("Txn queue sum: %lu\n", sys.retry.size() + ttl_queue_size);
+
+	double m0 = 0;
+	double m1 = 0;
+	double m2 = 0;
+	for (size_t diff : sys.tid_diffs) {
+		m0 += 1;
+		m1 += diff;
+		m2 += diff*diff;
+	}
+	printf("Txn tid diff, mean: %.3f, sd: %.3f\n", m1/m0, m2/m0 - (m1/m0)*(m1/m0));
 
 	return 0;
 }

@@ -2,6 +2,7 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <bitset>
 #include <utility>
 #include <vector>
 #include <deque>
@@ -29,7 +30,7 @@ struct node_t;
 struct txn_wrap_t {
 	txn_t t;
 	size_t coord;
-	size_t node_mask;
+	std::bitset<N_NODES> node_mask;
 	size_t thrs[N_NODES];
 
 	txn_wrap_t() {}
@@ -84,10 +85,11 @@ struct system_t {
 	std::vector<node_t> nodes;
 	std::unordered_set<size_t> aborted;
 	std::queue<std::pair<size_t, txn_wrap_t>> retry;
-	size_t completed;
+	size_t committed;
 	size_t dropped;
+	std::vector<size_t> tid_diffs;
 
-	system_t() : completed(0), dropped(0) {
+	system_t() : committed(0), dropped(0) {
 		nodes.reserve(N_NODES);
 		for (size_t i = 0; i<N_NODES; ++i) {
 			nodes.emplace_back(i);

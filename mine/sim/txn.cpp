@@ -11,12 +11,13 @@ static db_key_t rand_key() {
 }
 
 size_t new_tid() {
-	static size_t glob_tid = 0;
+	static size_t glob_tid = 1;
 	return glob_tid++;
 }
 
 txn_t::txn_t() {
 	tid = new_tid();
+	tid_orig = tid; // this is to see the first time the txn came in.
 	unsigned bloom = 0;
 	for (size_t i = 0; i<TXN_SIZE; ++i) {
 		db_key_t k;
