@@ -88,8 +88,9 @@ struct system_t {
 	size_t committed;
 	size_t dropped;
 	std::vector<size_t> tid_diffs;
+	size_t idle_time;
 
-	system_t() : committed(0), dropped(0) {
+	system_t() : committed(0), dropped(0), idle_time(0) {
 		nodes.reserve(N_NODES);
 		for (size_t i = 0; i<N_NODES; ++i) {
 			nodes.emplace_back(i);

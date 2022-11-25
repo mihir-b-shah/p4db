@@ -2,6 +2,7 @@
 #include <vector>
 #include <queue>
 #include <cstdlib>
+#include <cmath>
 #include <cassert>
 
 #include "consts.h"
@@ -50,6 +51,9 @@ int main() {
 						sys.nodes[n].thrs[t].state = STG_PARTIC_ACQ;
 					}
 				} else {
+					if (sys.nodes[n].thrs[t].state == STG_IDLE) {
+						sys.idle_time += 1;
+					}
 					nthread_step(s, sys.nodes[n].thrs[t], sys);
 				}
 				//printf("s: %lu, n: %lu, t: %lu, state: %d\n", s, n, t, nodes[n].thrs[t].state);
@@ -64,8 +68,11 @@ int main() {
 
 	printf("Txns committed in %lu steps: %lu\n", N_STEPS, sys.committed);
 	printf("Txns aborted in %lu steps: %lu\n", N_STEPS, sys.aborted.size());
-	printf("Txns dropped in %lu steps: %lu\n", N_STEPS, sys.dropped);
+	// good flow control would avoid drops
+	// printf("Txns dropped in %lu steps: %lu\n", N_STEPS, sys.dropped);
 	printf("Txn queue sum: %lu\n", sys.retry.size() + ttl_queue_size);
+	printf("%% of time idle: %f\n", (double) sys.idle_time / (N_STEPS * N_NODES * N_THREADS));
+	printf("%% of txns committed: %f\n", (double) sys.committed/(sys.committed + sys.aborted.size()));
 
 	double m0 = 0;
 	double m1 = 0;
@@ -75,7 +82,8 @@ int main() {
 		m1 += diff;
 		m2 += diff*diff;
 	}
-	printf("Txn tid diff, mean: %.3f, sd: %.3f\n", m1/m0, m2/m0 - (m1/m0)*(m1/m0));
+	printf("Txn tid diff, mean: %.3f, sd: %.3f\n", m1/m0, sqrt(m2/m0 - (m1/m0)*(m1/m0)));
+	printf("Txn throughput: %lu txns/step\n", sys.committed/N_STEPS);
 
 	return 0;
 }

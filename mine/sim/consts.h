@@ -15,29 +15,37 @@
 		on first guess, second is ~15 us. This is conservative (the higher it goes the better for us)-
 		stragglers, congestion, host processing times, etc. can all push these numbers higher.
 
-		40 nodes is max supported by the Barefoot switch p4db uses (they use 10G NICs).
-		The switch has 80 10G ports. As per a non-blocking topology, we connect 40 ports to
-		aggregation block above the ToR switch, and 40 below- thus, support 40 nodes.
+		32 nodes is max supported by the Barefoot switch BF 6064X-T switch.
+		The switch has 64 100GbE ports. As per a non-blocking topology, we connect 32 ports to
+		aggregation block above the ToR switch, and 32 below- thus, support 32 nodes.
 		Cross-numa partitions multiply this by 2. The other latencies are mostly same (since network cost
 		isn't the main dominating factor, it's starting up other txns as part of 2pc), or doing turn-around.
 
 		We prob won't touch more than 2 hot keys per txn, so this is the max I'm willing to keep.
+		If I run w/ 1M keys, 2 hot keys, commit rate is 93%. 1 hot key, it is 99.7%. Hence, the contention
+		problem is only worth solving for 2+ keys.
 
-		N_Keys: 1.2MB per stage. We don't want to use more than necessary # of stages. Assuming we do not
-		subdivide tuples (and selectively offload columns)- and maybe allow a little slack there should
-		we want to, let's say 100 B. So we can store 12000 records per stage. There are 20 stages .
+		N_Keys: 1.2MB per stage. We don't want to use more than necessary # of stages. Assuming we use 3
+		stages, that is 3.6MB, which is 16 B/record is 225000 records.
+
+		Let us reconstruct the setup. In lab (and in TACC) they are using dual-socket 28-core machines,
+		so 56 cores in total, with 2-way hyperthreading. Let us assume a dual-port NIC is used for each,
+		so effectively each 28-core machine gets a switch slot on ToR switch.
+
+		We have 2-way hyperthreading. However, if we can time network latencies, we can have a cooperative
+		multi-threading scheme as well per node, maybe get 3x threading that way.
 */
 
-static constexpr size_t TXN_SIZE = 2;
+static constexpr size_t TXN_SIZE = 1;
 static constexpr size_t N_STEPS = 10000;
-static constexpr size_t N_NODES = 80;
-static constexpr size_t N_THREADS = 130;
-static constexpr size_t N_KEYS = 10000;
-static constexpr size_t TXNS_PER_STEP = 2;
-static constexpr size_t COORD_DELAY = 180;
-static constexpr size_t PARTIC_DELAY = 150;
-static constexpr size_t ABORT_DELAY = 250;
-static constexpr size_t MAX_QUEUE_SIZE = 10;
+static constexpr size_t N_NODES = 128;
+static constexpr size_t N_THREADS = 112;
+static constexpr size_t N_KEYS = 100000;
+static constexpr size_t TXNS_PER_STEP = 10000;
+static constexpr size_t COORD_DELAY = 100;
+static constexpr size_t PARTIC_DELAY = 100;
+static constexpr size_t ABORT_DELAY = 200;
+static constexpr size_t MAX_QUEUE_SIZE = 100;
 static constexpr bool WAIT_LOCK = false;
 
 #endif
