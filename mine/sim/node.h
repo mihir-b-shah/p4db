@@ -23,7 +23,9 @@ enum exec_stage_e {
 	STG_READY,
 	STG_COMMIT,
 	STG_PARTIC_ACQ,
+	STG_SENTINEL,
 };
+static const char* stage_strs[] = {"IDLE", "COORD_ACQ", "PREPARE", "READY", "COMMIT", "PARTIC_ACQ"};
 
 struct node_t;
 
@@ -32,9 +34,10 @@ struct txn_wrap_t {
 	size_t coord;
 	std::bitset<N_NODES> node_mask;
 	size_t thrs[N_NODES];
+	size_t init_step;
 
 	txn_wrap_t() {}
-	txn_wrap_t(txn_t t);
+	txn_wrap_t(txn_t t, size_t s);
 };
 
 struct nthread_t {
@@ -85,12 +88,15 @@ struct system_t {
 	std::vector<node_t> nodes;
 	std::unordered_set<size_t> aborted;
 	std::queue<std::pair<size_t, txn_wrap_t>> retry;
+	size_t started;
 	size_t committed;
 	size_t dropped;
 	std::vector<size_t> tid_diffs;
+	std::vector<size_t> step_diffs;
 	size_t idle_time;
+	size_t stage_cts[STG_SENTINEL];
 
-	system_t() : committed(0), dropped(0), idle_time(0) {
+	system_t() : started(0), committed(0), dropped(0), idle_time(0), stage_cts{} {
 		nodes.reserve(N_NODES);
 		for (size_t i = 0; i<N_NODES; ++i) {
 			nodes.emplace_back(i);

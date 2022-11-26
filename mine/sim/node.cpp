@@ -18,7 +18,7 @@ size_t get_coord(const txn_t& txn) {
 	return best;
 }
 
-txn_wrap_t::txn_wrap_t(txn_t t) : t(t) {
+txn_wrap_t::txn_wrap_t(txn_t t, size_t s) : t(t), init_step(s) {
 	coord = get_coord(t);
 	for (size_t i = 0; i<TXN_SIZE; ++i) {
 		node_mask.set(node_for_key(t.ops[i]));
@@ -33,6 +33,9 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 
 	switch (nthr.state) {
 		// idle is stepped outside, by providing a txn.
+		case STG_SENTINEL:
+			assert(false && "STG_SENTINEL should not be used");
+			return;
 		case STG_IDLE:
 			return;
 		case STG_COORD_ACQ: 
@@ -43,7 +46,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 			}
 			if (nthr.lock_acq_prog == TXN_SIZE) {
 				// change state
-				printf("TXN %lu at step %lu finished lock acquisition on %s.\n", nthr.work.t.tid, s, nthr.state == STG_COORD_ACQ ? "coord" : "peer");
+				fprintf(stderr, "TXN %lu at step %lu finished lock acquisition on %s.\n", nthr.work.t.tid, s, nthr.state == STG_COORD_ACQ ? "coord" : "peer");
 				nthr.wait_time = nthr.work.node_mask.count() > 1 ? COORD_DELAY : 0;
 				switch (nthr.state) {
 					case STG_COORD_ACQ:
@@ -59,7 +62,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 				// acquire next lock
 				db_key_t k = nthr.work.t.ops[nthr.lock_acq_prog];
 				if (nthr.node->locks.find(k) == nthr.node->locks.end()) {
-					printf("TXN %lu at step %lu acquired lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
+					fprintf(stderr, "TXN %lu at step %lu acquired lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
 
 					nthr.work.thrs[nthr.node->id] = nthr.id;
 					nthr.node->locks[k] = nthr.work.t.tid;
@@ -67,9 +70,9 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 				} else {
 					if (WAIT_LOCK && nthr.node->locks[k] > nthr.work.t.tid) {
 						// WAIT_DIE CC protocol, where the holder is younger than me.
-						printf("TXN %lu at step %lu contended for lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
+						fprintf(stderr, "TXN %lu at step %lu contended for lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
 					} else {
-						printf("TXN %lu at step %lu aborted trying for lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
+						fprintf(stderr, "TXN %lu at step %lu aborted trying for lock for %lu on %s %lu.\n", nthr.work.t.tid, s, nthr.work.t.ops[nthr.lock_acq_prog], nthr.state == STG_COORD_ACQ ? "coord" : "peer", nthr.node->id);
 						/*
 						Abort.
 						1) Reset all participating threads' state.
@@ -103,18 +106,18 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 				nthr.wait_time -= 1;
 			} else if (nthr.ready_ct == 0) {
 				if (nthr.work.node_mask.count() > 1) {
-					printf("TXN %lu at step %lu sent PREPARE to %lu peers, waiting.\n", nthr.work.t.tid, s, nthr.work.node_mask.count()-1);
+					fprintf(stderr, "TXN %lu at step %lu sent PREPARE to %lu peers, waiting.\n", nthr.work.t.tid, s, nthr.work.node_mask.count()-1);
 				}
 				// get a thread responding to my msg, asap.
 				for (size_t i = 0; i<N_NODES; ++i) {
 					if (i != nthr.work.coord && nthr.work.node_mask.test(i)) {
-						sys.nodes[i].tq.push_back(nthr.work);
+						sys.nodes[i].tq.push_front(nthr.work);
 					}
 				}
 				nthr.ready_ct += 1;
 			} else if (nthr.ready_ct == nthr.work.node_mask.count()) {
 				if (nthr.wait_time != 0) {
-					printf("node_id: %lu, thr_id: %lu, nthr.wait_time: %lu\n", nthr.node->id, nthr.id, nthr.wait_time);
+					fprintf(stderr, "node_id: %lu, thr_id: %lu, nthr.wait_time: %lu\n", nthr.node->id, nthr.id, nthr.wait_time);
 				}
 				assert(nthr.wait_time == 0);
 				nthr.wait_time = nthr.work.node_mask.count() > 1 ? PARTIC_DELAY : 0;
@@ -123,7 +126,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 				nthr.wait_time -= 1;
 			} else if (nthr.wait_time == 0 && nthr.ready_ct == 1+nthr.work.node_mask.count()) {
 				// done- send the commit!
-				printf("TXN %lu at step %lu sent COMMIT to peers.\n", nthr.work.t.tid, s);
+				fprintf(stderr, "TXN %lu at step %lu sent COMMIT to peers.\n", nthr.work.t.tid, s);
 				for (size_t i = 0; i<N_NODES; ++i) {
 					if (i != nthr.work.coord && nthr.work.node_mask.test(i)) {
 						sys.nodes[i].thrs[nthr.work.thrs[i]].commit = true;
@@ -131,6 +134,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 				}
 				
 				sys.committed += 1;
+				sys.step_diffs.push_back(s - nthr.work.init_step);
 				sys.tid_diffs.push_back(nthr.work.t.tid - nthr.work.t.tid_orig);
 				nthr.reset();
 				for (size_t i = 0; i<TXN_SIZE; ++i) {
@@ -148,7 +152,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 			if (nthr.wait_time > 0) {
 				nthr.wait_time -= 1;
 			} else {
-				printf("TXN %lu (with old tid=%lu) at step %lu sent READY to coord at node %lu, thread %lu. I am node %lu, thread %lu\n", nthr.work.t.tid, nthr.work.t.tid_orig, s, nthr.work.coord, nthr.work.thrs[nthr.work.coord], nthr.node->id, nthr.id);
+				fprintf(stderr, "TXN %lu (with old tid=%lu) at step %lu sent READY to coord at node %lu, thread %lu. I am node %lu, thread %lu\n", nthr.work.t.tid, nthr.work.t.tid_orig, s, nthr.work.coord, nthr.work.thrs[nthr.work.coord], nthr.node->id, nthr.id);
 				// respond back to my coordinator.
 				sys.nodes[nthr.work.coord].thrs[nthr.work.thrs[nthr.work.coord]].work.thrs[nthr.node->id] = nthr.id;
 				assert(sys.nodes[nthr.work.coord].thrs[nthr.work.thrs[nthr.work.coord]].work.t.tid == nthr.work.t.tid);
@@ -159,7 +163,7 @@ void nthread_step(size_t s, nthread_t& nthr, system_t& sys) {
 		}
 		case STG_COMMIT: {
 			if (nthr.commit) {
-				printf("TXN %lu at step %lu received COMMIT at peer.\n", nthr.work.t.tid, s);
+				fprintf(stderr, "TXN %lu at step %lu received COMMIT at peer.\n", nthr.work.t.tid, s);
 				// done!
 				nthr.reset();
 				for (size_t i = 0; i<TXN_SIZE; ++i) {

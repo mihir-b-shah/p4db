@@ -36,12 +36,13 @@
 		multi-threading scheme as well per node, maybe get 3x threading that way.
 */
 
-static constexpr size_t TXN_SIZE = 1;
-static constexpr size_t N_STEPS = 10000;
+static constexpr size_t TXN_HOT_RECORDS = 1;
+static constexpr size_t TXN_SIZE = 4;
+static constexpr size_t N_STEPS = 50000;
 static constexpr size_t N_NODES = 128;
 static constexpr size_t N_THREADS = 112;
-static constexpr size_t N_KEYS = 100000;
-static constexpr size_t TXNS_PER_STEP = 10000;
+static constexpr size_t N_HOT_KEYS = 1000;
+static constexpr size_t TXNS_PER_STEP = 18;
 static constexpr size_t COORD_DELAY = 100;
 static constexpr size_t PARTIC_DELAY = 100;
 static constexpr size_t ABORT_DELAY = 200;
