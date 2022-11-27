@@ -88,7 +88,8 @@ int main() {
 	std::pair<double, double> step_diff = get_stats(sys.step_diffs);
 	printf("Txn step diff, mean: %.3f, sd: %.3f\n", step_diff.first, step_diff.second);
 
-	printf("Txn throughput: %.3f txns/step\n", (double) sys.committed/N_STEPS);
+	// When there is no contention, is emblematic of high queueing delays.
+	printf("Txn throughput: %.3f txns/step. Tgt throughput: ~%.3f txns/step\n", (double) sys.committed/N_STEPS, (double) (N_NODES*N_THREADS)/((3*COORD_DELAY+2*(TXN_SIZE-1)*PARTIC_DELAY)));
 
 	printf("Time spent in stage XXX:\n");
 	for (size_t i = 0; i<STG_SENTINEL; ++i) {

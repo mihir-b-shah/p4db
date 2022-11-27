@@ -39,14 +39,17 @@
 static constexpr size_t TXN_HOT_RECORDS = 1;
 static constexpr size_t TXN_SIZE = 4;
 static constexpr size_t N_STEPS = 50000;
-static constexpr size_t N_NODES = 128;
-static constexpr size_t N_THREADS = 112;
-static constexpr size_t N_HOT_KEYS = 1000;
-static constexpr size_t TXNS_PER_STEP = 18;
+static constexpr size_t N_NODES = 64;
+static constexpr size_t N_THREADS = 56;
+static constexpr size_t N_HOT_KEYS = 1000000;
 static constexpr size_t COORD_DELAY = 100;
 static constexpr size_t PARTIC_DELAY = 100;
 static constexpr size_t ABORT_DELAY = 200;
 static constexpr size_t MAX_QUEUE_SIZE = 100;
 static constexpr bool WAIT_LOCK = false;
+
+// assumes TXN_SIZE is much smaller than N_NODES.
+static constexpr size_t TXNS_PER_STEP_BASE_ = (N_NODES * N_THREADS) / (3*COORD_DELAY + 2*(TXN_SIZE-1)*PARTIC_DELAY);
+static constexpr size_t TXNS_PER_STEP = 5*TXNS_PER_STEP_BASE_/4;
 
 #endif
