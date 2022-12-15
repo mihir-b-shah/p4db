@@ -1,0 +1,1 @@
+{"version": "1.0", "descriptive_name": "p4db", "subproject_dir": "subprojects", "subprojects": [{"name": "fmt", "version": "7.0.1", "descriptive_name": "fmt"}, {"name": "cxxopts", "version": "2.2.1", "descriptive_name": "cxxopts"}]}

@@ -1,0 +1,1 @@
+{"targets": {}, "data": {"/home/mihirs/p4db/build/meson-private/cxxopts.pc": {"destination": "{libdir}/pkgconfig/cxxopts.pc", "tag": "devel"}}, "headers": {"/home/mihirs/p4db/subprojects/cxxopts-2.2.1/include/cxxopts.hpp": {"destination": "{includedir}/cxxopts.hpp", "tag": "devel"}}}

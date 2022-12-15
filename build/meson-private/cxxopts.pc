@@ -1,0 +1,7 @@
+prefix=/usr/local
+includedir=${prefix}/include
+
+Name: cxxopts
+Description: Lightweight C++ command line option parser
+Version: 2.2.1
+Cflags: -I${includedir}
