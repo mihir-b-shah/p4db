@@ -4,6 +4,7 @@
 #include "comm/msg.hpp"
 #include "db/defs.hpp"
 #include "db/errors.hpp"
+#include "db/spinlock.hpp"
 #include "server.hpp"
 
 #include <algorithm>

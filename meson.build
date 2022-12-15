@@ -2,7 +2,7 @@
 
 project('p4db', 'cpp',
     version: '1.0',
-    meson_version : '>= 0.55.0',
+    meson_version : '>= 0.53.0',
     default_options: ['warning_level=3', 'buildtype=release', 'b_lto=true', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=release', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=debugoptimized', 'cpp_std=c++2a'],
@@ -43,11 +43,6 @@ fmt_dep = fmt_proj.get_variable('fmt_dep')
 cxxopts_proj = subproject('cxxopts')
 cxxopts_dep = cxxopts_proj.get_variable('cxxopts_dep')
 
-dpdk_dep = dependency('libdpdk', required: true)
-# dpdk_proj = subproject('dpdk')
-# dpdk_dep = dpdk_proj.get_variable('static_dep')
-# dpdk_dep = dependency('libdpdk', fallback : ['dpdk', 'static_dep'])
-
 
 
 
@@ -83,7 +78,6 @@ project_deps += [
     threads_dep,
     fmt_dep,
     cxxopts_dep,
-    dpdk_dep,
     # tbb_dep
     # vtune_dep,
     # dl_dep
@@ -102,13 +96,12 @@ p4db_bin = executable('p4db',
     link_with : project_libs
 )
 
-
-# This adds the clang format file to the build directory
-configure_file(input : '.clang-format',
-               output : '.clang-format',
-	       copy: true)
-run_target('format',
-  command : ['clang-format','-i','-style=file', main_source, project_sources, project_headers])
+p4db_lib = library('p4db', 
+    main_source + project_sources, 
+    include_directories : project_includes, 
+    dependencies : project_deps,
+    link_with : project_libs
+)
 
 # # This regex excludes any sources from the third_party, tests, benchmarks 
 # # and gtest related files.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "db/types.hpp"
+#include "db/hex_dump.hpp"
 
 #include <cstdint>
 #include <iostream>

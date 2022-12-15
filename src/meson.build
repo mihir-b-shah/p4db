@@ -1,5 +1,4 @@
 subdir('db')
-subdir('dpdk_lib')
 subdir('benchmarks')
 subdir('stats')
 subdir('comm')

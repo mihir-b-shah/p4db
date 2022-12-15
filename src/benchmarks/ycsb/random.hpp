@@ -4,6 +4,7 @@
 #include "db/defs.hpp"
 
 #include <random>
+#include <cstdio>
 
 
 namespace benchmark {
@@ -16,11 +17,13 @@ public:
 
 private:
     Config& config;
-    const uint64_t local_part_size;
+    uint64_t local_part_size;
 
 public:
     YCSBRandom(uint32_t seed)
-        : gen(seed), config(Config::instance()), local_part_size(config.ycsb.table_size / config.num_nodes) {}
+        : gen(seed), config(Config::instance()) {
+			local_part_size = config.ycsb.table_size / config.num_nodes;
+		}
 
     template <typename T>
     T random(T lower, T upper) {

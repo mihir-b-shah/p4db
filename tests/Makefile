@@ -1,5 +1,5 @@
 CXX=g++
-CFLAGS=-std=c++2a -O0 -g -MD -Wall -Wextra -fmax-errors=1 -I. -I../src/ -fsanitize=address 
+CFLAGS=-std=c++2a -O0 -g -MD -Wall -Wextra -fmax-errors=1 -I. -I../src/ -fsanitize=address -L../build/ -Wl,-rpath=../build/ -lp4db
 # CFLAGS=-std=c++2a -O3 -g -MD -Wall -Wextra -fmax-errors=1 -I. -I../src
 LIBS=-pthread
 
@@ -7,7 +7,7 @@ LIBS=-pthread
 OBJS = #main.o
 
 
-BINS = access_dist nolock_test nurand shared_lock tpcc_neworder zipf
+BINS = access_dist nolock_test nurand shared_lock tpcc_neworder zipf layout
 
 
 all: $(BINS)

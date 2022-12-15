@@ -2,10 +2,9 @@
 plots/
 
 TODO.md
-build*
 code
 code.tar.gz
-build_release/
+build/
 
 # Prerequisites
 *.d
@@ -21,7 +20,6 @@ build_release/
 *.pch
 
 # Compiled Dynamic libraries
-*.so
 *.dylib
 *.dll
 
