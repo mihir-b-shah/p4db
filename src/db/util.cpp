@@ -10,7 +10,7 @@ void pin_worker(uint32_t core, pthread_t pid /*= pthread_self()*/) {
     core += 2; // make space for dpdk main and receiver thread
 
     constexpr auto NUM_SOCKETS = 2;
-    constexpr auto NUM_HYPERTHREADS = 2;
+    constexpr auto NUM_HYPERTHREADS = 1;
     static const auto cpu_map = []() {
         std::vector<int> map;
 

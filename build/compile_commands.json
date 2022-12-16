@@ -1,530 +1,442 @@
 [
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Isubprojects/fmt-7.0.1/libfmt.so.p -Isubprojects/fmt-7.0.1 -I../subprojects/fmt-7.0.1 -I../subprojects/fmt-7.0.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++14 -O3 -march=native -fPIC -DFMT_EXPORT -MD -MQ subprojects/fmt-7.0.1/libfmt.so.p/src_format.cc.o -MF subprojects/fmt-7.0.1/libfmt.so.p/src_format.cc.o.d -o subprojects/fmt-7.0.1/libfmt.so.p/src_format.cc.o -c ../subprojects/fmt-7.0.1/src/format.cc",
-    "file": "../subprojects/fmt-7.0.1/src/format.cc",
-    "output": "subprojects/fmt-7.0.1/libfmt.so.p/src_format.cc.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Isubprojects/fmt-7.0.1/libfmt.so.p -Isubprojects/fmt-7.0.1 -I../subprojects/fmt-7.0.1 -I../subprojects/fmt-7.0.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++14 -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_EXPORT -MD -MQ subprojects/fmt-7.0.1/libfmt.so.p/src_format.cc.o -MF subprojects/fmt-7.0.1/libfmt.so.p/src_format.cc.o.d -o subprojects/fmt-7.0.1/libfmt.so.p/src_format.cc.o -c ../subprojects/fmt-7.0.1/src/format.cc",
+    "file": "../subprojects/fmt-7.0.1/src/format.cc"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Isubprojects/fmt-7.0.1/libfmt.so.p -Isubprojects/fmt-7.0.1 -I../subprojects/fmt-7.0.1 -I../subprojects/fmt-7.0.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++14 -O3 -march=native -fPIC -DFMT_EXPORT -MD -MQ subprojects/fmt-7.0.1/libfmt.so.p/src_os.cc.o -MF subprojects/fmt-7.0.1/libfmt.so.p/src_os.cc.o.d -o subprojects/fmt-7.0.1/libfmt.so.p/src_os.cc.o -c ../subprojects/fmt-7.0.1/src/os.cc",
-    "file": "../subprojects/fmt-7.0.1/src/os.cc",
-    "output": "subprojects/fmt-7.0.1/libfmt.so.p/src_os.cc.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Isubprojects/fmt-7.0.1/libfmt.so.p -Isubprojects/fmt-7.0.1 -I../subprojects/fmt-7.0.1 -I../subprojects/fmt-7.0.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++14 -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_EXPORT -MD -MQ subprojects/fmt-7.0.1/libfmt.so.p/src_os.cc.o -MF subprojects/fmt-7.0.1/libfmt.so.p/src_os.cc.o.d -o subprojects/fmt-7.0.1/libfmt.so.p/src_os.cc.o -c ../subprojects/fmt-7.0.1/src/os.cc",
+    "file": "../subprojects/fmt-7.0.1/src/os.cc"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_main.cpp.o -MF p4db.p/src_main.cpp.o.d -o p4db.p/src_main.cpp.o -c ../src/main.cpp",
-    "file": "../src/main.cpp",
-    "output": "p4db.p/src_main.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_main.cpp.o -MF p4db.p/src_main.cpp.o.d -o p4db.p/src_main.cpp.o -c ../src/main.cpp",
+    "file": "../src/main.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_db_config.cpp.o -MF p4db.p/src_db_config.cpp.o.d -o p4db.p/src_db_config.cpp.o -c ../src/db/config.cpp",
-    "file": "../src/db/config.cpp",
-    "output": "p4db.p/src_db_config.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_db_config.cpp.o -MF p4db.p/src_db_config.cpp.o.d -o p4db.p/src_db_config.cpp.o -c ../src/db/config.cpp",
+    "file": "../src/db/config.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_db_hex_dump.cpp.o -MF p4db.p/src_db_hex_dump.cpp.o.d -o p4db.p/src_db_hex_dump.cpp.o -c ../src/db/hex_dump.cpp",
-    "file": "../src/db/hex_dump.cpp",
-    "output": "p4db.p/src_db_hex_dump.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_db_hex_dump.cpp.o -MF p4db.p/src_db_hex_dump.cpp.o.d -o p4db.p/src_db_hex_dump.cpp.o -c ../src/db/hex_dump.cpp",
+    "file": "../src/db/hex_dump.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_db_undolog.cpp.o -MF p4db.p/src_db_undolog.cpp.o.d -o p4db.p/src_db_undolog.cpp.o -c ../src/db/undolog.cpp",
-    "file": "../src/db/undolog.cpp",
-    "output": "p4db.p/src_db_undolog.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_db_undolog.cpp.o -MF p4db.p/src_db_undolog.cpp.o.d -o p4db.p/src_db_undolog.cpp.o -c ../src/db/undolog.cpp",
+    "file": "../src/db/undolog.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_db_util.cpp.o -MF p4db.p/src_db_util.cpp.o.d -o p4db.p/src_db_util.cpp.o -c ../src/db/util.cpp",
-    "file": "../src/db/util.cpp",
-    "output": "p4db.p/src_db_util.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_db_util.cpp.o -MF p4db.p/src_db_util.cpp.o.d -o p4db.p/src_db_util.cpp.o -c ../src/db/util.cpp",
+    "file": "../src/db/util.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_ycsb_ycsb.cpp.o -MF p4db.p/src_benchmarks_ycsb_ycsb.cpp.o.d -o p4db.p/src_benchmarks_ycsb_ycsb.cpp.o -c ../src/benchmarks/ycsb/ycsb.cpp",
-    "file": "../src/benchmarks/ycsb/ycsb.cpp",
-    "output": "p4db.p/src_benchmarks_ycsb_ycsb.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_ycsb_ycsb.cpp.o -MF p4db.p/src_benchmarks_ycsb_ycsb.cpp.o.d -o p4db.p/src_benchmarks_ycsb_ycsb.cpp.o -c ../src/benchmarks/ycsb/ycsb.cpp",
+    "file": "../src/benchmarks/ycsb/ycsb.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_ycsb_txn_multi.cpp.o -MF p4db.p/src_benchmarks_ycsb_txn_multi.cpp.o.d -o p4db.p/src_benchmarks_ycsb_txn_multi.cpp.o -c ../src/benchmarks/ycsb/txn/multi.cpp",
-    "file": "../src/benchmarks/ycsb/txn/multi.cpp",
-    "output": "p4db.p/src_benchmarks_ycsb_txn_multi.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_ycsb_txn_multi.cpp.o -MF p4db.p/src_benchmarks_ycsb_txn_multi.cpp.o.d -o p4db.p/src_benchmarks_ycsb_txn_multi.cpp.o -c ../src/benchmarks/ycsb/txn/multi.cpp",
+    "file": "../src/benchmarks/ycsb/txn/multi.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_ycsb_txn_read.cpp.o -MF p4db.p/src_benchmarks_ycsb_txn_read.cpp.o.d -o p4db.p/src_benchmarks_ycsb_txn_read.cpp.o -c ../src/benchmarks/ycsb/txn/read.cpp",
-    "file": "../src/benchmarks/ycsb/txn/read.cpp",
-    "output": "p4db.p/src_benchmarks_ycsb_txn_read.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_ycsb_txn_read.cpp.o -MF p4db.p/src_benchmarks_ycsb_txn_read.cpp.o.d -o p4db.p/src_benchmarks_ycsb_txn_read.cpp.o -c ../src/benchmarks/ycsb/txn/read.cpp",
+    "file": "../src/benchmarks/ycsb/txn/read.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_ycsb_txn_write.cpp.o -MF p4db.p/src_benchmarks_ycsb_txn_write.cpp.o.d -o p4db.p/src_benchmarks_ycsb_txn_write.cpp.o -c ../src/benchmarks/ycsb/txn/write.cpp",
-    "file": "../src/benchmarks/ycsb/txn/write.cpp",
-    "output": "p4db.p/src_benchmarks_ycsb_txn_write.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_ycsb_txn_write.cpp.o -MF p4db.p/src_benchmarks_ycsb_txn_write.cpp.o.d -o p4db.p/src_benchmarks_ycsb_txn_write.cpp.o -c ../src/benchmarks/ycsb/txn/write.cpp",
+    "file": "../src/benchmarks/ycsb/txn/write.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_ycsb_txn_switch.cpp.o -MF p4db.p/src_benchmarks_ycsb_txn_switch.cpp.o.d -o p4db.p/src_benchmarks_ycsb_txn_switch.cpp.o -c ../src/benchmarks/ycsb/txn/switch.cpp",
-    "file": "../src/benchmarks/ycsb/txn/switch.cpp",
-    "output": "p4db.p/src_benchmarks_ycsb_txn_switch.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_ycsb_txn_switch.cpp.o -MF p4db.p/src_benchmarks_ycsb_txn_switch.cpp.o.d -o p4db.p/src_benchmarks_ycsb_txn_switch.cpp.o -c ../src/benchmarks/ycsb/txn/switch.cpp",
+    "file": "../src/benchmarks/ycsb/txn/switch.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_smallbank.cpp.o -MF p4db.p/src_benchmarks_smallbank_smallbank.cpp.o.d -o p4db.p/src_benchmarks_smallbank_smallbank.cpp.o -c ../src/benchmarks/smallbank/smallbank.cpp",
-    "file": "../src/benchmarks/smallbank/smallbank.cpp",
-    "output": "p4db.p/src_benchmarks_smallbank_smallbank.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_smallbank.cpp.o -MF p4db.p/src_benchmarks_smallbank_smallbank.cpp.o.d -o p4db.p/src_benchmarks_smallbank_smallbank.cpp.o -c ../src/benchmarks/smallbank/smallbank.cpp",
+    "file": "../src/benchmarks/smallbank/smallbank.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o -c ../src/benchmarks/smallbank/txn/amalgamate.cpp",
-    "file": "../src/benchmarks/smallbank/txn/amalgamate.cpp",
-    "output": "p4db.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o -c ../src/benchmarks/smallbank/txn/amalgamate.cpp",
+    "file": "../src/benchmarks/smallbank/txn/amalgamate.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_balance.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_balance.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_balance.cpp.o -c ../src/benchmarks/smallbank/txn/balance.cpp",
-    "file": "../src/benchmarks/smallbank/txn/balance.cpp",
-    "output": "p4db.p/src_benchmarks_smallbank_txn_balance.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_balance.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_balance.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_balance.cpp.o -c ../src/benchmarks/smallbank/txn/balance.cpp",
+    "file": "../src/benchmarks/smallbank/txn/balance.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o -c ../src/benchmarks/smallbank/txn/deposit_checking.cpp",
-    "file": "../src/benchmarks/smallbank/txn/deposit_checking.cpp",
-    "output": "p4db.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o -c ../src/benchmarks/smallbank/txn/deposit_checking.cpp",
+    "file": "../src/benchmarks/smallbank/txn/deposit_checking.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_send_payment.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_send_payment.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_send_payment.cpp.o -c ../src/benchmarks/smallbank/txn/send_payment.cpp",
-    "file": "../src/benchmarks/smallbank/txn/send_payment.cpp",
-    "output": "p4db.p/src_benchmarks_smallbank_txn_send_payment.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_send_payment.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_send_payment.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_send_payment.cpp.o -c ../src/benchmarks/smallbank/txn/send_payment.cpp",
+    "file": "../src/benchmarks/smallbank/txn/send_payment.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o -c ../src/benchmarks/smallbank/txn/transact_saving.cpp",
-    "file": "../src/benchmarks/smallbank/txn/transact_saving.cpp",
-    "output": "p4db.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o -c ../src/benchmarks/smallbank/txn/transact_saving.cpp",
+    "file": "../src/benchmarks/smallbank/txn/transact_saving.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_write_check.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_write_check.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_write_check.cpp.o -c ../src/benchmarks/smallbank/txn/write_check.cpp",
-    "file": "../src/benchmarks/smallbank/txn/write_check.cpp",
-    "output": "p4db.p/src_benchmarks_smallbank_txn_write_check.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_write_check.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_write_check.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_write_check.cpp.o -c ../src/benchmarks/smallbank/txn/write_check.cpp",
+    "file": "../src/benchmarks/smallbank/txn/write_check.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_switch.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_switch.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_switch.cpp.o -c ../src/benchmarks/smallbank/txn/switch.cpp",
-    "file": "../src/benchmarks/smallbank/txn/switch.cpp",
-    "output": "p4db.p/src_benchmarks_smallbank_txn_switch.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_smallbank_txn_switch.cpp.o -MF p4db.p/src_benchmarks_smallbank_txn_switch.cpp.o.d -o p4db.p/src_benchmarks_smallbank_txn_switch.cpp.o -c ../src/benchmarks/smallbank/txn/switch.cpp",
+    "file": "../src/benchmarks/smallbank/txn/switch.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_tpcc_tpcc.cpp.o -MF p4db.p/src_benchmarks_tpcc_tpcc.cpp.o.d -o p4db.p/src_benchmarks_tpcc_tpcc.cpp.o -c ../src/benchmarks/tpcc/tpcc.cpp",
-    "file": "../src/benchmarks/tpcc/tpcc.cpp",
-    "output": "p4db.p/src_benchmarks_tpcc_tpcc.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_tpcc_tpcc.cpp.o -MF p4db.p/src_benchmarks_tpcc_tpcc.cpp.o.d -o p4db.p/src_benchmarks_tpcc_tpcc.cpp.o -c ../src/benchmarks/tpcc/tpcc.cpp",
+    "file": "../src/benchmarks/tpcc/tpcc.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_tpcc_txn_new_order.cpp.o -MF p4db.p/src_benchmarks_tpcc_txn_new_order.cpp.o.d -o p4db.p/src_benchmarks_tpcc_txn_new_order.cpp.o -c ../src/benchmarks/tpcc/txn/new_order.cpp",
-    "file": "../src/benchmarks/tpcc/txn/new_order.cpp",
-    "output": "p4db.p/src_benchmarks_tpcc_txn_new_order.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_tpcc_txn_new_order.cpp.o -MF p4db.p/src_benchmarks_tpcc_txn_new_order.cpp.o.d -o p4db.p/src_benchmarks_tpcc_txn_new_order.cpp.o -c ../src/benchmarks/tpcc/txn/new_order.cpp",
+    "file": "../src/benchmarks/tpcc/txn/new_order.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_tpcc_txn_payment.cpp.o -MF p4db.p/src_benchmarks_tpcc_txn_payment.cpp.o.d -o p4db.p/src_benchmarks_tpcc_txn_payment.cpp.o -c ../src/benchmarks/tpcc/txn/payment.cpp",
-    "file": "../src/benchmarks/tpcc/txn/payment.cpp",
-    "output": "p4db.p/src_benchmarks_tpcc_txn_payment.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_tpcc_txn_payment.cpp.o -MF p4db.p/src_benchmarks_tpcc_txn_payment.cpp.o.d -o p4db.p/src_benchmarks_tpcc_txn_payment.cpp.o -c ../src/benchmarks/tpcc/txn/payment.cpp",
+    "file": "../src/benchmarks/tpcc/txn/payment.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_tpcc_txn_switch.cpp.o -MF p4db.p/src_benchmarks_tpcc_txn_switch.cpp.o.d -o p4db.p/src_benchmarks_tpcc_txn_switch.cpp.o -c ../src/benchmarks/tpcc/txn/switch.cpp",
-    "file": "../src/benchmarks/tpcc/txn/switch.cpp",
-    "output": "p4db.p/src_benchmarks_tpcc_txn_switch.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_tpcc_txn_switch.cpp.o -MF p4db.p/src_benchmarks_tpcc_txn_switch.cpp.o.d -o p4db.p/src_benchmarks_tpcc_txn_switch.cpp.o -c ../src/benchmarks/tpcc/txn/switch.cpp",
+    "file": "../src/benchmarks/tpcc/txn/switch.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o -MF p4db.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o.d -o p4db.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o -c ../src/benchmarks/micro_recirc/micro_recirc.cpp",
-    "file": "../src/benchmarks/micro_recirc/micro_recirc.cpp",
-    "output": "p4db.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o -MF p4db.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o.d -o p4db.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o -c ../src/benchmarks/micro_recirc/micro_recirc.cpp",
+    "file": "../src/benchmarks/micro_recirc/micro_recirc.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_micro_recirc_txn_arg.cpp.o -MF p4db.p/src_benchmarks_micro_recirc_txn_arg.cpp.o.d -o p4db.p/src_benchmarks_micro_recirc_txn_arg.cpp.o -c ../src/benchmarks/micro_recirc/txn/arg.cpp",
-    "file": "../src/benchmarks/micro_recirc/txn/arg.cpp",
-    "output": "p4db.p/src_benchmarks_micro_recirc_txn_arg.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_micro_recirc_txn_arg.cpp.o -MF p4db.p/src_benchmarks_micro_recirc_txn_arg.cpp.o.d -o p4db.p/src_benchmarks_micro_recirc_txn_arg.cpp.o -c ../src/benchmarks/micro_recirc/txn/arg.cpp",
+    "file": "../src/benchmarks/micro_recirc/txn/arg.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_micro_recirc_txn_switch.cpp.o -MF p4db.p/src_benchmarks_micro_recirc_txn_switch.cpp.o.d -o p4db.p/src_benchmarks_micro_recirc_txn_switch.cpp.o -c ../src/benchmarks/micro_recirc/txn/switch.cpp",
-    "file": "../src/benchmarks/micro_recirc/txn/switch.cpp",
-    "output": "p4db.p/src_benchmarks_micro_recirc_txn_switch.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_benchmarks_micro_recirc_txn_switch.cpp.o -MF p4db.p/src_benchmarks_micro_recirc_txn_switch.cpp.o.d -o p4db.p/src_benchmarks_micro_recirc_txn_switch.cpp.o -c ../src/benchmarks/micro_recirc/txn/switch.cpp",
+    "file": "../src/benchmarks/micro_recirc/txn/switch.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_stats_collector.cpp.o -MF p4db.p/src_stats_collector.cpp.o.d -o p4db.p/src_stats_collector.cpp.o -c ../src/stats/collector.cpp",
-    "file": "../src/stats/collector.cpp",
-    "output": "p4db.p/src_stats_collector.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_stats_collector.cpp.o -MF p4db.p/src_stats_collector.cpp.o.d -o p4db.p/src_stats_collector.cpp.o -c ../src/stats/collector.cpp",
+    "file": "../src/stats/collector.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_stats_counter.cpp.o -MF p4db.p/src_stats_counter.cpp.o.d -o p4db.p/src_stats_counter.cpp.o -c ../src/stats/counter.cpp",
-    "file": "../src/stats/counter.cpp",
-    "output": "p4db.p/src_stats_counter.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_stats_counter.cpp.o -MF p4db.p/src_stats_counter.cpp.o.d -o p4db.p/src_stats_counter.cpp.o -c ../src/stats/counter.cpp",
+    "file": "../src/stats/counter.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_stats_cycles.cpp.o -MF p4db.p/src_stats_cycles.cpp.o.d -o p4db.p/src_stats_cycles.cpp.o -c ../src/stats/cycles.cpp",
-    "file": "../src/stats/cycles.cpp",
-    "output": "p4db.p/src_stats_cycles.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_stats_cycles.cpp.o -MF p4db.p/src_stats_cycles.cpp.o.d -o p4db.p/src_stats_cycles.cpp.o -c ../src/stats/cycles.cpp",
+    "file": "../src/stats/cycles.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_stats_periodic.cpp.o -MF p4db.p/src_stats_periodic.cpp.o.d -o p4db.p/src_stats_periodic.cpp.o -c ../src/stats/periodic.cpp",
-    "file": "../src/stats/periodic.cpp",
-    "output": "p4db.p/src_stats_periodic.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_stats_periodic.cpp.o -MF p4db.p/src_stats_periodic.cpp.o.d -o p4db.p/src_stats_periodic.cpp.o -c ../src/stats/periodic.cpp",
+    "file": "../src/stats/periodic.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_stats_context.cpp.o -MF p4db.p/src_stats_context.cpp.o.d -o p4db.p/src_stats_context.cpp.o -c ../src/stats/context.cpp",
-    "file": "../src/stats/context.cpp",
-    "output": "p4db.p/src_stats_context.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_stats_context.cpp.o -MF p4db.p/src_stats_context.cpp.o.d -o p4db.p/src_stats_context.cpp.o -c ../src/stats/context.cpp",
+    "file": "../src/stats/context.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_comm_handlers_init.cpp.o -MF p4db.p/src_comm_handlers_init.cpp.o.d -o p4db.p/src_comm_handlers_init.cpp.o -c ../src/comm/handlers/init.cpp",
-    "file": "../src/comm/handlers/init.cpp",
-    "output": "p4db.p/src_comm_handlers_init.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_comm_handlers_init.cpp.o -MF p4db.p/src_comm_handlers_init.cpp.o.d -o p4db.p/src_comm_handlers_init.cpp.o -c ../src/comm/handlers/init.cpp",
+    "file": "../src/comm/handlers/init.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_comm_handlers_barrier.cpp.o -MF p4db.p/src_comm_handlers_barrier.cpp.o.d -o p4db.p/src_comm_handlers_barrier.cpp.o -c ../src/comm/handlers/barrier.cpp",
-    "file": "../src/comm/handlers/barrier.cpp",
-    "output": "p4db.p/src_comm_handlers_barrier.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_comm_handlers_barrier.cpp.o -MF p4db.p/src_comm_handlers_barrier.cpp.o.d -o p4db.p/src_comm_handlers_barrier.cpp.o -c ../src/comm/handlers/barrier.cpp",
+    "file": "../src/comm/handlers/barrier.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_comm_handlers_tuple_put_res.cpp.o -MF p4db.p/src_comm_handlers_tuple_put_res.cpp.o.d -o p4db.p/src_comm_handlers_tuple_put_res.cpp.o -c ../src/comm/handlers/tuple_put_res.cpp",
-    "file": "../src/comm/handlers/tuple_put_res.cpp",
-    "output": "p4db.p/src_comm_handlers_tuple_put_res.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_comm_handlers_tuple_put_res.cpp.o -MF p4db.p/src_comm_handlers_tuple_put_res.cpp.o.d -o p4db.p/src_comm_handlers_tuple_put_res.cpp.o -c ../src/comm/handlers/tuple_put_res.cpp",
+    "file": "../src/comm/handlers/tuple_put_res.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_comm_msg_handler.cpp.o -MF p4db.p/src_comm_msg_handler.cpp.o.d -o p4db.p/src_comm_msg_handler.cpp.o -c ../src/comm/msg_handler.cpp",
-    "file": "../src/comm/msg_handler.cpp",
-    "output": "p4db.p/src_comm_msg_handler.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_comm_msg_handler.cpp.o -MF p4db.p/src_comm_msg_handler.cpp.o.d -o p4db.p/src_comm_msg_handler.cpp.o -c ../src/comm/msg_handler.cpp",
+    "file": "../src/comm/msg_handler.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_comm_udp.cpp.o -MF p4db.p/src_comm_udp.cpp.o.d -o p4db.p/src_comm_udp.cpp.o -c ../src/comm/udp.cpp",
-    "file": "../src/comm/udp.cpp",
-    "output": "p4db.p/src_comm_udp.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_comm_udp.cpp.o -MF p4db.p/src_comm_udp.cpp.o.d -o p4db.p/src_comm_udp.cpp.o -c ../src/comm/udp.cpp",
+    "file": "../src/comm/udp.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_table_table.cpp.o -MF p4db.p/src_table_table.cpp.o.d -o p4db.p/src_table_table.cpp.o -c ../src/table/table.cpp",
-    "file": "../src/table/table.cpp",
-    "output": "p4db.p/src_table_table.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_table_table.cpp.o -MF p4db.p/src_table_table.cpp.o.d -o p4db.p/src_table_table.cpp.o -c ../src/table/table.cpp",
+    "file": "../src/table/table.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_declustered_layout.cpp.o -MF p4db.p/src_declustered_layout_declustered_layout.cpp.o.d -o p4db.p/src_declustered_layout_declustered_layout.cpp.o -c ../src/declustered_layout/declustered_layout.cpp",
-    "file": "../src/declustered_layout/declustered_layout.cpp",
-    "output": "p4db.p/src_declustered_layout_declustered_layout.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_declustered_layout.cpp.o -MF p4db.p/src_declustered_layout_declustered_layout.cpp.o.d -o p4db.p/src_declustered_layout_declustered_layout.cpp.o -c ../src/declustered_layout/declustered_layout.cpp",
+    "file": "../src/declustered_layout/declustered_layout.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_dotwriter.cpp.o -MF p4db.p/src_declustered_layout_dotwriter.cpp.o.d -o p4db.p/src_declustered_layout_dotwriter.cpp.o -c ../src/declustered_layout/dotwriter.cpp",
-    "file": "../src/declustered_layout/dotwriter.cpp",
-    "output": "p4db.p/src_declustered_layout_dotwriter.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_dotwriter.cpp.o -MF p4db.p/src_declustered_layout_dotwriter.cpp.o.d -o p4db.p/src_declustered_layout_dotwriter.cpp.o -c ../src/declustered_layout/dotwriter.cpp",
+    "file": "../src/declustered_layout/dotwriter.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_graph.cpp.o -MF p4db.p/src_declustered_layout_graph.cpp.o.d -o p4db.p/src_declustered_layout_graph.cpp.o -c ../src/declustered_layout/graph.cpp",
-    "file": "../src/declustered_layout/graph.cpp",
-    "output": "p4db.p/src_declustered_layout_graph.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_graph.cpp.o -MF p4db.p/src_declustered_layout_graph.cpp.o.d -o p4db.p/src_declustered_layout_graph.cpp.o -c ../src/declustered_layout/graph.cpp",
+    "file": "../src/declustered_layout/graph.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_graph_maxcut.cpp.o -MF p4db.p/src_declustered_layout_graph_maxcut.cpp.o.d -o p4db.p/src_declustered_layout_graph_maxcut.cpp.o -c ../src/declustered_layout/graph_maxcut.cpp",
-    "file": "../src/declustered_layout/graph_maxcut.cpp",
-    "output": "p4db.p/src_declustered_layout_graph_maxcut.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_graph_maxcut.cpp.o -MF p4db.p/src_declustered_layout_graph_maxcut.cpp.o.d -o p4db.p/src_declustered_layout_graph_maxcut.cpp.o -c ../src/declustered_layout/graph_maxcut.cpp",
+    "file": "../src/declustered_layout/graph_maxcut.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_graph_toposort.cpp.o -MF p4db.p/src_declustered_layout_graph_toposort.cpp.o.d -o p4db.p/src_declustered_layout_graph_toposort.cpp.o -c ../src/declustered_layout/graph_toposort.cpp",
-    "file": "../src/declustered_layout/graph_toposort.cpp",
-    "output": "p4db.p/src_declustered_layout_graph_toposort.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_graph_toposort.cpp.o -MF p4db.p/src_declustered_layout_graph_toposort.cpp.o.d -o p4db.p/src_declustered_layout_graph_toposort.cpp.o -c ../src/declustered_layout/graph_toposort.cpp",
+    "file": "../src/declustered_layout/graph_toposort.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_partitioning.cpp.o -MF p4db.p/src_declustered_layout_partitioning.cpp.o.d -o p4db.p/src_declustered_layout_partitioning.cpp.o -c ../src/declustered_layout/partitioning.cpp",
-    "file": "../src/declustered_layout/partitioning.cpp",
-    "output": "p4db.p/src_declustered_layout_partitioning.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_partitioning.cpp.o -MF p4db.p/src_declustered_layout_partitioning.cpp.o.d -o p4db.p/src_declustered_layout_partitioning.cpp.o -c ../src/declustered_layout/partitioning.cpp",
+    "file": "../src/declustered_layout/partitioning.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_switch_simulator.cpp.o -MF p4db.p/src_declustered_layout_switch_simulator.cpp.o.d -o p4db.p/src_declustered_layout_switch_simulator.cpp.o -c ../src/declustered_layout/switch_simulator.cpp",
-    "file": "../src/declustered_layout/switch_simulator.cpp",
-    "output": "p4db.p/src_declustered_layout_switch_simulator.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ip4db.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -DFMT_SHARED -pthread -MD -MQ p4db.p/src_declustered_layout_switch_simulator.cpp.o -MF p4db.p/src_declustered_layout_switch_simulator.cpp.o.d -o p4db.p/src_declustered_layout_switch_simulator.cpp.o -c ../src/declustered_layout/switch_simulator.cpp",
+    "file": "../src/declustered_layout/switch_simulator.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_main.cpp.o -MF libp4db.so.p/src_main.cpp.o.d -o libp4db.so.p/src_main.cpp.o -c ../src/main.cpp",
-    "file": "../src/main.cpp",
-    "output": "libp4db.so.p/src_main.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_main.cpp.o -MF libp4db.so.p/src_main.cpp.o.d -o libp4db.so.p/src_main.cpp.o -c ../src/main.cpp",
+    "file": "../src/main.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_db_config.cpp.o -MF libp4db.so.p/src_db_config.cpp.o.d -o libp4db.so.p/src_db_config.cpp.o -c ../src/db/config.cpp",
-    "file": "../src/db/config.cpp",
-    "output": "libp4db.so.p/src_db_config.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_db_config.cpp.o -MF libp4db.so.p/src_db_config.cpp.o.d -o libp4db.so.p/src_db_config.cpp.o -c ../src/db/config.cpp",
+    "file": "../src/db/config.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_db_hex_dump.cpp.o -MF libp4db.so.p/src_db_hex_dump.cpp.o.d -o libp4db.so.p/src_db_hex_dump.cpp.o -c ../src/db/hex_dump.cpp",
-    "file": "../src/db/hex_dump.cpp",
-    "output": "libp4db.so.p/src_db_hex_dump.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_db_hex_dump.cpp.o -MF libp4db.so.p/src_db_hex_dump.cpp.o.d -o libp4db.so.p/src_db_hex_dump.cpp.o -c ../src/db/hex_dump.cpp",
+    "file": "../src/db/hex_dump.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_db_undolog.cpp.o -MF libp4db.so.p/src_db_undolog.cpp.o.d -o libp4db.so.p/src_db_undolog.cpp.o -c ../src/db/undolog.cpp",
-    "file": "../src/db/undolog.cpp",
-    "output": "libp4db.so.p/src_db_undolog.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_db_undolog.cpp.o -MF libp4db.so.p/src_db_undolog.cpp.o.d -o libp4db.so.p/src_db_undolog.cpp.o -c ../src/db/undolog.cpp",
+    "file": "../src/db/undolog.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_db_util.cpp.o -MF libp4db.so.p/src_db_util.cpp.o.d -o libp4db.so.p/src_db_util.cpp.o -c ../src/db/util.cpp",
-    "file": "../src/db/util.cpp",
-    "output": "libp4db.so.p/src_db_util.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_db_util.cpp.o -MF libp4db.so.p/src_db_util.cpp.o.d -o libp4db.so.p/src_db_util.cpp.o -c ../src/db/util.cpp",
+    "file": "../src/db/util.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_ycsb_ycsb.cpp.o -MF libp4db.so.p/src_benchmarks_ycsb_ycsb.cpp.o.d -o libp4db.so.p/src_benchmarks_ycsb_ycsb.cpp.o -c ../src/benchmarks/ycsb/ycsb.cpp",
-    "file": "../src/benchmarks/ycsb/ycsb.cpp",
-    "output": "libp4db.so.p/src_benchmarks_ycsb_ycsb.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_ycsb_ycsb.cpp.o -MF libp4db.so.p/src_benchmarks_ycsb_ycsb.cpp.o.d -o libp4db.so.p/src_benchmarks_ycsb_ycsb.cpp.o -c ../src/benchmarks/ycsb/ycsb.cpp",
+    "file": "../src/benchmarks/ycsb/ycsb.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_ycsb_txn_multi.cpp.o -MF libp4db.so.p/src_benchmarks_ycsb_txn_multi.cpp.o.d -o libp4db.so.p/src_benchmarks_ycsb_txn_multi.cpp.o -c ../src/benchmarks/ycsb/txn/multi.cpp",
-    "file": "../src/benchmarks/ycsb/txn/multi.cpp",
-    "output": "libp4db.so.p/src_benchmarks_ycsb_txn_multi.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_ycsb_txn_multi.cpp.o -MF libp4db.so.p/src_benchmarks_ycsb_txn_multi.cpp.o.d -o libp4db.so.p/src_benchmarks_ycsb_txn_multi.cpp.o -c ../src/benchmarks/ycsb/txn/multi.cpp",
+    "file": "../src/benchmarks/ycsb/txn/multi.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_ycsb_txn_read.cpp.o -MF libp4db.so.p/src_benchmarks_ycsb_txn_read.cpp.o.d -o libp4db.so.p/src_benchmarks_ycsb_txn_read.cpp.o -c ../src/benchmarks/ycsb/txn/read.cpp",
-    "file": "../src/benchmarks/ycsb/txn/read.cpp",
-    "output": "libp4db.so.p/src_benchmarks_ycsb_txn_read.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_ycsb_txn_read.cpp.o -MF libp4db.so.p/src_benchmarks_ycsb_txn_read.cpp.o.d -o libp4db.so.p/src_benchmarks_ycsb_txn_read.cpp.o -c ../src/benchmarks/ycsb/txn/read.cpp",
+    "file": "../src/benchmarks/ycsb/txn/read.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_ycsb_txn_write.cpp.o -MF libp4db.so.p/src_benchmarks_ycsb_txn_write.cpp.o.d -o libp4db.so.p/src_benchmarks_ycsb_txn_write.cpp.o -c ../src/benchmarks/ycsb/txn/write.cpp",
-    "file": "../src/benchmarks/ycsb/txn/write.cpp",
-    "output": "libp4db.so.p/src_benchmarks_ycsb_txn_write.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_ycsb_txn_write.cpp.o -MF libp4db.so.p/src_benchmarks_ycsb_txn_write.cpp.o.d -o libp4db.so.p/src_benchmarks_ycsb_txn_write.cpp.o -c ../src/benchmarks/ycsb/txn/write.cpp",
+    "file": "../src/benchmarks/ycsb/txn/write.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_ycsb_txn_switch.cpp.o -MF libp4db.so.p/src_benchmarks_ycsb_txn_switch.cpp.o.d -o libp4db.so.p/src_benchmarks_ycsb_txn_switch.cpp.o -c ../src/benchmarks/ycsb/txn/switch.cpp",
-    "file": "../src/benchmarks/ycsb/txn/switch.cpp",
-    "output": "libp4db.so.p/src_benchmarks_ycsb_txn_switch.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_ycsb_txn_switch.cpp.o -MF libp4db.so.p/src_benchmarks_ycsb_txn_switch.cpp.o.d -o libp4db.so.p/src_benchmarks_ycsb_txn_switch.cpp.o -c ../src/benchmarks/ycsb/txn/switch.cpp",
+    "file": "../src/benchmarks/ycsb/txn/switch.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_smallbank.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_smallbank.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_smallbank.cpp.o -c ../src/benchmarks/smallbank/smallbank.cpp",
-    "file": "../src/benchmarks/smallbank/smallbank.cpp",
-    "output": "libp4db.so.p/src_benchmarks_smallbank_smallbank.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_smallbank.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_smallbank.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_smallbank.cpp.o -c ../src/benchmarks/smallbank/smallbank.cpp",
+    "file": "../src/benchmarks/smallbank/smallbank.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o -c ../src/benchmarks/smallbank/txn/amalgamate.cpp",
-    "file": "../src/benchmarks/smallbank/txn/amalgamate.cpp",
-    "output": "libp4db.so.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_amalgamate.cpp.o -c ../src/benchmarks/smallbank/txn/amalgamate.cpp",
+    "file": "../src/benchmarks/smallbank/txn/amalgamate.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_balance.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_balance.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_balance.cpp.o -c ../src/benchmarks/smallbank/txn/balance.cpp",
-    "file": "../src/benchmarks/smallbank/txn/balance.cpp",
-    "output": "libp4db.so.p/src_benchmarks_smallbank_txn_balance.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_balance.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_balance.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_balance.cpp.o -c ../src/benchmarks/smallbank/txn/balance.cpp",
+    "file": "../src/benchmarks/smallbank/txn/balance.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o -c ../src/benchmarks/smallbank/txn/deposit_checking.cpp",
-    "file": "../src/benchmarks/smallbank/txn/deposit_checking.cpp",
-    "output": "libp4db.so.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_deposit_checking.cpp.o -c ../src/benchmarks/smallbank/txn/deposit_checking.cpp",
+    "file": "../src/benchmarks/smallbank/txn/deposit_checking.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_send_payment.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_send_payment.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_send_payment.cpp.o -c ../src/benchmarks/smallbank/txn/send_payment.cpp",
-    "file": "../src/benchmarks/smallbank/txn/send_payment.cpp",
-    "output": "libp4db.so.p/src_benchmarks_smallbank_txn_send_payment.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_send_payment.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_send_payment.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_send_payment.cpp.o -c ../src/benchmarks/smallbank/txn/send_payment.cpp",
+    "file": "../src/benchmarks/smallbank/txn/send_payment.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o -c ../src/benchmarks/smallbank/txn/transact_saving.cpp",
-    "file": "../src/benchmarks/smallbank/txn/transact_saving.cpp",
-    "output": "libp4db.so.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_transact_saving.cpp.o -c ../src/benchmarks/smallbank/txn/transact_saving.cpp",
+    "file": "../src/benchmarks/smallbank/txn/transact_saving.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_write_check.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_write_check.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_write_check.cpp.o -c ../src/benchmarks/smallbank/txn/write_check.cpp",
-    "file": "../src/benchmarks/smallbank/txn/write_check.cpp",
-    "output": "libp4db.so.p/src_benchmarks_smallbank_txn_write_check.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_write_check.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_write_check.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_write_check.cpp.o -c ../src/benchmarks/smallbank/txn/write_check.cpp",
+    "file": "../src/benchmarks/smallbank/txn/write_check.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_switch.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_switch.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_switch.cpp.o -c ../src/benchmarks/smallbank/txn/switch.cpp",
-    "file": "../src/benchmarks/smallbank/txn/switch.cpp",
-    "output": "libp4db.so.p/src_benchmarks_smallbank_txn_switch.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_smallbank_txn_switch.cpp.o -MF libp4db.so.p/src_benchmarks_smallbank_txn_switch.cpp.o.d -o libp4db.so.p/src_benchmarks_smallbank_txn_switch.cpp.o -c ../src/benchmarks/smallbank/txn/switch.cpp",
+    "file": "../src/benchmarks/smallbank/txn/switch.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_tpcc_tpcc.cpp.o -MF libp4db.so.p/src_benchmarks_tpcc_tpcc.cpp.o.d -o libp4db.so.p/src_benchmarks_tpcc_tpcc.cpp.o -c ../src/benchmarks/tpcc/tpcc.cpp",
-    "file": "../src/benchmarks/tpcc/tpcc.cpp",
-    "output": "libp4db.so.p/src_benchmarks_tpcc_tpcc.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_tpcc_tpcc.cpp.o -MF libp4db.so.p/src_benchmarks_tpcc_tpcc.cpp.o.d -o libp4db.so.p/src_benchmarks_tpcc_tpcc.cpp.o -c ../src/benchmarks/tpcc/tpcc.cpp",
+    "file": "../src/benchmarks/tpcc/tpcc.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_tpcc_txn_new_order.cpp.o -MF libp4db.so.p/src_benchmarks_tpcc_txn_new_order.cpp.o.d -o libp4db.so.p/src_benchmarks_tpcc_txn_new_order.cpp.o -c ../src/benchmarks/tpcc/txn/new_order.cpp",
-    "file": "../src/benchmarks/tpcc/txn/new_order.cpp",
-    "output": "libp4db.so.p/src_benchmarks_tpcc_txn_new_order.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_tpcc_txn_new_order.cpp.o -MF libp4db.so.p/src_benchmarks_tpcc_txn_new_order.cpp.o.d -o libp4db.so.p/src_benchmarks_tpcc_txn_new_order.cpp.o -c ../src/benchmarks/tpcc/txn/new_order.cpp",
+    "file": "../src/benchmarks/tpcc/txn/new_order.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_tpcc_txn_payment.cpp.o -MF libp4db.so.p/src_benchmarks_tpcc_txn_payment.cpp.o.d -o libp4db.so.p/src_benchmarks_tpcc_txn_payment.cpp.o -c ../src/benchmarks/tpcc/txn/payment.cpp",
-    "file": "../src/benchmarks/tpcc/txn/payment.cpp",
-    "output": "libp4db.so.p/src_benchmarks_tpcc_txn_payment.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_tpcc_txn_payment.cpp.o -MF libp4db.so.p/src_benchmarks_tpcc_txn_payment.cpp.o.d -o libp4db.so.p/src_benchmarks_tpcc_txn_payment.cpp.o -c ../src/benchmarks/tpcc/txn/payment.cpp",
+    "file": "../src/benchmarks/tpcc/txn/payment.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_tpcc_txn_switch.cpp.o -MF libp4db.so.p/src_benchmarks_tpcc_txn_switch.cpp.o.d -o libp4db.so.p/src_benchmarks_tpcc_txn_switch.cpp.o -c ../src/benchmarks/tpcc/txn/switch.cpp",
-    "file": "../src/benchmarks/tpcc/txn/switch.cpp",
-    "output": "libp4db.so.p/src_benchmarks_tpcc_txn_switch.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_tpcc_txn_switch.cpp.o -MF libp4db.so.p/src_benchmarks_tpcc_txn_switch.cpp.o.d -o libp4db.so.p/src_benchmarks_tpcc_txn_switch.cpp.o -c ../src/benchmarks/tpcc/txn/switch.cpp",
+    "file": "../src/benchmarks/tpcc/txn/switch.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o -MF libp4db.so.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o.d -o libp4db.so.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o -c ../src/benchmarks/micro_recirc/micro_recirc.cpp",
-    "file": "../src/benchmarks/micro_recirc/micro_recirc.cpp",
-    "output": "libp4db.so.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o -MF libp4db.so.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o.d -o libp4db.so.p/src_benchmarks_micro_recirc_micro_recirc.cpp.o -c ../src/benchmarks/micro_recirc/micro_recirc.cpp",
+    "file": "../src/benchmarks/micro_recirc/micro_recirc.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_micro_recirc_txn_arg.cpp.o -MF libp4db.so.p/src_benchmarks_micro_recirc_txn_arg.cpp.o.d -o libp4db.so.p/src_benchmarks_micro_recirc_txn_arg.cpp.o -c ../src/benchmarks/micro_recirc/txn/arg.cpp",
-    "file": "../src/benchmarks/micro_recirc/txn/arg.cpp",
-    "output": "libp4db.so.p/src_benchmarks_micro_recirc_txn_arg.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_micro_recirc_txn_arg.cpp.o -MF libp4db.so.p/src_benchmarks_micro_recirc_txn_arg.cpp.o.d -o libp4db.so.p/src_benchmarks_micro_recirc_txn_arg.cpp.o -c ../src/benchmarks/micro_recirc/txn/arg.cpp",
+    "file": "../src/benchmarks/micro_recirc/txn/arg.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_micro_recirc_txn_switch.cpp.o -MF libp4db.so.p/src_benchmarks_micro_recirc_txn_switch.cpp.o.d -o libp4db.so.p/src_benchmarks_micro_recirc_txn_switch.cpp.o -c ../src/benchmarks/micro_recirc/txn/switch.cpp",
-    "file": "../src/benchmarks/micro_recirc/txn/switch.cpp",
-    "output": "libp4db.so.p/src_benchmarks_micro_recirc_txn_switch.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_benchmarks_micro_recirc_txn_switch.cpp.o -MF libp4db.so.p/src_benchmarks_micro_recirc_txn_switch.cpp.o.d -o libp4db.so.p/src_benchmarks_micro_recirc_txn_switch.cpp.o -c ../src/benchmarks/micro_recirc/txn/switch.cpp",
+    "file": "../src/benchmarks/micro_recirc/txn/switch.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_stats_collector.cpp.o -MF libp4db.so.p/src_stats_collector.cpp.o.d -o libp4db.so.p/src_stats_collector.cpp.o -c ../src/stats/collector.cpp",
-    "file": "../src/stats/collector.cpp",
-    "output": "libp4db.so.p/src_stats_collector.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_stats_collector.cpp.o -MF libp4db.so.p/src_stats_collector.cpp.o.d -o libp4db.so.p/src_stats_collector.cpp.o -c ../src/stats/collector.cpp",
+    "file": "../src/stats/collector.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_stats_counter.cpp.o -MF libp4db.so.p/src_stats_counter.cpp.o.d -o libp4db.so.p/src_stats_counter.cpp.o -c ../src/stats/counter.cpp",
-    "file": "../src/stats/counter.cpp",
-    "output": "libp4db.so.p/src_stats_counter.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_stats_counter.cpp.o -MF libp4db.so.p/src_stats_counter.cpp.o.d -o libp4db.so.p/src_stats_counter.cpp.o -c ../src/stats/counter.cpp",
+    "file": "../src/stats/counter.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_stats_cycles.cpp.o -MF libp4db.so.p/src_stats_cycles.cpp.o.d -o libp4db.so.p/src_stats_cycles.cpp.o -c ../src/stats/cycles.cpp",
-    "file": "../src/stats/cycles.cpp",
-    "output": "libp4db.so.p/src_stats_cycles.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_stats_cycles.cpp.o -MF libp4db.so.p/src_stats_cycles.cpp.o.d -o libp4db.so.p/src_stats_cycles.cpp.o -c ../src/stats/cycles.cpp",
+    "file": "../src/stats/cycles.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_stats_periodic.cpp.o -MF libp4db.so.p/src_stats_periodic.cpp.o.d -o libp4db.so.p/src_stats_periodic.cpp.o -c ../src/stats/periodic.cpp",
-    "file": "../src/stats/periodic.cpp",
-    "output": "libp4db.so.p/src_stats_periodic.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_stats_periodic.cpp.o -MF libp4db.so.p/src_stats_periodic.cpp.o.d -o libp4db.so.p/src_stats_periodic.cpp.o -c ../src/stats/periodic.cpp",
+    "file": "../src/stats/periodic.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_stats_context.cpp.o -MF libp4db.so.p/src_stats_context.cpp.o.d -o libp4db.so.p/src_stats_context.cpp.o -c ../src/stats/context.cpp",
-    "file": "../src/stats/context.cpp",
-    "output": "libp4db.so.p/src_stats_context.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_stats_context.cpp.o -MF libp4db.so.p/src_stats_context.cpp.o.d -o libp4db.so.p/src_stats_context.cpp.o -c ../src/stats/context.cpp",
+    "file": "../src/stats/context.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_comm_handlers_init.cpp.o -MF libp4db.so.p/src_comm_handlers_init.cpp.o.d -o libp4db.so.p/src_comm_handlers_init.cpp.o -c ../src/comm/handlers/init.cpp",
-    "file": "../src/comm/handlers/init.cpp",
-    "output": "libp4db.so.p/src_comm_handlers_init.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_comm_handlers_init.cpp.o -MF libp4db.so.p/src_comm_handlers_init.cpp.o.d -o libp4db.so.p/src_comm_handlers_init.cpp.o -c ../src/comm/handlers/init.cpp",
+    "file": "../src/comm/handlers/init.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_comm_handlers_barrier.cpp.o -MF libp4db.so.p/src_comm_handlers_barrier.cpp.o.d -o libp4db.so.p/src_comm_handlers_barrier.cpp.o -c ../src/comm/handlers/barrier.cpp",
-    "file": "../src/comm/handlers/barrier.cpp",
-    "output": "libp4db.so.p/src_comm_handlers_barrier.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_comm_handlers_barrier.cpp.o -MF libp4db.so.p/src_comm_handlers_barrier.cpp.o.d -o libp4db.so.p/src_comm_handlers_barrier.cpp.o -c ../src/comm/handlers/barrier.cpp",
+    "file": "../src/comm/handlers/barrier.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_comm_handlers_tuple_put_res.cpp.o -MF libp4db.so.p/src_comm_handlers_tuple_put_res.cpp.o.d -o libp4db.so.p/src_comm_handlers_tuple_put_res.cpp.o -c ../src/comm/handlers/tuple_put_res.cpp",
-    "file": "../src/comm/handlers/tuple_put_res.cpp",
-    "output": "libp4db.so.p/src_comm_handlers_tuple_put_res.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_comm_handlers_tuple_put_res.cpp.o -MF libp4db.so.p/src_comm_handlers_tuple_put_res.cpp.o.d -o libp4db.so.p/src_comm_handlers_tuple_put_res.cpp.o -c ../src/comm/handlers/tuple_put_res.cpp",
+    "file": "../src/comm/handlers/tuple_put_res.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_comm_msg_handler.cpp.o -MF libp4db.so.p/src_comm_msg_handler.cpp.o.d -o libp4db.so.p/src_comm_msg_handler.cpp.o -c ../src/comm/msg_handler.cpp",
-    "file": "../src/comm/msg_handler.cpp",
-    "output": "libp4db.so.p/src_comm_msg_handler.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_comm_msg_handler.cpp.o -MF libp4db.so.p/src_comm_msg_handler.cpp.o.d -o libp4db.so.p/src_comm_msg_handler.cpp.o -c ../src/comm/msg_handler.cpp",
+    "file": "../src/comm/msg_handler.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_comm_udp.cpp.o -MF libp4db.so.p/src_comm_udp.cpp.o.d -o libp4db.so.p/src_comm_udp.cpp.o -c ../src/comm/udp.cpp",
-    "file": "../src/comm/udp.cpp",
-    "output": "libp4db.so.p/src_comm_udp.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_comm_udp.cpp.o -MF libp4db.so.p/src_comm_udp.cpp.o.d -o libp4db.so.p/src_comm_udp.cpp.o -c ../src/comm/udp.cpp",
+    "file": "../src/comm/udp.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_table_table.cpp.o -MF libp4db.so.p/src_table_table.cpp.o.d -o libp4db.so.p/src_table_table.cpp.o -c ../src/table/table.cpp",
-    "file": "../src/table/table.cpp",
-    "output": "libp4db.so.p/src_table_table.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_table_table.cpp.o -MF libp4db.so.p/src_table_table.cpp.o.d -o libp4db.so.p/src_table_table.cpp.o -c ../src/table/table.cpp",
+    "file": "../src/table/table.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_declustered_layout.cpp.o -MF libp4db.so.p/src_declustered_layout_declustered_layout.cpp.o.d -o libp4db.so.p/src_declustered_layout_declustered_layout.cpp.o -c ../src/declustered_layout/declustered_layout.cpp",
-    "file": "../src/declustered_layout/declustered_layout.cpp",
-    "output": "libp4db.so.p/src_declustered_layout_declustered_layout.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_declustered_layout.cpp.o -MF libp4db.so.p/src_declustered_layout_declustered_layout.cpp.o.d -o libp4db.so.p/src_declustered_layout_declustered_layout.cpp.o -c ../src/declustered_layout/declustered_layout.cpp",
+    "file": "../src/declustered_layout/declustered_layout.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_dotwriter.cpp.o -MF libp4db.so.p/src_declustered_layout_dotwriter.cpp.o.d -o libp4db.so.p/src_declustered_layout_dotwriter.cpp.o -c ../src/declustered_layout/dotwriter.cpp",
-    "file": "../src/declustered_layout/dotwriter.cpp",
-    "output": "libp4db.so.p/src_declustered_layout_dotwriter.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_dotwriter.cpp.o -MF libp4db.so.p/src_declustered_layout_dotwriter.cpp.o.d -o libp4db.so.p/src_declustered_layout_dotwriter.cpp.o -c ../src/declustered_layout/dotwriter.cpp",
+    "file": "../src/declustered_layout/dotwriter.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_graph.cpp.o -MF libp4db.so.p/src_declustered_layout_graph.cpp.o.d -o libp4db.so.p/src_declustered_layout_graph.cpp.o -c ../src/declustered_layout/graph.cpp",
-    "file": "../src/declustered_layout/graph.cpp",
-    "output": "libp4db.so.p/src_declustered_layout_graph.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_graph.cpp.o -MF libp4db.so.p/src_declustered_layout_graph.cpp.o.d -o libp4db.so.p/src_declustered_layout_graph.cpp.o -c ../src/declustered_layout/graph.cpp",
+    "file": "../src/declustered_layout/graph.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_graph_maxcut.cpp.o -MF libp4db.so.p/src_declustered_layout_graph_maxcut.cpp.o.d -o libp4db.so.p/src_declustered_layout_graph_maxcut.cpp.o -c ../src/declustered_layout/graph_maxcut.cpp",
-    "file": "../src/declustered_layout/graph_maxcut.cpp",
-    "output": "libp4db.so.p/src_declustered_layout_graph_maxcut.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_graph_maxcut.cpp.o -MF libp4db.so.p/src_declustered_layout_graph_maxcut.cpp.o.d -o libp4db.so.p/src_declustered_layout_graph_maxcut.cpp.o -c ../src/declustered_layout/graph_maxcut.cpp",
+    "file": "../src/declustered_layout/graph_maxcut.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_graph_toposort.cpp.o -MF libp4db.so.p/src_declustered_layout_graph_toposort.cpp.o.d -o libp4db.so.p/src_declustered_layout_graph_toposort.cpp.o -c ../src/declustered_layout/graph_toposort.cpp",
-    "file": "../src/declustered_layout/graph_toposort.cpp",
-    "output": "libp4db.so.p/src_declustered_layout_graph_toposort.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_graph_toposort.cpp.o -MF libp4db.so.p/src_declustered_layout_graph_toposort.cpp.o.d -o libp4db.so.p/src_declustered_layout_graph_toposort.cpp.o -c ../src/declustered_layout/graph_toposort.cpp",
+    "file": "../src/declustered_layout/graph_toposort.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_partitioning.cpp.o -MF libp4db.so.p/src_declustered_layout_partitioning.cpp.o.d -o libp4db.so.p/src_declustered_layout_partitioning.cpp.o -c ../src/declustered_layout/partitioning.cpp",
-    "file": "../src/declustered_layout/partitioning.cpp",
-    "output": "libp4db.so.p/src_declustered_layout_partitioning.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_partitioning.cpp.o -MF libp4db.so.p/src_declustered_layout_partitioning.cpp.o.d -o libp4db.so.p/src_declustered_layout_partitioning.cpp.o -c ../src/declustered_layout/partitioning.cpp",
+    "file": "../src/declustered_layout/partitioning.cpp"
   },
   {
-    "directory": "/home/mihirs/p4db/build",
-    "command": "g++ -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_switch_simulator.cpp.o -MF libp4db.so.p/src_declustered_layout_switch_simulator.cpp.o.d -o libp4db.so.p/src_declustered_layout_switch_simulator.cpp.o -c ../src/declustered_layout/switch_simulator.cpp",
-    "file": "../src/declustered_layout/switch_simulator.cpp",
-    "output": "libp4db.so.p/src_declustered_layout_switch_simulator.cpp.o"
+    "directory": "/u/mihirs/p4db/build",
+    "command": "g++-11 -Ilibp4db.so.p -I. -I.. -Isrc -I../src -I../subprojects/fmt-7.0.1/include -I../subprojects/cxxopts-2.2.1/include -I/u/mihirs/.local/include/ -L/u/mihirs/.local/lib/ -flto=auto -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -Wextra -Wpedantic -std=c++2a -O3 -march=native -pg -Wl,-rpath=/u/mihirs/.local/lib/ -Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/ -Wl,--start-group -ltbb -Wl,--end-group -fPIC -DFMT_SHARED -pthread -MD -MQ libp4db.so.p/src_declustered_layout_switch_simulator.cpp.o -MF libp4db.so.p/src_declustered_layout_switch_simulator.cpp.o.d -o libp4db.so.p/src_declustered_layout_switch_simulator.cpp.o -c ../src/declustered_layout/switch_simulator.cpp",
+    "file": "../src/declustered_layout/switch_simulator.cpp"
   }
 ]

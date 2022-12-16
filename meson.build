@@ -6,6 +6,7 @@ project('p4db', 'cpp',
     default_options: ['warning_level=3', 'buildtype=release', 'b_lto=true', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=release', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=debugoptimized', 'cpp_std=c++2a'],
+    # default_options: ['warning_level=3', 'buildtype=debug', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=debug', 'b_sanitize=address', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=debug', 'b_sanitize=address,undefined', 'cpp_std=c++2a'],
 )
@@ -13,7 +14,13 @@ add_global_arguments('-march=native', language : ['cpp', 'c']) #vs add_global_li
 # add_project_arguments ???
 # add_global_arguments('-fno-omit-frame-pointer', language : ['cpp', 'c'])
 # add_global_arguments('-g', language : ['cpp', 'c'])
+add_global_arguments('-pg', language : ['cpp', 'c'])
 # add_global_arguments('-fmax-errors=1', language : ['cpp', 'c'])
+add_global_arguments('-I/u/mihirs/.local/include/', language : ['cpp', 'c'])
+add_global_arguments('-L/u/mihirs/.local/lib/', language : ['cpp', 'c'])
+add_global_arguments('-Wl,-rpath=/u/mihirs/.local/lib/', language : ['cpp', 'c'])
+add_global_arguments('-Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/', language : ['cpp'])
+add_global_arguments('-ltbb', language : ['cpp', 'c'])
 
 # add_global_arguments('-mno-tbm', language : ['cpp', 'c'])
 # add_global_arguments('-DRTE_LIBRTE_MBUF_DEBUG', language : ['cpp', 'c'])
@@ -44,12 +51,7 @@ cxxopts_proj = subproject('cxxopts')
 cxxopts_dep = cxxopts_proj.get_variable('cxxopts_dep')
 
 
-
-
-
-
 cxx = meson.get_compiler('cpp')
-# tbb_dep = cxx.find_library('tbb', required : true)
 
 
 # python3 = find_program('python3', 'python')
@@ -78,7 +80,6 @@ project_deps += [
     threads_dep,
     fmt_dep,
     cxxopts_dep,
-    # tbb_dep
     # vtune_dep,
     # dl_dep
 ]
@@ -93,14 +94,16 @@ p4db_bin = executable('p4db',
     main_source + project_sources, 
     include_directories : project_includes, 
     dependencies : project_deps,
-    link_with : project_libs
+    link_with : project_libs,
+    link_args : ['-pg']
 )
 
 p4db_lib = library('p4db', 
     main_source + project_sources, 
     include_directories : project_includes, 
     dependencies : project_deps,
-    link_with : project_libs
+    link_with : project_libs,
+    link_args : ['-pg']
 )
 
 # # This regex excludes any sources from the third_party, tests, benchmarks 

@@ -71,7 +71,8 @@ void Config::parse_cli(int argc, char** argv) {
     num_nodes = result.as<uint32_t>("num_nodes");
     num_txn_workers = result.as<uint32_t>("num_txn_workers");
 
-		servers.emplace_back("127.0.0.1", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+    servers.emplace_back("128.83.144.118", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+    //servers.emplace_back("128.83.144.182", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
     if (result.count("servers")) {
         servers.clear();
         servers = result.as<std::vector<Server>>("servers");

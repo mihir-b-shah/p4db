@@ -1,1 +1,0 @@
-./layout --node_id 0 --num_nodes 1 --num_txn_workers 10 --workload ycsb --use_switch true --num_txns 500000 --ycsb_table_size 10000000 --ycsb_write_prob 50 --ycsb_remote_prob 0 --ycsb_hot_prob 75 --ycsb_hot_size 50

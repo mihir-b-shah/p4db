@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <cstdio>
+
 
 class Database {
     std::vector<Table*> table_ids;

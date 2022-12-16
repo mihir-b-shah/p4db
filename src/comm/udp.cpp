@@ -2,6 +2,9 @@
 
 #include "db/config.hpp"
 #include "msg_handler.hpp"
+#include "stats/context.hpp"
+
+#include <cstdio>
 
 
 UDPCommunicator::UDPCommunicator() {
@@ -37,6 +40,7 @@ void UDPCommunicator::set_handler(MessageHandler* handler) {
     this->handler = handler;
     auto& config = Config::instance();
     thread = std::jthread([&, handler](std::stop_token token) {
+        const WorkerContext::guard worker_ctx;
         pin_worker(config.num_txn_workers);
         while (!token.stop_requested()) {
             auto pkt = receive();
@@ -53,6 +57,11 @@ void UDPCommunicator::send(msg::node_t target, Pkt_t*& pkt, uint32_t) {
 }
 
 void UDPCommunicator::send(msg::node_t target, Pkt_t*& pkt) {
+    /*
+    auto p_addr = (const struct sockaddr_in*) &addresses[target];
+    printf("Sending to node %u, thread %u- size %d packet, to ipaddr: %s, port %u.\n", (uint32_t) target, target.get_tid(), pkt->size(), inet_ntoa(p_addr->sin_addr), p_addr->sin_port);
+    */
+
     if (target >= addresses.size()) {
         throw std::runtime_error("target " + std::to_string(target) + " out of bounds");
     }
@@ -104,6 +113,15 @@ UDPCommunicator::Pkt_t* UDPCommunicator::receive() {
     if (!recv_buffer) {
         recv_buffer = Pkt_t::alloc();
     }
+    
+    /*
+    struct sockaddr p_addr;
+    socklen_t p_len;
+    getsockname(sock, &p_addr, &p_len);
+    struct sockaddr_in* p_sin = (struct sockaddr_in*) &p_addr;
+    printf("Listening for packet on ip %s, port %u\n", inet_ntoa(p_sin->sin_addr), p_sin->sin_port);
+    */
+
     int len = recv(sock, recv_buffer, Pkt_t::BUF_SIZE, MSG_DONTWAIT);
     if (len <= 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
         return nullptr;
