@@ -76,6 +76,9 @@ void MessageHandler::handle(Pkt_t* pkt, msg::TupleGetRes* res) {
 
     try {
         auto future = open_futures.erase(res->msg_id);
+        if (future == nullptr) {
+            printf("Msg_id err: %lu\n", res->msg_id.value);
+        }
         future->set_pkt(pkt);
     } catch (...) {
         std::cerr << "Received msg_id=" << res->msg_id << " without future.\n";

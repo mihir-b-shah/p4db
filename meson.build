@@ -3,23 +3,23 @@
 project('p4db', 'cpp',
     version: '1.0',
     meson_version : '>= 0.53.0',
-    default_options: ['warning_level=3', 'buildtype=release', 'b_lto=true', 'cpp_std=c++2a'],
+    # default_options: ['warning_level=3', 'buildtype=release', 'b_lto=true', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=release', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=debugoptimized', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=debug', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=debug', 'b_sanitize=address', 'cpp_std=c++2a'],
-    # default_options: ['warning_level=3', 'buildtype=debug', 'b_sanitize=address,undefined', 'cpp_std=c++2a'],
+    default_options: ['warning_level=3', 'buildtype=debug', 'b_sanitize=address,undefined', 'cpp_std=c++2a'],
 )
 add_global_arguments('-march=native', language : ['cpp', 'c']) #vs add_global_link_arguments
 # add_project_arguments ???
 # add_global_arguments('-fno-omit-frame-pointer', language : ['cpp', 'c'])
 # add_global_arguments('-g', language : ['cpp', 'c'])
-add_global_arguments('-pg', language : ['cpp', 'c'])
+# add_global_arguments('-static', language : ['cpp', 'c'])
+# add_global_arguments('-pg', language : ['cpp', 'c'])
 # add_global_arguments('-fmax-errors=1', language : ['cpp', 'c'])
 add_global_arguments('-I/u/mihirs/.local/include/', language : ['cpp', 'c'])
 add_global_arguments('-L/u/mihirs/.local/lib/', language : ['cpp', 'c'])
 add_global_arguments('-Wl,-rpath=/u/mihirs/.local/lib/', language : ['cpp', 'c'])
-add_global_arguments('-Wl,-rpath=/lusr/opt/gcc-11.1.0/lib64/', language : ['cpp'])
 add_global_arguments('-ltbb', language : ['cpp', 'c'])
 
 # add_global_arguments('-mno-tbm', language : ['cpp', 'c'])
@@ -44,10 +44,10 @@ project_deps = []
 
 threads_dep = dependency('threads')
 
-fmt_proj = subproject('fmt')
+fmt_proj = subproject('fmt') #default_options: ['default_library=static'])
 fmt_dep = fmt_proj.get_variable('fmt_dep')
 
-cxxopts_proj = subproject('cxxopts')
+cxxopts_proj = subproject('cxxopts') #default_options: ['default_library=static'])
 cxxopts_dep = cxxopts_proj.get_variable('cxxopts_dep')
 
 
@@ -94,17 +94,16 @@ p4db_bin = executable('p4db',
     main_source + project_sources, 
     include_directories : project_includes, 
     dependencies : project_deps,
-    link_with : project_libs,
-    link_args : ['-pg']
+    link_with : project_libs
+    #link_args : '-static'
 )
 
-p4db_lib = library('p4db', 
-    main_source + project_sources, 
-    include_directories : project_includes, 
-    dependencies : project_deps,
-    link_with : project_libs,
-    link_args : ['-pg']
-)
+# p4db_lib = library('p4db', 
+#     main_source + project_sources, 
+#     include_directories : project_includes, 
+#     dependencies : project_deps,
+#     link_with : project_libs
+# )
 
 # # This regex excludes any sources from the third_party, tests, benchmarks 
 # # and gtest related files.

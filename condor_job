@@ -1,0 +1,23 @@
+
+LD_LIBRARY_PATH=/lusr/opt/gcc-11.1.0/lib64
+
++Group="UNDER"
++Project="OPERATING_DISTRIBUTED_SYSTEMS"
++ProjectDescription="Running contention experiments for a distributed OLTP system"
++ParallelShutdownPolicy="WAIT_FOR_ALL"
+
+universe=parallel   
+getenv=true
+Rank=Memory
+notification=Error
+notify_user=mihirs@cs.utexas.edu
+executable=./build/p4db
+arguments=--node_id $(node) --num_nodes 1 --num_txn_workers 24 --workload ycsb --use_switch=false --num_txns 500000 --ycsb_table_size 1000 --ycsb_write_prob 50 --ycsb_remote_prob 0 --ycsb_hot_prob 75 --ycsb_hot_size 50
+log=logfile
+error=errfile.$(node)
+output=outfile.$(node)
+machine_count=1
+request_cpus=24
+should_transfer_files=IF_NEEDED
+when_to_transfer_output=ON_EXIT
+queue

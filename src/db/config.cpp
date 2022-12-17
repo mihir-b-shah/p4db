@@ -2,6 +2,16 @@
 
 #include <cxxopts.hpp>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <netdb.h> 
+#include <arpa/inet.h>
+#include <errno.h>
+
 class BetterParseResult : public cxxopts::ParseResult {
 public:
     BetterParseResult() = delete;
@@ -71,8 +81,27 @@ void Config::parse_cli(int argc, char** argv) {
     num_nodes = result.as<uint32_t>("num_nodes");
     num_txn_workers = result.as<uint32_t>("num_txn_workers");
 
-    servers.emplace_back("128.83.144.118", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
-    //servers.emplace_back("128.83.144.182", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+    int coord_sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    struct hostent* coord = gethostbyname("candyland.cs.utexas.edu");
+    struct sockaddr_in coord_addr; 
+    memset(&coord_addr, 0, sizeof(coord_addr));
+    coord_addr.sin_family = AF_INET;
+    memcpy(&(coord_addr.sin_addr.s_addr), coord->h_addr, coord->h_length);
+    coord_addr.sin_port = htons(5001);
+    char coord_buf[201] = {};
+
+    // does zero-length packet screw up tcp/congestion control?
+    connect(coord_sockfd, (struct sockaddr*) &coord_addr, (socklen_t) sizeof(struct sockaddr_in));
+    send(coord_sockfd, coord_buf, 1, 0);
+    recvfrom(coord_sockfd, coord_buf, 200, 0, NULL, 0);
+
+    char* ip_token = strtok(coord_buf, " ");
+    while (ip_token != NULL) {
+        printf("Ip_token: %s\n", ip_token);
+        servers.emplace_back(ip_token, 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+        ip_token = strtok(NULL, " ");
+    }
+
     if (result.count("servers")) {
         servers.clear();
         servers = result.as<std::vector<Server>>("servers");
