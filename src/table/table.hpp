@@ -94,8 +94,6 @@ struct StructTable final : public Table {
     Tuple_t::PartitionInfo_t part_info;
     Communicator& comm;
     std::unique_ptr<Row_t[]> data;
-    // HugePages<Row_t> data;
-
 
     StructTable(std::size_t max_size, Communicator& comm)
         : max_size(max_size), part_info(max_size), comm(comm) {

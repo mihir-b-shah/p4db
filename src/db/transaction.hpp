@@ -145,6 +145,7 @@ struct TransactionBase : crtp<T>, public Transaction, public TransactionArgs, pu
 
         auto future = mempool.allocate<Future_t>();
         auto msg_id = db.msg_handler->set_new_id(req);
+        //printf("LINE:%d Inserting for msg_id=%lu, future=%p\n", __LINE__, msg_id.value, future);
         db.msg_handler->add_future(msg_id, future);
 
         db.comm->send(loc_info.target, pkt, tid);
@@ -202,6 +203,7 @@ struct TransactionBase : crtp<T>, public Transaction, public TransactionArgs, pu
 
         auto future = mempool.allocate<Future_t>();
         auto msg_id = db.msg_handler->set_new_id(req);
+        //printf("LINE:%d Inserting for msg_id=%lu, future=%p\n", __LINE__, msg_id.value, future);
         db.msg_handler->add_future(msg_id, future);
 
         db.comm->send(loc_info.target, pkt, tid);
@@ -260,6 +262,7 @@ struct TransactionBase : crtp<T>, public Transaction, public TransactionArgs, pu
 
         auto future = mempool.allocate<Future_t>(std::move(parse_fn));
         auto msg_id = comm->handler->set_new_id(txn);
+        //printf("LINE:%d Inserting for msg_id=%lu, future=%p\n", __LINE__, msg_id.value, future);
         comm->handler->add_future(msg_id, future);
         comm->send(comm->switch_id, pkt, tid);
 

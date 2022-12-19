@@ -1,4 +1,4 @@
-Build started at 2022-12-17T00:30:05.231559
+Build started at 2022-12-18T17:21:52.788455
 Main binary: /lusr/bin/python3.10
 Build Options: 
 Python system: Linux
@@ -44,6 +44,7 @@ C++ linker for the build machine: g++-11 ld.bfd 2.30
 Build targets in project: 1
 Subproject cxxopts finished.
 
+Dependency libdpdk found: YES 20.08.0 (cached)
 Build targets in project: 2
 
 p4db 1.0
@@ -54,8 +55,8 @@ p4db 1.0
 
 Found ninja-1.8.2 at /usr/bin/ninja
 Running compile:
-Working directory:  /tmp/tmpumb3r0ne
-Command line:  g++-11 /tmp/tmpumb3r0ne/testfile.cpp -o /tmp/tmpumb3r0ne/output.obj -D_FILE_OFFSET_BITS=64 -c -std=c++14 
+Working directory:  /tmp/tmpivi1lebv
+Command line:  g++-11 /tmp/tmpivi1lebv/testfile.cpp -o /tmp/tmpivi1lebv/output.obj -D_FILE_OFFSET_BITS=64 -c -std=c++14 
 
 Code:
  int i = static_cast<int>(0);
@@ -65,8 +66,8 @@ Compiler stderr:
  
 Compiler accepts -std=c++14: YES
 Running compile:
-Working directory:  /u/mihirs/p4db/build/meson-private/tmpk47zqlbd
-Command line:  g++-11 /u/mihirs/p4db/build/meson-private/tmpk47zqlbd/testfile.cpp -o /u/mihirs/p4db/build/meson-private/tmpk47zqlbd/output.obj -c -D_FILE_OFFSET_BITS=64 -O0 -fpermissive --print-search-dirs 
+Working directory:  /u/mihirs/p4db/build/meson-private/tmp2fxdcq6g
+Command line:  g++-11 /u/mihirs/p4db/build/meson-private/tmp2fxdcq6g/testfile.cpp -o /u/mihirs/p4db/build/meson-private/tmp2fxdcq6g/output.obj -c -D_FILE_OFFSET_BITS=64 -O0 -fpermissive --print-search-dirs 
 
 Code:
  

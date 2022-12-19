@@ -1,8 +1,8 @@
 # Follow: https://github.com/tiernemi/meson-sample-project
-
+    
 project('p4db', 'cpp',
     version: '1.0',
-    meson_version : '>= 0.53.0',
+    meson_version : '>= 0.55.0',
     # default_options: ['warning_level=3', 'buildtype=release', 'b_lto=true', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=release', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=debugoptimized', 'cpp_std=c++2a'],
@@ -21,6 +21,14 @@ add_global_arguments('-I/u/mihirs/.local/include/', language : ['cpp', 'c'])
 add_global_arguments('-L/u/mihirs/.local/lib/', language : ['cpp', 'c'])
 add_global_arguments('-Wl,-rpath=/u/mihirs/.local/lib/', language : ['cpp', 'c'])
 add_global_arguments('-ltbb', language : ['cpp', 'c'])
+add_global_arguments('-I/u/mihirs/.local/usr/local/include', language : ['cpp', 'c'])
+
+#add_global_arguments('-Isubprojects/dpdk-20.08/lib/librte_ethdev', language : ['cpp', 'c'])
+#add_global_arguments('-I../subprojects/dpdk-20.08/lib/librte_ethdev', language : ['cpp', 'c'])
+#add_global_arguments('-Isubprojects/dpdk-20.08/lib/librte_net', language : ['cpp', 'c'])
+#add_global_arguments('-I../subprojects/dpdk-20.08/lib/librte_net', language : ['cpp', 'c'])
+#add_global_arguments('-Isubprojects/dpdk-20.08/lib/librte_pdump', language : ['cpp', 'c'])
+#add_global_arguments('-I../subprojects/dpdk-20.08/lib/librte_pdump', language : ['cpp', 'c'])
 
 # add_global_arguments('-mno-tbm', language : ['cpp', 'c'])
 # add_global_arguments('-DRTE_LIBRTE_MBUF_DEBUG', language : ['cpp', 'c'])
@@ -31,7 +39,6 @@ add_global_arguments('-ltbb', language : ['cpp', 'c'])
 # disable in config/common_base
 # CONFIG_RTE_MBUF_DEBUG=n
 # CONFIG_RTE_LIBRTE_MEMPOOL_DEBUG=y
-
 
 
 project_headers = []
@@ -50,6 +57,7 @@ fmt_dep = fmt_proj.get_variable('fmt_dep')
 cxxopts_proj = subproject('cxxopts') #default_options: ['default_library=static'])
 cxxopts_dep = cxxopts_proj.get_variable('cxxopts_dep')
 
+dpdk_dep = dependency('libdpdk', required: true)
 
 cxx = meson.get_compiler('cpp')
 
@@ -73,13 +81,14 @@ cxx = meson.get_compiler('cpp')
 
 project_includes += [
     include_directories('src'),
-    fmt_proj.get_variable('fmt_inc')
+    fmt_proj.get_variable('fmt_inc'),
 ]
 
 project_deps += [
     threads_dep,
     fmt_dep,
     cxxopts_dep,
+    dpdk_dep,
     # vtune_dep,
     # dl_dep
 ]
@@ -95,7 +104,6 @@ p4db_bin = executable('p4db',
     include_directories : project_includes, 
     dependencies : project_deps,
     link_with : project_libs
-    #link_args : '-static'
 )
 
 # p4db_lib = library('p4db', 

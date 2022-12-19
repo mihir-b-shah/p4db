@@ -97,7 +97,7 @@ void Config::parse_cli(int argc, char** argv) {
 
     char* ip_token = strtok(coord_buf, " ");
     while (ip_token != NULL) {
-        printf("Ip_token: %s\n", ip_token);
+        //printf("Ip_token: %s\n", ip_token);
         servers.emplace_back(ip_token, 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
         ip_token = strtok(NULL, " ");
     }

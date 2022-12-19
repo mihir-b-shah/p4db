@@ -15,6 +15,7 @@ msg::id_t MessageHandler::set_new_id(msg::Header* msg) {
 }
 
 void MessageHandler::add_future(msg::id_t msg_id, AbstractFuture* future) {
+    //printf("Inserting for msg_id=%lu, future=%p\n", msg_id.value, future);
     open_futures.insert(msg_id, future);
 }
 
@@ -75,10 +76,9 @@ void MessageHandler::handle(Pkt_t* pkt, msg::TupleGetRes* res) {
     // std::cerr << "msg::TupleGetRes tid=" << res->tid << " rid=" << res->rid << " mode=" << static_cast<int>(res->mode) << '\n';
 
     try {
+        //printf("LINE: %d Erasing msg_id %lu\n", __LINE__, res->msg_id.value);
         auto future = open_futures.erase(res->msg_id);
-        if (future == nullptr) {
-            printf("Msg_id err: %lu\n", res->msg_id.value);
-        }
+        //printf("LINE: %d Erased msg_id %lu with val=%p\n", __LINE__, res->msg_id.value, future);
         future->set_pkt(pkt);
     } catch (...) {
         std::cerr << "Received msg_id=" << res->msg_id << " without future.\n";
@@ -117,7 +117,9 @@ void MessageHandler::handle(Pkt_t* pkt, msg::SwitchTxn* txn) {
     }
 
     try {
+        //printf("LINE: %d Erasing msg_id %lu\n", __LINE__, txn->msg_id.value);
         auto future = open_futures.erase(txn->msg_id);
+        //printf("LINE: %d Erased msg_id %lu with val=%p\n", __LINE__, txn->msg_id.value, future);
         future->set_pkt(pkt);
     } catch (...) {
         std::cerr << "Received msg_id=" << txn->msg_id << " without future.\n";

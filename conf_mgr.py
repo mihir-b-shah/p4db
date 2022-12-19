@@ -4,7 +4,7 @@ import threading
 
 ip_list = []
 ip_list_cv = threading.Condition()
-N = 2
+N = 1
 n = 0
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

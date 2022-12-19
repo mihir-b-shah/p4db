@@ -6,6 +6,12 @@
 
 #include <cstdio>
 
+/*
+Packet drops, mistaken sends, etc make this very problematic.
+Maybe implementing an RDMA send/recv version of this might be ok?
+It can run in userspace and can allow running experiments.
+*/
+
 
 UDPCommunicator::UDPCommunicator() {
     auto& config = Config::instance();
@@ -47,6 +53,7 @@ void UDPCommunicator::set_handler(MessageHandler* handler) {
             if (!pkt) {
                 continue;
             }
+            //printf("Msg->type: %u\n", static_cast<unsigned>(pkt->as<msg::Header>()->type));
             handler->handle(pkt);
         }
     });
@@ -57,11 +64,6 @@ void UDPCommunicator::send(msg::node_t target, Pkt_t*& pkt, uint32_t) {
 }
 
 void UDPCommunicator::send(msg::node_t target, Pkt_t*& pkt) {
-    /*
-    auto p_addr = (const struct sockaddr_in*) &addresses[target];
-    printf("Sending to node %u, thread %u- size %d packet, to ipaddr: %s, port %u.\n", (uint32_t) target, target.get_tid(), pkt->size(), inet_ntoa(p_addr->sin_addr), p_addr->sin_port);
-    */
-
     if (target >= addresses.size()) {
         throw std::runtime_error("target " + std::to_string(target) + " out of bounds");
     }
@@ -70,6 +72,7 @@ void UDPCommunicator::send(msg::node_t target, Pkt_t*& pkt) {
     {
         const std::lock_guard<lock_t> lock(mutex); // Interestingly locking is faster
         len = sendto(sock, pkt, pkt->size(), 0, (const struct sockaddr*)&addresses[target], sizeof(struct sockaddr_in));
+        //printf("Sent msg of size %d\n", len);
     }
 
     if (len != pkt->size()) {
@@ -114,15 +117,8 @@ UDPCommunicator::Pkt_t* UDPCommunicator::receive() {
         recv_buffer = Pkt_t::alloc();
     }
     
-    /*
-    struct sockaddr p_addr;
-    socklen_t p_len;
-    getsockname(sock, &p_addr, &p_len);
-    struct sockaddr_in* p_sin = (struct sockaddr_in*) &p_addr;
-    printf("Listening for packet on ip %s, port %u\n", inet_ntoa(p_sin->sin_addr), p_sin->sin_port);
-    */
-
     int len = recv(sock, recv_buffer, Pkt_t::BUF_SIZE, MSG_DONTWAIT);
+    //printf("Received msg of size %d\n", len);
     if (len <= 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
         return nullptr;
     }
