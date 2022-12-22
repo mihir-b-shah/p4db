@@ -13,7 +13,7 @@ namespace declustered_layout {
 
 struct DeclusteredLayout {
     // Intel confidential
-    static constexpr auto STAGES = 42;
+    static constexpr auto STAGES = 16;
     static constexpr auto REGS_PER_STAGE = 1;
     static constexpr auto REG_SIZE = 42;
     static constexpr auto LOCK_BITS = 2;

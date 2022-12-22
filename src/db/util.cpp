@@ -7,7 +7,11 @@
 
 void pin_worker(uint32_t core, pthread_t pid /*= pthread_self()*/) {
     WorkerContext::get().tid = core;
-    core += 2; // make space for dpdk main and receiver thread
+    
+    #ifdef DPDK
+    // make space for dpdk main, receiver thread
+    core += 2
+    #endif
 
     constexpr auto NUM_SOCKETS = 2;
     constexpr auto NUM_HYPERTHREADS = 1;
@@ -46,7 +50,6 @@ void pin_worker(uint32_t core, pthread_t pid /*= pthread_self()*/) {
 
         return map;
     }();
-
 
     cpu_set_t mask;
     CPU_ZERO(&mask);
