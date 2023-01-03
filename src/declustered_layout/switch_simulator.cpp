@@ -48,8 +48,10 @@ void SwitchSimulator::process(std::vector<Transaction> txns) {
 
         pass_hist[passes - 1] += txn.repeats;
         total_txns += txn.repeats;
+        /*
         std::cout << "txn[" << (i++) << "] passes=" << passes << " !deps=" << violated_deps
                   << " --> " << txn.accesses << " regs=" << regs << "\n";
+        */
     }
 
     // crop last zero elements
@@ -66,7 +68,7 @@ void SwitchSimulator::process(std::vector<Transaction> txns) {
     }
 
     // print results
-    std::cout << "pass_hist={single,multi,...}=" << pass_hist << "\n";
+    //std::cout << "pass_hist={single,multi,...}=" << pass_hist << "\n";
     std::streamsize ss = std::cout.precision();
     std::cout.precision(4);
     std::cout << "pass_dist={single,multi,...}=" << pass_dist << "\n";

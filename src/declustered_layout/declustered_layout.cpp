@@ -4,6 +4,8 @@
 #include "graph_maxcut.hpp"
 #include "graph_toposort.hpp"
 
+#include <cstdlib>
+#include <utility>
 
 namespace declustered_layout {
 
@@ -93,8 +95,19 @@ bool DeclusteredLayout::is_hot(uint64_t idx) const {
     return switch_tuples.find(idx) != switch_tuples.end();
 }
 
-const TupleLocation& DeclusteredLayout::get_location(const uint64_t idx) const {
-    return switch_tuples.at(idx);
+TupleLocation DeclusteredLayout::get_location(uint64_t idx) {
+    // Lets say we have enough room for the records we have chosen to accelerate.
+    // Just assign it randomly if I havent seen it before.
+    if (switch_tuples.find(idx) == switch_tuples.end()) {
+        TupleLocation tl;
+        tl.stage_id = rand() % STAGES;
+        tl.reg_array_id = rand() % REGS_PER_STAGE;
+        tl.reg_array_idx = rand() % REG_SIZE;
+        tl.lock_bit = 0;
+        return tl;
+    } else {
+        return switch_tuples.at(idx);
+    }
 }
 
 void DeclusteredLayout::clear() {

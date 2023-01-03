@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <random>
 #include <vector>
+#include <cmath>
 
 
 namespace declustered_layout {
@@ -12,9 +13,11 @@ namespace declustered_layout {
 
 struct Generator {
     std::mt19937 gen;
-    std::uniform_int_distribution<uint64_t> dist{0, 1000};
+    std::uniform_real_distribution<> dist{0.0, 1.0};
     Generator() { gen.seed(0); }
-    uint64_t operator()() { return dist(gen); }
+    uint64_t operator()() {
+        return (uint64_t) 100*tan((M_PI/2)*dist(gen));
+    }
 };
 
 

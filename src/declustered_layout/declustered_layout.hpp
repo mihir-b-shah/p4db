@@ -13,12 +13,12 @@ namespace declustered_layout {
 
 struct DeclusteredLayout {
     // Intel confidential
-    static constexpr auto STAGES = 16;
+    static constexpr auto STAGES = 64;
     static constexpr auto REGS_PER_STAGE = 1;
-    static constexpr auto REG_SIZE = 42;
+    static constexpr auto REG_SIZE = 10000;
     static constexpr auto LOCK_BITS = 2;
     static constexpr auto PARTITIONS = STAGES * REGS_PER_STAGE;
-    static constexpr auto MAX_ACCESSES = 10;
+    static constexpr auto MAX_ACCESSES = 64;
 
 
     Graph g;
@@ -30,11 +30,13 @@ struct DeclusteredLayout {
 
     bool is_hot(uint64_t idx) const;
 
-    const TupleLocation& get_location(uint64_t idx) const;
+    TupleLocation get_location(uint64_t idx);
 
     void clear();
 
     void print();
+
+    size_t get_layout_coverage(){ return switch_tuples.size(); }
 };
 
 

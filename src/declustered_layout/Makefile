@@ -1,5 +1,5 @@
 CXX=g++-11
-CFLAGS=-std=c++2a -O0 -g -MD -Wall -Wextra -fmax-errors=1 -I. -I../../src/ -I./MQLib/include/ 
+CFLAGS=-std=c++2a -O3 -g -MD -Wall -fmax-errors=1 -I. -I../../src/ -I./MQLib/include/ 
 # CFLAGS=-std=c++2a -O3 -g -MD -Wall -Wextra -fmax-errors=1 -I. -I../../src
 LIBS=-pthread -L./MQLib/bin -l:MQLib.a -fsanitize=address 
 

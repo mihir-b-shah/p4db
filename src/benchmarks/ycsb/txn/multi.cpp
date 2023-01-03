@@ -20,11 +20,6 @@ namespace benchmark {
 namespace ycsb {
 
 YCSB::RC YCSB::operator()(YCSBArgs::Multi<NUM_OPS>& arg) {
-    static bool timed = false;
-    if (!timed) {
-
-    }
-
     if (arg.on_switch) {
         WorkerContext::get().cycl.reset(stats::Cycles::switch_txn_latency);
         WorkerContext::get().cycl.start(stats::Cycles::switch_txn_latency);

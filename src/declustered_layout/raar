@@ -1,0 +1,10 @@
+undirected:
+	#nodes=1000
+	#edges=27240
+	max_weight=217
+#parts=16 partition_sizes={60,62,63,67,62,59,60,66,67,61,64,61,58,66,64,60}
+# covered records: 1000
+---- ONLY SAMPLES ----
+pass_dist={single,multi,...}={0.9188,0.0795,0.001579,0.000117}
+---- ALL TXNS ----
+pass_dist={single,multi,...}={0.5208,0.391,0.08087,0.007353}
