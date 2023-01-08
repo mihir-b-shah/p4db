@@ -3,6 +3,24 @@
 
 #include <cstdio>
 #include <cassert>
+#include <cstdlib>
+
+namespace stats {
+    size_t num_cycles = 0;
+    size_t num_txns = 0;
+    size_t num_passes = 0;
+}
+
+static void print_stats() {
+    printf("Num cycles: %lu\n", stats::num_cycles);
+    printf("Num txns: %lu\n", stats::num_txns);
+    printf("Num passes: %lu\n", stats::num_passes);
+}
+
+__attribute__((constructor))
+static void register_stats() {
+    atexit(print_stats);
+}
 
 inline static size_t port_to_group(size_t port) {
     return port / (N_PORTS / N_PORT_GROUPS);
@@ -43,13 +61,16 @@ void switch_t::ipb_to_parser(size_t i) {
 }
 
 void switch_t::run_cycle() {
+    stats::num_cycles += 1;
     run_reg_ops(N_STAGES-1);
     if (ingr_pipe_[N_STAGES-1].has_value()) {
         txn_pool_t::slot_id_t txn_slot = ingr_pipe_[N_STAGES-1].value();
         sw_txn_t& txn = txn_pool_.at(txn_slot);
         txn.pass_ct += 1;
+        stats::num_passes += 1;
 
         if (txn.passes.size() == txn.pass_ct) {
+            stats::num_txns += 1;
             mock_egress_[txn.port].push(txn_slot);
         } else {
             ipb_[RECIRC_PORT].push(txn_slot);

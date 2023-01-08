@@ -13,14 +13,20 @@ int main() {
     batch_iter_t iter = get_batch_iter(workload_e::YCSB);
     std::vector<txn_t> batch = iter.next_batch();
     layout_t layout = get_layout(batch);
+    size_t received = 0;
+    size_t cycle = 0;
 
-    for (size_t cycle = 0; cycle < 50000; ++cycle) {
+    while (1) {
         if (cycle < batch.size()) {
             sw_txn_t sw_txn(/*port*/ 0, layout, batch[cycle]);
             p4_switch.send(sw_txn);
         }
         p4_switch.run_cycle();
-        // no need to receive now, since mock egress queues are unboundedly large.
+        received += p4_switch.recv(0).has_value();
+        if (received == batch.size()) {
+            break;
+        }
+        cycle += 1;
     }
     return 0;
 }
