@@ -33,7 +33,7 @@ constexpr bool operator&(StatsBitmask lhs, StatsBitmask rhs) {
 
 // constexpr StatsBitmask ENABLED_STATS = StatsBitmask::COUNTER | StatsBitmask::CYCLES | StatsBitmask::PERIODIC;
 
-constexpr StatsBitmask ENABLED_STATS = StatsBitmask::CYCLES;
+constexpr StatsBitmask ENABLED_STATS = StatsBitmask::ALL;
 constexpr bool STATS_PER_WORKER = false;
 constexpr auto STATS_CYCLE_SAMPLE_TIME = 10ms; //100us;
 constexpr auto STATS_PERIODIC_SAMPLE_TIME = 500ms;

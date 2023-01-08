@@ -1,7 +1,0 @@
-prefix=/u/mihirs/p4db/build
-includedir=${prefix}/include
-srcdir=/u/mihirs/p4db
-
-Name: cxxopts
-Description: Lightweight C++ command line option parser
-Version: 2.2.1

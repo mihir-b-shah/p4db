@@ -8,18 +8,12 @@ source("utils.R")
 
 
 
-
 no_fine_no_fast = (p4db_read(csv_file="exp_ycsb_optis_slow.csv") %>%
         filter(metric=="total_commits"&ycsb_opti_test=="false"&switch_no_conflict=="false"))$throughput
-fine_no_fast = (p4db_read(csv_file="exp_ycsb_optis_slow.csv") %>%
-        filter(metric=="total_commits"&ycsb_opti_test=="true"&switch_no_conflict=="false"))$throughput
-
-
 no_fine_fast = (p4db_read(csv_file="exp_ycsb_optis.csv") %>%
         filter(metric=="total_commits"&ycsb_opti_test=="false"&switch_no_conflict=="false"))$throughput
 fine_fast = (p4db_read(csv_file="exp_ycsb_optis.csv") %>%
         filter(metric=="total_commits"&ycsb_opti_test=="true"&switch_no_conflict=="false"))$throughput
-
 single_pass = (p4db_read(csv_file="exp_ycsb_optis.csv") %>%
         filter(metric=="total_commits"&ycsb_opti_test=="false"&switch_no_conflict=="true"))$throughput
 
