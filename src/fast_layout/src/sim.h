@@ -82,7 +82,7 @@ struct sw_txn_t {
     std::vector<sw_pass_txn_t> passes;
 
     // zero-arg constructor needed for mempool
-    sw_txn_t() : pass_ct(0) {}
+    sw_txn_t() : id(0), pass_ct(0) {}
     sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn);
 };
 

@@ -3,6 +3,7 @@
 #define _MEMPOOL_H_
 
 #include <forward_list>
+#include <cassert>
 
 template <typename T, size_t N>
 class sw_mempool_t {
@@ -16,9 +17,7 @@ public:
     }
 
     slot_id_t alloc() {
-        if (free_list_.empty()) {
-            throw; // shouldn't happen...
-        }
+        assert(!free_list_.empty());
         slot_id_t slot = free_list_.front();
         free_list_.pop_front();
         return slot;

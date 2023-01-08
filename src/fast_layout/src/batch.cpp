@@ -77,7 +77,9 @@ static std::vector<txn_t> get_hot_txn_comps(const std::vector<txn_t>& raw_txns) 
         auto it = std::copy_if(raw_txn.ops.begin(), raw_txn.ops.end(), txn.ops.begin(),
             [&hot_keys](db_key_t k){ return hot_keys.find(k) != hot_keys.end(); });
         txn.ops.resize(it - txn.ops.begin());
-        txns.push_back(txn);
+        if (txn.ops.size() > 0) {
+            txns.push_back(txn);
+        }
     }
     return txns;
 }

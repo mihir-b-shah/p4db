@@ -1,13 +1,18 @@
 
 #include "sim.h"
 
+#include <cstdio>
+#include <cassert>
+
 inline static size_t port_to_group(size_t port) {
     return port / (N_PORTS / N_PORT_GROUPS);
 }
 
 bool switch_t::send(sw_txn_t txn) {
+    static size_t incr_id = 1;
     size_t group = port_to_group(txn.port);
     if (ipb_[group].size() < IPB_SIZE) {
+        txn.id = incr_id++;
         txn_pool_t::slot_id_t slot = txn_pool_.alloc();
         txn_pool_.at(slot) = txn;
         ipb_[group].push(slot);
@@ -42,10 +47,11 @@ void switch_t::run_cycle() {
     if (ingr_pipe_[N_STAGES-1].has_value()) {
         txn_pool_t::slot_id_t txn_slot = ingr_pipe_[N_STAGES-1].value();
         sw_txn_t& txn = txn_pool_.at(txn_slot);
+        txn.pass_ct += 1;
+
         if (txn.passes.size() == txn.pass_ct) {
             mock_egress_[txn.port].push(txn_slot);
         } else {
-            txn.pass_ct += 1;
             ipb_[RECIRC_PORT].push(txn_slot);
         }
     }
@@ -73,6 +79,7 @@ void switch_t::run_cycle() {
         ingr_pipe_[0] = std::nullopt;
     } else {
         ingr_pipe_[0] = parser_[idx];
+        parser_[idx] = std::nullopt;
         ipb_to_parser(idx);
     }
 
