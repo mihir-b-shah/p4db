@@ -40,8 +40,10 @@ private:
     size_t pos_;
 };
 
+typedef std::unordered_map<db_key_t, tuple_loc_t> layout_t;
+
 batch_iter_t get_batch_iter(workload_e wtype);
-std::unordered_map<db_key_t, tuple_loc_t> get_layout(const std::vector<txn_t>& txns);
+layout_t get_layout(const std::vector<txn_t>& txns);
 void run_batch(const std::vector<txn_t>& txns);
 
 /*  Each port is 100 GbE. A port group is 400 GbE.
@@ -68,6 +70,10 @@ struct sw_txn_t {
     sw_txn_id_t id;
     size_t pass_ct;
     std::vector<std::optional<size_t>[N_STAGES][REGS_PER_STAGE]> passes;
+
+    // zero-arg constructor needed for mempool
+    sw_txn_t() : pass_ct(0) {}
+    sw_txn_t(size_t port, const layout_t& layout, txn_t txn);
 };
 
 class switch_t {
@@ -78,11 +84,14 @@ public:
     std::optional<sw_txn_id_t> recv(size_t port);
 
 private:
-    std::queue<sw_txn_t> ipb_[N_PORT_GROUPS + 1];
-    std::optional<sw_txn_t> parser_[N_PORT_GROUPS + 1];
-    std::optional<sw_txn_t> ingr_pipe_[N_STAGES];
-    std::queue<sw_txn_t> mock_egress_[N_PORTS];
-    sw_val_t regs[N_STAGES][REGS_PER_STAGE][SLOTS_PER_REG];
+    typedef sw_mempool_t<sw_txn_t, 4096> txn_pool_t;
+
+    txn_pool_t txn_pool_;
+    std::queue<txn_pool_t::slot_id_t> ipb_[N_PORT_GROUPS + 1];
+    std::optional<txn_pool_t::slot_id_t> parser_[N_PORT_GROUPS + 1];
+    std::optional<txn_pool_t::slot_id_t> ingr_pipe_[N_STAGES];
+    std::queue<txn_pool_t::slot_id_t> mock_egress_[N_PORTS];
+    sw_val_t regs_[N_STAGES][REGS_PER_STAGE][SLOTS_PER_REG];
 
     void run_reg_ops(size_t i);
     void ipb_to_parser(size_t i);
