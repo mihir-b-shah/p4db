@@ -1,2 +1,6 @@
 *.d
 *.run
+*.o
+src/*.a
+src/*.d
+src/*.o
