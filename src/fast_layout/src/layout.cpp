@@ -2,26 +2,52 @@
 #include "sim.h"
 
 #include <array>
+#include <cassert>
 #include <utility>
 
 layout_t get_layout(const std::vector<txn_t>& txns) {
-     
+    // strawman
+    layout_t layout;
+    if (txns.size() == 0) {
+        return layout;
+    }
+    
+    size_t txn_id = 0;
+    size_t op_id = 0;
+
+    for (size_t p = 0; p<SLOTS_PER_REG; ++p) {
+        for (size_t s = 0; s<N_STAGES; ++s) {
+            for (size_t r = 0; r<REGS_PER_STAGE; ++r) {
+                layout[txns[txn_id].ops[op_id]] = {s, r, p};
+                if (txn_id == txns.size()) {
+                    goto end;
+                } else if (op_id == txns[txn_id].ops.size()) {
+                    txn_id += 1;
+                    op_id = 0;
+                } else {
+                    op_id += 1;
+                }
+            }
+        }
+    }
+
+    end:
+    return layout;
 }
 
 sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn) : port(port), pass_ct(0) {
-    std::array<std::pair<db_key_t, tuple_loc_t>> tmp[100];
-
+    std::array<tuple_loc_t, 100> tmp;
     size_t num_ops = txn.ops.size();
     assert(num_ops <= 100);
 
     for (size_t i = 0; i<txn.ops.size(); ++i) {
-        tmp[i] = {txn.ops[i], layout[txn.ops[i]]};
+        tmp[i] = layout.find(txn.ops[i])->second;
     }
-    std::sort(tmp.begin(), tmp.begin() + num_ops, (const auto& p1, const auto& p2){
-        if (p1.second.stage == p2.second.stage) {
-            return p1.second.reg < p2.second.reg;
+    std::sort(tmp.begin(), tmp.begin() + num_ops, [](const tuple_loc_t& p1, const tuple_loc_t& p2){
+        if (p1.stage == p2.stage) {
+            return p1.reg < p2.reg;
         } else {
-            return p1.second.stage < p2.second.stage;
+            return p1.stage < p2.stage;
         }
     });
 
@@ -29,9 +55,9 @@ sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn) : port
     size_t i = 0;
     size_t n_passes = 0;
     while (i < num_ops) {
-        tuple_loc_t tl = tmp[tl];
+        tuple_loc_t tl = tmp[i];
         size_t start = i++;
-        while (i < num_ops && tmp[i].second == tl) {
+        while (i < num_ops && tmp[i] == tl) {
             i += 1;
         }
         if (i-start > n_passes) {
@@ -43,11 +69,11 @@ sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn) : port
     passes.resize(n_passes);
     i = 0;
     while (i < num_ops) {
-        tuple_loc_t tl = tmp[i].second;
-        passes[0][tl.stage][tl.reg] = tmp[i].first;
+        tuple_loc_t tl = tmp[i];
+        passes[0].grid[tl.stage][tl.reg] = tl.idx;
         size_t start = i++;
-        while (i < num_ops && tmp[i].second == tl) {
-            passes[i-start][tl.stage][tl.reg] = tmp[i].first;
+        while (i < num_ops && tmp[i] == tl) {
+            passes[i-start].grid[tl.stage][tl.reg] = tl.idx;
             i += 1;
         }
     }

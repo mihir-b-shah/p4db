@@ -5,8 +5,8 @@ inline static size_t port_to_group(size_t port) {
     return port / (N_PORTS / N_PORT_GROUPS);
 }
 
-bool switch_t::send(size_t port, sw_txn_t txn) {
-    size_t group = port_to_group(port);
+bool switch_t::send(sw_txn_t txn) {
+    size_t group = port_to_group(txn.port);
     if (ipb_[group].size() < IPB_SIZE) {
         txn_pool_t::slot_id_t slot = txn_pool_.alloc();
         txn_pool_.at(slot) = txn;
@@ -21,10 +21,10 @@ void switch_t::run_reg_ops(size_t i) {
     if (ingr_pipe_[i].has_value()) {
         txn_pool_t::slot_id_t txn_slot = ingr_pipe_[i].value();
         sw_txn_t& txn = txn_pool_.at(txn_slot);
-        for (size_t j = 0; j<N_REGS; ++j) {
-            std::optional<size_t> slot_op = txn.passes[txn.pass_num][i][j];
+        for (size_t j = 0; j<REGS_PER_STAGE; ++j) {
+            std::optional<size_t> slot_op = txn.passes[txn.pass_ct].grid[i][j];
             if (slot_op.has_value()) {
-                regs_[i][j][op.value()] = txn.id;
+                regs_[i][j][slot_op.value()] = txn.id;
             }
         }
     }
@@ -33,11 +33,11 @@ void switch_t::run_reg_ops(size_t i) {
 void switch_t::ipb_to_parser(size_t i) {
     if (!ipb_[i].empty()) {
         parser_[i] = ipb_[i].front();
-        ipb_[i].poll();
+        ipb_[i].pop();
     }
 }
 
-void switch_t:run_cycle() {
+void switch_t::run_cycle() {
     run_reg_ops(N_STAGES-1);
     if (ingr_pipe_[N_STAGES-1].has_value()) {
         txn_pool_t::slot_id_t txn_slot = ingr_pipe_[N_STAGES-1].value();
@@ -51,7 +51,7 @@ void switch_t:run_cycle() {
     }
     for (ssize_t i = N_STAGES-1; i>=1; --i) {
         run_reg_ops(i-1);
-        ingr_pipe_[i] = ingr_pipe[i-1];
+        ingr_pipe_[i] = ingr_pipe_[i-1];
     }
     // who has a parse result ready, of them, whose ipb is fullest?
     size_t idx = 0;

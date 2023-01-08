@@ -8,6 +8,8 @@
 #include <queue>
 #include <optional>
 
+#include "mempool.h"
+
 typedef size_t db_key_t;
 
 #define N_STAGES 20
@@ -19,6 +21,11 @@ typedef size_t db_key_t;
 struct tuple_loc_t {
     size_t stage;
     size_t reg;
+    size_t idx;
+
+    bool operator==(const tuple_loc_t& tl) {
+        return stage == tl.stage && reg == tl.stage && idx == tl.idx;
+    }
 };
 
 struct txn_t {
@@ -60,26 +67,29 @@ void run_batch(const std::vector<txn_t>& txns);
 #define N_PORT_GROUPS 8
 #define RECIRC_PORT 8
 #define IPB_SIZE 500
-#define SLOTS_PER_REG 1000
 
 typedef size_t sw_txn_id_t;
 typedef size_t sw_val_t;
+
+struct sw_pass_txn_t {
+    std::optional<size_t> grid[N_STAGES][REGS_PER_STAGE];
+};
 
 struct sw_txn_t {
     size_t port;
     sw_txn_id_t id;
     size_t pass_ct;
-    std::vector<std::optional<size_t>[N_STAGES][REGS_PER_STAGE]> passes;
+    std::vector<sw_pass_txn_t> passes;
 
     // zero-arg constructor needed for mempool
     sw_txn_t() : pass_ct(0) {}
-    sw_txn_t(size_t port, const layout_t& layout, txn_t txn);
+    sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn);
 };
 
 class switch_t {
 public:
-    switch_t() : regs{{0}} {}
-    bool send(size_t port, sw_txn_t txn);
+    switch_t() : regs_{{0}} {}
+    bool send(sw_txn_t txn);
     void run_cycle();
     std::optional<sw_txn_id_t> recv(size_t port);
 

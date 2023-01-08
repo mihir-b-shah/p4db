@@ -20,7 +20,7 @@ public:
             throw; // shouldn't happen...
         }
         slot_id_t slot = free_list_.front();
-        free_list_.pop();
+        free_list_.pop_front();
         return slot;
     }
 
@@ -28,7 +28,7 @@ public:
         free_list_.push_front(slot);
     }
 
-    const T& at(slot_id_t slot) {
+    T& at(slot_id_t slot) {
         return pool_[slot];
     }
 
