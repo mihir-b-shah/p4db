@@ -89,19 +89,24 @@ bool switch_t::manage_locks(const sw_txn_t& txn) {
     }
 }
 
+#define LOOKUP_OPT(opt,var,dflt_val) ((opt).has_value() ? txn_pool_.at((opt).value()).var : dflt_val)
+
 void switch_t::print_state() {
     for (size_t i = 0; i<N_PORT_GROUPS + 1; i += 8) {
         printf("ipb size on port %lu: %lu\n", i, ipb_[i].size());
-        printf("parser occupied on port %lu: %lu\n", i, parser_[i].has_value() ? txn_pool_.at(parser_[i].value()).id : 0);
+        printf("parser occupied on port %lu: %lu\n", i, LOOKUP_OPT(parser_[i], id, 0));
     }
+    printf("txn at stage 0 has %lu passes\n", LOOKUP_OPT(ingr_pipe_[0], passes.size(), 0));
     for (size_t i = 0; i<N_STAGES; ++i) {
-        printf("stage %lu occupied: %lu\n", i, ingr_pipe_[i].has_value() ? txn_pool_.at(ingr_pipe_[i].value()).id : 0);
+        printf("stage %lu occupied: %lu, valid: %d\n", i, LOOKUP_OPT(ingr_pipe_[i], id, 0),
+            LOOKUP_OPT(ingr_pipe_[i], valid, 0));
     }
+    printf("\n");
 }
 
 void switch_t::run_cycle() {
     stats::num_cycles += 1;
-    //print_state();
+    print_state();
 
     run_reg_ops(N_STAGES-1);
     if (ingr_pipe_[N_STAGES-1].has_value()) {
