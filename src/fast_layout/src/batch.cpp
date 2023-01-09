@@ -9,7 +9,6 @@
 #include <sstream>
 #include <string>
 
-// TODO: effect of varying batch size.
 std::vector<txn_t> batch_iter_t::next_batch() {
     if (all_txns_.size() - pos_ < MAX_BATCH) {
         return {};
@@ -71,7 +70,7 @@ static std::vector<txn_t> get_syn_unif_txns() {
 
     for (size_t i = 0; i<100000; ++i) {
         txn_t txn;
-        for (size_t i = 0; i<8; ++i) {
+        for (size_t j = 0; j<8; ++j) {
             txn.ops.push_back(rand() % 100000);
         }
         raw_txns.push_back(txn);
@@ -84,10 +83,27 @@ static std::vector<txn_t> get_syn_hot_8_txns() {
 
     for (size_t i = 0; i<100000; ++i) {
         txn_t txn;
-        for (size_t i = 0; i<8; ++i) {
-            txn.ops.push_back(rand() % 10);
+        for (size_t j = 0; j<8; ++j) {
+            txn.ops.push_back(rand() % 100);
         }
         txn.ops.push_back(rand() % 1000000000);
+        raw_txns.push_back(txn);
+    }
+    return raw_txns;
+}
+
+static std::vector<txn_t> get_syn_adversarial_txns() {
+    std::vector<txn_t> raw_txns;
+
+    for (size_t i = 0; i<100000; ++i) {
+        txn_t txn;
+        // ensure double pass
+        txn.ops.push_back(0);
+        txn.ops.push_back(0);
+
+        for (size_t j = 0; j<6; ++j) {
+            txn.ops.push_back(rand() % 1000000000);
+        }
         raw_txns.push_back(txn);
     }
     return raw_txns;
@@ -140,6 +156,9 @@ batch_iter_t get_batch_iter(workload_e wtype) {
         break;
     case workload_e::SYN_HOT_8:
         txns = get_syn_hot_8_txns();
+        break;
+    case workload_e::SYN_ADVERSARIAL:
+        txns = get_syn_adversarial_txns();
         break;
     }
     return batch_iter_t(get_hot_txn_comps(txns));

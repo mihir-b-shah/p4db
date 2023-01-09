@@ -38,6 +38,7 @@ enum class workload_e {
     YCSB,
     SYN_UNIF,
     SYN_HOT_8,
+    SYN_ADVERSARIAL,
 };
 
 class batch_iter_t {

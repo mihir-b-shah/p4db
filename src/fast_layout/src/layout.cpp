@@ -5,33 +5,70 @@
 #include <cassert>
 #include <cstdio>
 #include <utility>
+#include <optional>
+
+namespace batch_help {
+    class uniq_op_iter_t {
+    public:
+        uniq_op_iter_t(const std::vector<txn_t>& txns) : txns_(txns), txn_it_(0), op_it_(0) {
+            assert(txns_.size() == 0 || valid());
+        }
+
+        db_key_t get() const {
+            return txns_[txn_it_].ops[op_it_];
+        }
+
+        // guaranteed to be monotonic.
+        bool valid() const {
+            static bool past = true;
+            bool ret = in_bounds() && visited_.find(get()) == visited_.end();
+            assert(past || !ret);
+            return ret;
+        }
+
+        void advance() {
+            assert(valid());
+            visited_.insert(get());
+            while (in_bounds() && !valid()) {
+                if (op_it_ == txns_[txn_it_].ops.size()-1) {
+                    txn_it_ += 1;
+                    op_it_ = 0;
+                } else {
+                    op_it_ += 1;
+                }
+            }
+        }
+
+    private:
+        const std::vector<txn_t>& txns_;
+        size_t txn_it_;
+        size_t op_it_;
+        /* technically wasteful, the layout down below does the same thing,
+            but keep simple for now. */
+        std::unordered_set<db_key_t> visited_;
+
+        bool in_bounds() const {
+            return txn_it_ < txns_.size() && op_it_ < txns_[txn_it_].ops.size();
+        }
+    };
+}
 
 layout_t get_layout(const std::vector<txn_t>& txns) {
-    // strawman
+    // a simple spraying solution.
     layout_t layout;
-    if (txns.size() == 0) {
-        return layout;
-    }
-    
-    size_t txn_id = 0;
-    size_t op_id = 0;
+    batch_help::uniq_op_iter_t op_iter(txns);
 
     for (size_t i = 0; i<SLOTS_PER_REG; ++i) {
         for (size_t s = 0; s<N_STAGES; ++s) {
             for (size_t r = 0; r<REGS_PER_STAGE; ++r) {
-                assert(txn_id < txns.size() && op_id < txns[txn_id].ops.size());
-                tuple_loc_t tl = {s, r, i};
-                if (layout.find(txns[txn_id].ops[op_id]) == layout.end()) {
-                    layout.insert({txns[txn_id].ops[op_id], tl});
-                }
-                if (txn_id == txns.size()-1 && op_id == txns[txn_id].ops.size()-1) {
+                if (!op_iter.valid()) {
                     goto end;
-                } else if (op_id == txns[txn_id].ops.size()-1) {
-                    txn_id += 1;
-                    op_id = 0;
-                } else {
-                    op_id += 1;
                 }
+
+                db_key_t key = op_iter.get();
+                tuple_loc_t tl = {s, r, i};
+                layout.insert({key, tl});
+                op_iter.advance();
             }
         }
     }
