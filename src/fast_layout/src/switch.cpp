@@ -96,7 +96,12 @@ void switch_t::print_state() {
         printf("ipb size on port %lu: %lu\n", i, ipb_[i].size());
         printf("parser occupied on port %lu: %lu\n", i, LOOKUP_OPT(parser_[i], id, 0));
     }
-    printf("txn at stage 0 has %lu passes\n", LOOKUP_OPT(ingr_pipe_[0], passes.size(), 0));
+    if (LOOKUP_OPT(ingr_pipe_[N_STAGES-1], valid, 0) && 
+        LOOKUP_OPT(ingr_pipe_[N_STAGES-1], passes.size(), 0) == 
+            1 + LOOKUP_OPT(ingr_pipe_[N_STAGES-1], pass_ct, 0)) {
+        printf("txn leaving has %lu passes, %lu ops\n", LOOKUP_OPT(ingr_pipe_[N_STAGES-1], passes.size(), 0), LOOKUP_OPT(ingr_pipe_[N_STAGES-1], orig_txn.ops.size(), 0));
+    }
+    
     for (size_t i = 0; i<N_STAGES; ++i) {
         printf("stage %lu occupied: %lu, valid: %d\n", i, LOOKUP_OPT(ingr_pipe_[i], id, 0),
             LOOKUP_OPT(ingr_pipe_[i], valid, 0));

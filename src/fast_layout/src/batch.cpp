@@ -1,8 +1,8 @@
 
 #include "sim.h"
-#include "utils.h"
 
 #include <algorithm>
+#include <map>
 #include <fstream>
 #include <cassert>
 #include <cstdlib>
@@ -79,6 +79,33 @@ static std::vector<txn_t> get_syn_unif_txns() {
     return raw_txns;
 }
 
+static std::vector<txn_t> get_syn_hot_8_txns() {
+    std::vector<txn_t> raw_txns;
+
+    for (size_t i = 0; i<100000; ++i) {
+        txn_t txn;
+        for (size_t i = 0; i<8; ++i) {
+            txn.ops.push_back(rand() % 10);
+        }
+        txn.ops.push_back(rand() % 1000000000);
+        raw_txns.push_back(txn);
+    }
+    return raw_txns;
+}
+
+std::vector<std::pair<db_key_t, size_t>> get_key_cts(const std::vector<txn_t>& txns) {
+    std::map<db_key_t, size_t> cts;
+    for (const txn_t& txn : txns) {
+        for (db_key_t op : txn.ops) {
+            cts[op] += 1;
+        }
+    }
+    std::vector<std::pair<db_key_t, size_t>> vec(cts.begin(), cts.end());
+    std::sort(vec.begin(), vec.end(), [](const auto& p1, const auto& p2){
+        return p2.second < p1.second;
+    });
+    return vec;
+}
 
 static std::vector<txn_t> get_hot_txn_comps(const std::vector<txn_t>& raw_txns) {
     std::vector<std::pair<db_key_t, size_t>> key_cts = get_key_cts(raw_txns);
@@ -110,6 +137,9 @@ batch_iter_t get_batch_iter(workload_e wtype) {
         break;
     case workload_e::SYN_UNIF:
         txns = get_syn_unif_txns();
+        break;
+    case workload_e::SYN_HOT_8:
+        txns = get_syn_hot_8_txns();
         break;
     }
     return batch_iter_t(get_hot_txn_comps(txns));

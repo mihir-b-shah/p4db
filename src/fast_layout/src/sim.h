@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <utility>
 #include <queue>
 #include <optional>
 
@@ -12,9 +13,9 @@
 
 typedef size_t db_key_t;
 
-#define N_STAGES 20
+#define N_STAGES 19
 #define REGS_PER_STAGE 4
-#define SLOTS_PER_REG 16000
+#define SLOTS_PER_REG (14000000/(REGS_PER_STAGE*N_STAGES))
 #define MAX_BATCH 10000
 #define FRAC_HOT 0.01
 
@@ -36,6 +37,7 @@ enum class workload_e {
     INSTACART,
     YCSB,
     SYN_UNIF,
+    SYN_HOT_8,
 };
 
 class batch_iter_t {
@@ -51,8 +53,8 @@ private:
 typedef std::unordered_map<db_key_t, tuple_loc_t> layout_t;
 
 batch_iter_t get_batch_iter(workload_e wtype);
+std::vector<std::pair<db_key_t, size_t>> get_key_cts(const std::vector<txn_t>& txns);
 layout_t get_layout(const std::vector<txn_t>& txns);
-void run_batch(const std::vector<txn_t>& txns);
 
 /*  Each port is 100 GbE. A port group is 400 GbE.
     We'll act as if a parser can handle 400 GbE instead of needing 4 parsers of 100 GbE.
@@ -81,6 +83,7 @@ struct sw_txn_t {
     size_t port;
     sw_txn_id_t id;
     size_t pass_ct;
+    txn_t orig_txn;
     bool valid;
     std::vector<sw_pass_txn_t> passes;
 

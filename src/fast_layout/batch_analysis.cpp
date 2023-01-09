@@ -1,6 +1,5 @@
 
 #include "sim.h"
-#include "utils.h"
 
 #include <cstdio>
 

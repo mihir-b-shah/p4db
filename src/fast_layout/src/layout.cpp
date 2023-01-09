@@ -41,7 +41,7 @@ layout_t get_layout(const std::vector<txn_t>& txns) {
 }
 
 sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn) 
-    : port(port), id(0), pass_ct(0), valid(true) {
+    : port(port), id(0), pass_ct(0), orig_txn(txn), valid(true) {
 
     std::array<tuple_loc_t, 100> tmp;
     size_t num_ops = txn.ops.size();
