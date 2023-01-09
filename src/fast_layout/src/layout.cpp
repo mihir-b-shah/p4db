@@ -21,7 +21,9 @@ layout_t get_layout(const std::vector<txn_t>& txns) {
             for (size_t r = 0; r<REGS_PER_STAGE; ++r) {
                 assert(txn_id < txns.size() && op_id < txns[txn_id].ops.size());
                 tuple_loc_t tl = {s, r, i};
-                layout.insert({txns[txn_id].ops[op_id], tl});
+                if (layout.find(txns[txn_id].ops[op_id]) == layout.end()) {
+                    layout.insert({txns[txn_id].ops[op_id], tl});
+                }
                 if (txn_id == txns.size()-1 && op_id == txns[txn_id].ops.size()-1) {
                     goto end;
                 } else if (op_id == txns[txn_id].ops.size()-1) {
@@ -38,12 +40,14 @@ layout_t get_layout(const std::vector<txn_t>& txns) {
     return layout;
 }
 
-sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn) : port(port), id(0), pass_ct(0) {
+sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn) 
+    : port(port), id(0), pass_ct(0), failed_lock(false) {
+
     std::array<tuple_loc_t, 100> tmp;
     size_t num_ops = txn.ops.size();
     assert(num_ops <= 100);
 
-    for (size_t i = 0; i<txn.ops.size(); ++i) {
+    for (size_t i = 0; i<num_ops; ++i) {
         tmp[i] = layout.find(txn.ops[i])->second;
     }
     std::sort(tmp.begin(), tmp.begin() + num_ops, [](const tuple_loc_t& p1, const tuple_loc_t& p2){

@@ -24,7 +24,7 @@ struct tuple_loc_t {
     size_t idx;
 
     bool operator==(const tuple_loc_t& tl) {
-        return stage == tl.stage && reg == tl.stage && idx == tl.idx;
+        return stage == tl.stage && reg == tl.stage;
     }
 };
 
@@ -35,6 +35,7 @@ struct txn_t {
 enum class workload_e {
     INSTACART,
     YCSB,
+    SYN_UNIF,
 };
 
 class batch_iter_t {
@@ -61,7 +62,8 @@ void run_batch(const std::vector<txn_t>& txns);
     Not implementing egress for now, since resubmission/holding locks only applies
     to ingress pipe.
     Mock egress is just a way to let packets exit.
-    Ignoring the deparser here, since its more hassle than worth it. */
+    Ignoring the deparser here, since its more hassle than worth it.
+    We treat the lock table separately for implementation simplicity. */
 
 #define N_PORTS 32
 #define N_PORT_GROUPS 8
@@ -79,16 +81,18 @@ struct sw_txn_t {
     size_t port;
     sw_txn_id_t id;
     size_t pass_ct;
+    bool failed_lock;
     std::vector<sw_pass_txn_t> passes;
 
     // zero-arg constructor needed for mempool
-    sw_txn_t() : id(0), pass_ct(0) {}
+    sw_txn_t() : id(0), pass_ct(0), failed_lock(false) {}
     sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn);
 };
 
 class switch_t {
 public:
     switch_t() : regs_{{0}} {}
+    bool ipb_almost_full(size_t port, double thr);
     bool send(sw_txn_t txn);
     void run_cycle();
     std::optional<sw_txn_id_t> recv(size_t port);
@@ -102,9 +106,10 @@ private:
     std::optional<txn_pool_t::slot_id_t> ingr_pipe_[N_STAGES];
     std::queue<txn_pool_t::slot_id_t> mock_egress_[N_PORTS];
     sw_val_t regs_[N_STAGES][REGS_PER_STAGE][SLOTS_PER_REG];
-
+    
     void run_reg_ops(size_t i);
     void ipb_to_parser(size_t i);
+    void print_state();
 };
 
 #endif

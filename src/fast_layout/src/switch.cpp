@@ -26,6 +26,10 @@ inline static size_t port_to_group(size_t port) {
     return port / (N_PORTS / N_PORT_GROUPS);
 }
 
+bool switch_t::ipb_almost_full(size_t port, double thr) {
+    return ipb_[port_to_group(port)].size() >= IPB_SIZE*thr;
+}
+
 bool switch_t::send(sw_txn_t txn) {
     static size_t incr_id = 1;
     size_t group = port_to_group(txn.port);
@@ -60,8 +64,20 @@ void switch_t::ipb_to_parser(size_t i) {
     }
 }
 
+void switch_t::print_state() {
+    for (size_t i = 0; i<N_PORT_GROUPS + 1; i += 8) {
+        printf("ipb size on port %lu: %lu\n", i, ipb_[i].size());
+        printf("parser occupied on port %lu: %lu\n", i, parser_[i].has_value() ? txn_pool_.at(parser_[i].value()).id : 0);
+    }
+    for (size_t i = 0; i<N_STAGES; ++i) {
+        printf("stage %lu occupied: %lu\n", i, ingr_pipe_[i].has_value() ? txn_pool_.at(ingr_pipe_[i].value()).id : 0);
+    }
+}
+
 void switch_t::run_cycle() {
     stats::num_cycles += 1;
+    //print_state();
+
     run_reg_ops(N_STAGES-1);
     if (ingr_pipe_[N_STAGES-1].has_value()) {
         txn_pool_t::slot_id_t txn_slot = ingr_pipe_[N_STAGES-1].value();

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <fstream>
 #include <cassert>
+#include <cstdlib>
 #include <sstream>
 #include <string>
 
@@ -65,6 +66,20 @@ static std::vector<txn_t> get_ycsb_txns() {
     return raw_txns;
 }
 
+static std::vector<txn_t> get_syn_unif_txns() {
+    std::vector<txn_t> raw_txns;
+
+    for (size_t i = 0; i<100000; ++i) {
+        txn_t txn;
+        for (size_t i = 0; i<8; ++i) {
+            txn.ops.push_back(rand() % 100000);
+        }
+        raw_txns.push_back(txn);
+    }
+    return raw_txns;
+}
+
+
 static std::vector<txn_t> get_hot_txn_comps(const std::vector<txn_t>& raw_txns) {
     std::vector<std::pair<db_key_t, size_t>> key_cts = get_key_cts(raw_txns);
     key_cts.resize(static_cast<size_t>(key_cts.size() * FRAC_HOT));
@@ -92,6 +107,9 @@ batch_iter_t get_batch_iter(workload_e wtype) {
         break;
     case workload_e::YCSB:
         txns = get_ycsb_txns();
+        break;
+    case workload_e::SYN_UNIF:
+        txns = get_syn_unif_txns();
         break;
     }
     return batch_iter_t(get_hot_txn_comps(txns));
