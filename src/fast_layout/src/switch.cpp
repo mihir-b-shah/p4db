@@ -48,10 +48,12 @@ void switch_t::run_reg_ops(size_t i) {
     if (ingr_pipe_[i].has_value()) {
         txn_pool_t::slot_id_t txn_slot = ingr_pipe_[i].value();
         sw_txn_t& txn = txn_pool_.at(txn_slot);
-        for (size_t j = 0; j<REGS_PER_STAGE; ++j) {
-            std::optional<size_t> slot_op = txn.passes[txn.pass_ct].grid[i][j];
-            if (slot_op.has_value()) {
-                regs_[i][j][slot_op.value()] = txn.id;
+        if (txn.valid) {
+            for (size_t j = 0; j<REGS_PER_STAGE; ++j) {
+                std::optional<size_t> slot_op = txn.passes[txn.pass_ct].grid[i][j];
+                if (slot_op.has_value()) {
+                    regs_[i][j][slot_op.value()] = txn.id;
+                }
             }
         }
     }
@@ -61,6 +63,29 @@ void switch_t::ipb_to_parser(size_t i) {
     if (!ipb_[i].empty()) {
         parser_[i] = ipb_[i].front();
         ipb_[i].pop();
+    }
+}
+
+bool switch_t::manage_locks(const sw_txn_t& txn) {
+    // whole-pipe lock
+    static std::optional<sw_txn_id_t> holder = std::nullopt;
+    if (!holder.has_value()) {
+        if (txn.passes.size() != 1) {
+            // only acquire for multi-pass
+            holder = txn.id;
+        }
+        return true;
+    } else {
+        if (holder.value() == txn.id) {
+            // there's a lock, it's held by me
+            if (txn.passes.size() == txn.pass_ct + 1) {
+                // last pass, release it.
+                holder = std::nullopt;
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 }
 
@@ -82,13 +107,16 @@ void switch_t::run_cycle() {
     if (ingr_pipe_[N_STAGES-1].has_value()) {
         txn_pool_t::slot_id_t txn_slot = ingr_pipe_[N_STAGES-1].value();
         sw_txn_t& txn = txn_pool_.at(txn_slot);
-        txn.pass_ct += 1;
+        if (txn.valid) {
+            txn.pass_ct += 1;
+        }
         stats::num_passes += 1;
 
         if (txn.passes.size() == txn.pass_ct) {
             stats::num_txns += 1;
             mock_egress_[txn.port].push(txn_slot);
         } else {
+            txn.valid = true;
             ipb_[RECIRC_PORT].push(txn_slot);
         }
     }
@@ -115,6 +143,8 @@ void switch_t::run_cycle() {
         // no one had a value.
         ingr_pipe_[0] = std::nullopt;
     } else {
+        sw_txn_t& txn = txn_pool_.at(parser_[idx].value());
+        txn.valid = manage_locks(txn);
         ingr_pipe_[0] = parser_[idx];
         parser_[idx] = std::nullopt;
         ipb_to_parser(idx);

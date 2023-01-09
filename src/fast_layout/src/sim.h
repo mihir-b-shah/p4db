@@ -12,7 +12,7 @@
 
 typedef size_t db_key_t;
 
-#define N_STAGES 20
+#define N_STAGES 19
 #define REGS_PER_STAGE 4
 #define SLOTS_PER_REG 16000
 #define MAX_BATCH 10000
@@ -81,11 +81,11 @@ struct sw_txn_t {
     size_t port;
     sw_txn_id_t id;
     size_t pass_ct;
-    bool failed_lock;
+    bool valid;
     std::vector<sw_pass_txn_t> passes;
 
     // zero-arg constructor needed for mempool
-    sw_txn_t() : id(0), pass_ct(0), failed_lock(false) {}
+    sw_txn_t() : id(0), pass_ct(0), valid(true) {}
     sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn);
 };
 
@@ -109,6 +109,7 @@ private:
     
     void run_reg_ops(size_t i);
     void ipb_to_parser(size_t i);
+    bool manage_locks(const sw_txn_t& txn);
     void print_state();
 };
 
