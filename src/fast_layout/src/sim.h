@@ -25,7 +25,7 @@ struct tuple_loc_t {
     size_t idx;
 
     bool operator==(const tuple_loc_t& tl) {
-        return stage == tl.stage && reg == tl.stage;
+        return stage == tl.stage && reg == tl.reg;
     }
 };
 
