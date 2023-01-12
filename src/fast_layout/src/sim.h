@@ -74,7 +74,13 @@ layout_t get_layout(const std::vector<txn_t>& txns);
 #define IPB_SIZE 500
 
 typedef size_t sw_txn_id_t;
-typedef size_t sw_val_t;
+
+struct sw_val_t {
+    bool dirty;
+    size_t last_txn_id;
+
+    sw_val_t() : dirty(false), last_txn_id(0) {}
+};
 
 struct sw_pass_txn_t {
     std::optional<size_t> grid[N_STAGES][REGS_PER_STAGE];
@@ -95,7 +101,7 @@ struct sw_txn_t {
 
 class switch_t {
 public:
-    switch_t() : regs_{{0}} {}
+    switch_t() {}
     bool ipb_almost_full(size_t port, double thr);
     bool send(sw_txn_t txn);
     void run_cycle();

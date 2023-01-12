@@ -4,12 +4,14 @@
 #include <cstdio>
 #include <cassert>
 #include <cstdlib>
+#include <limits>
 
 namespace stats {
     size_t num_cycles = 0;
     size_t num_txns = 0;
     size_t num_passes = 0;
-    size_t num_dirty_ops = 0;
+    size_t num_dir_dirty_ops = 0;
+    size_t num_cum_dirty_ops = 0;
     size_t num_ops = 0;
 }
 
@@ -17,7 +19,8 @@ static void print_stats() {
     printf("Num cycles: %lu\n", stats::num_cycles);
     printf("Num txns: %lu\n", stats::num_txns);
     printf("Num passes: %lu\n", stats::num_passes);
-    printf("Num dirty ops: %lu\n", stats::num_dirty_ops);
+    printf("Num direct dirty ops: %lu\n", stats::num_dir_dirty_ops);
+    printf("Num cumulative dirty ops: %lu\n", stats::num_cum_dirty_ops);
     printf("Num ops: %lu\n", stats::num_ops);
 }
 
@@ -57,11 +60,16 @@ void switch_t::run_reg_ops(size_t i) {
                 std::optional<size_t> slot_op = txn.passes[txn.pass_ct].grid[i][j];
                 if (slot_op.has_value()) {
                     // violates serializability
-                    if (regs_[i][j][slot_op.value()] > txn.id) {
-                        stats::num_dirty_ops += 1;
+                    sw_val_t& ref = regs_[i][j][slot_op.value()];
+                    if (ref.last_txn_id > txn.id) {
+                        ref.dirty = true;
+                        stats::num_dir_dirty_ops += 1;
+                    }
+                    if (ref.dirty) {
+                        stats::num_cum_dirty_ops += 1;
                     }
                     stats::num_ops += 1;
-                    regs_[i][j][slot_op.value()] = txn.id;
+                    ref.last_txn_id = txn.id;
                 }
             }
         }
@@ -75,12 +83,13 @@ void switch_t::ipb_to_parser(size_t i) {
     }
 }
 
-bool switch_t::manage_locks(const sw_txn_t& txn) {
-    // whole-pipe lock
+static bool whole_pipe_lock(const sw_txn_t& txn) {
+    static constexpr size_t LOCK_PASS_THRESHOLD = std::numeric_limits<size_t>::max();
     static std::optional<sw_txn_id_t> holder = std::nullopt;
+
     if (!holder.has_value()) {
-        if (txn.passes.size() != 1) {
-            // only acquire for multi-pass
+        // only acquire for multi-pass
+        if (txn.passes.size() >= LOCK_PASS_THRESHOLD) {
             holder = txn.id;
         }
         return true;
@@ -96,6 +105,10 @@ bool switch_t::manage_locks(const sw_txn_t& txn) {
             return false;
         }
     }
+}
+
+bool switch_t::manage_locks(const sw_txn_t& txn) {
+    return whole_pipe_lock(txn);
 }
 
 #define LOOKUP_OPT(opt,var,dflt_val) ((opt).has_value() ? txn_pool_.at((opt).value()).var : dflt_val)
