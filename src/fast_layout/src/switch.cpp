@@ -9,12 +9,16 @@ namespace stats {
     size_t num_cycles = 0;
     size_t num_txns = 0;
     size_t num_passes = 0;
+    size_t num_dirty_ops = 0;
+    size_t num_ops = 0;
 }
 
 static void print_stats() {
     printf("Num cycles: %lu\n", stats::num_cycles);
     printf("Num txns: %lu\n", stats::num_txns);
     printf("Num passes: %lu\n", stats::num_passes);
+    printf("Num dirty ops: %lu\n", stats::num_dirty_ops);
+    printf("Num ops: %lu\n", stats::num_ops);
 }
 
 __attribute__((constructor))
@@ -52,6 +56,11 @@ void switch_t::run_reg_ops(size_t i) {
             for (size_t j = 0; j<REGS_PER_STAGE; ++j) {
                 std::optional<size_t> slot_op = txn.passes[txn.pass_ct].grid[i][j];
                 if (slot_op.has_value()) {
+                    // violates serializability
+                    if (regs_[i][j][slot_op.value()] > txn.id) {
+                        stats::num_dirty_ops += 1;
+                    }
+                    stats::num_ops += 1;
                     regs_[i][j][slot_op.value()] = txn.id;
                 }
             }
