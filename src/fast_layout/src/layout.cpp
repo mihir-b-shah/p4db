@@ -53,28 +53,45 @@ namespace batch_help {
     };
 }
 
-layout_t get_layout(const std::vector<txn_t>& txns) {
-    // a simple spraying solution.
-    layout_t layout;
+layout_t::layout_t(const std::vector<txn_t>& txns)
+    : keys_sorted_(get_key_cts(txns)), key_cts_(keys_sorted_.begin(), keys_sorted_.end()) {
     batch_help::uniq_op_iter_t op_iter(txns);
 
     for (size_t i = 0; i<SLOTS_PER_REG; ++i) {
         for (size_t s = 0; s<N_STAGES; ++s) {
             for (size_t r = 0; r<REGS_PER_STAGE; ++r) {
                 if (!op_iter.valid()) {
-                    goto end;
+                    // done
+                    return;
                 }
 
                 db_key_t key = op_iter.get();
                 tuple_loc_t tl = {s, r, i};
-                layout.insert({key, tl});
+                forward_[key] = tl;
+                backward_per_reg_[tl.stage][tl.reg].insert({tl.idx, key});
                 op_iter.advance();
             }
         }
     }
+}
 
-    end:
-    return layout;
+size_t layout_t::get_key_ct(db_key_t key) const {
+    return key_cts_.find(key)->second;
+}
+
+std::optional<tuple_loc_t> layout_t::lookup(db_key_t key) const {
+    auto it = forward_.find(key);
+    if (it == forward_.end()) {
+        return std::nullopt;
+    } else {
+        return it->second;
+    }
+}
+
+db_key_t layout_t::rev_lookup(size_t stage, size_t reg, size_t idx) const {
+    auto it = backward_per_reg_[stage][reg].find(idx);
+    assert(it != backward_per_reg_[stage][reg].end());
+    return it->second;
 }
 
 sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn) 
@@ -85,13 +102,18 @@ sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn)
     assert(num_ops <= 100);
 
     for (size_t i = 0; i<num_ops; ++i) {
-        tmp[i] = layout.find(txn.ops[i])->second;
+        tmp[i] = layout.lookup(txn.ops[i]).value();
+        locs.push_back(tmp[i]);
     }
-    std::sort(tmp.begin(), tmp.begin() + num_ops, [](const tuple_loc_t& p1, const tuple_loc_t& p2){
-        if (p1.stage == p2.stage) {
+    std::sort(tmp.begin(), tmp.begin() + num_ops, [&layout](const tuple_loc_t& p1, const tuple_loc_t& p2){
+        if (p1.stage != p2.stage) {
+            return p1.stage < p2.stage;
+        } else if (p1.reg != p2.reg) {
             return p1.reg < p2.reg;
         } else {
-            return p1.stage < p2.stage;
+            db_key_t k1 = layout.rev_lookup(p1.stage, p1.reg, p1.idx);
+            db_key_t k2 = layout.rev_lookup(p2.stage, p2.reg, p2.idx);
+            return layout.get_key_ct(k2) < layout.get_key_ct(k1);
         }
     });
 
@@ -114,10 +136,14 @@ sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn)
     i = 0;
     while (i < num_ops) {
         tuple_loc_t tl = tmp[i];
-        passes[0].grid[tl.stage][tl.reg] = tl.idx;
+        passes[0].grid[tmp[i].stage][tmp[i].reg] = tmp[i].idx;
         size_t start = i++;
         while (i < num_ops && tmp[i] == tl) {
-            passes[i-start].grid[tl.stage][tl.reg] = tl.idx;
+            // just choose the first one we lock.
+            if (!one_lock.has_value()) {
+                one_lock = tmp[i];
+            }
+            passes[i-start].grid[tmp[i].stage][tmp[i].reg] = tmp[i].idx;
             i += 1;
         }
     }

@@ -1,5 +1,5 @@
 CXX=g++-11
-CFLAGS=-std=c++2a -O3 -g -MD -Wall -I. -Isrc/ -fsanitize=address
+CFLAGS=-std=c++2a -O0 -g -MD -Wall -I. -Isrc/ -fsanitize=address
 
 RM = rm -f
 LIB = src/libp4txn.a

@@ -14,7 +14,7 @@ switch_t p4_switch;
 int main() {
     batch_iter_t iter = get_batch_iter(workload_e::INSTACART);
     std::vector<txn_t> batch = iter.next_batch();
-    layout_t layout = get_layout(batch);
+    layout_t layout(batch);
     size_t received = 0;
     size_t cycle = 0;
     size_t p_batch = 0;

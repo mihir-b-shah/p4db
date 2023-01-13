@@ -51,11 +51,22 @@ private:
     size_t pos_;
 };
 
-typedef std::unordered_map<db_key_t, tuple_loc_t> layout_t;
+class layout_t {
+public:
+    layout_t(const std::vector<txn_t>& txns);
+    size_t get_key_ct(db_key_t key) const;
+    std::optional<tuple_loc_t> lookup(db_key_t key) const;
+    db_key_t rev_lookup(size_t stage, size_t reg, size_t idx) const;
+
+private:
+    std::unordered_map<db_key_t, tuple_loc_t> forward_;
+    std::unordered_map<size_t, db_key_t> backward_per_reg_[N_STAGES][REGS_PER_STAGE];
+    std::vector<std::pair<db_key_t, size_t>> keys_sorted_;
+    std::unordered_map<db_key_t, size_t> key_cts_;
+};
 
 batch_iter_t get_batch_iter(workload_e wtype);
 std::vector<std::pair<db_key_t, size_t>> get_key_cts(const std::vector<txn_t>& txns);
-layout_t get_layout(const std::vector<txn_t>& txns);
 
 /*  Each port is 100 GbE. A port group is 400 GbE.
     We'll act as if a parser can handle 400 GbE instead of needing 4 parsers of 100 GbE.
@@ -76,10 +87,12 @@ layout_t get_layout(const std::vector<txn_t>& txns);
 typedef size_t sw_txn_id_t;
 
 struct sw_val_t {
+    inline static constexpr sw_txn_id_t START_TXN_ID = 0;
+
     bool dirty;
     size_t last_txn_id;
 
-    sw_val_t() : dirty(false), last_txn_id(0) {}
+    sw_val_t() : dirty(false), last_txn_id(START_TXN_ID) {}
 };
 
 struct sw_pass_txn_t {
@@ -92,7 +105,9 @@ struct sw_txn_t {
     size_t pass_ct;
     txn_t orig_txn;
     bool valid;
+    std::vector<tuple_loc_t> locs;
     std::vector<sw_pass_txn_t> passes;
+    std::optional<tuple_loc_t> one_lock;
 
     // zero-arg constructor needed for mempool
     sw_txn_t() : id(0), pass_ct(0), valid(true) {}

@@ -5,6 +5,8 @@
 #include <cassert>
 #include <cstdlib>
 #include <limits>
+#include <unordered_map>
+#include <algorithm>
 
 namespace stats {
     size_t num_cycles = 0;
@@ -13,15 +15,61 @@ namespace stats {
     size_t num_dir_dirty_ops = 0;
     size_t num_cum_dirty_ops = 0;
     size_t num_ops = 0;
+
+    class slot_hist_t {
+    public:
+        ~slot_hist_t() {
+            // print stats at end, but before our data structures are destructed.
+            printf("-------- Dirty stats ---------\n");
+            size_t total = 0;
+            for (size_t i = 0; i<N_STAGES; ++i) {
+                for (size_t j = 0; j<REGS_PER_STAGE; ++j) {
+                    for (const auto& pr : dirty_by_slot_[i][j]) {
+                        total += pr.second;
+                        printf("stage=%2lu reg=%2lu idx=%2lu: %lu\n", i, j, pr.first, pr.second);
+                    }
+                }
+            }
+            printf("Total dirty ops (check): %lu\n", total);
+            printf("-----------------------------\n");
+        }
+
+        sw_txn_id_t get_prior_access_id(size_t stage, size_t reg, size_t idx, sw_txn_id_t id) {
+            const std::vector<sw_txn_id_t>& v = access_hist_[stage][reg][idx];
+            // my id should be there. return the previous one.
+            auto it = std::lower_bound(v.begin(), v.end(), id);
+            assert(*it == id);
+            return it == v.begin() ? sw_val_t::START_TXN_ID : *(it-1);
+        }
+
+        std::unordered_map<size_t, std::vector<sw_txn_id_t>>& get_reg_hist_map(size_t stage, size_t reg) {
+            return access_hist_[stage][reg];
+        }
+
+        void incr_slot_dirty(size_t stage, size_t reg, size_t idx) {
+            auto& dmap = dirty_by_slot_[stage][reg];
+            if (dmap.find(idx) == dmap.end()) {
+                dmap.insert({idx, 0});
+            }
+            dmap[idx] += 1;
+        }
+
+    private:
+        std::unordered_map<size_t, std::vector<sw_txn_id_t>> access_hist_[N_STAGES][REGS_PER_STAGE];
+        std::unordered_map<size_t, size_t> dirty_by_slot_[N_STAGES][REGS_PER_STAGE];
+    };
+    slot_hist_t slot_hist;
 }
 
 static void print_stats() {
+    printf("-------- General stats ---------\n");
     printf("Num cycles: %lu\n", stats::num_cycles);
     printf("Num txns: %lu\n", stats::num_txns);
     printf("Num passes: %lu\n", stats::num_passes);
     printf("Num direct dirty ops: %lu\n", stats::num_dir_dirty_ops);
     printf("Num cumulative dirty ops: %lu\n", stats::num_cum_dirty_ops);
     printf("Num ops: %lu\n", stats::num_ops);
+    printf("--------------------------------\n");
 }
 
 __attribute__((constructor))
@@ -42,6 +90,13 @@ bool switch_t::send(sw_txn_t txn) {
     size_t group = port_to_group(txn.port);
     if (ipb_[group].size() < IPB_SIZE) {
         txn.id = incr_id++;
+        for (const tuple_loc_t& loc : txn.locs) {
+            auto& reg_hist = stats::slot_hist.get_reg_hist_map(loc.stage, loc.reg);
+            if (reg_hist.find(loc.idx) == reg_hist.end()) {
+                reg_hist.insert({loc.idx, {}});
+            }
+            reg_hist[loc.idx].push_back(txn.id);
+        }
         txn_pool_t::slot_id_t slot = txn_pool_.alloc();
         txn_pool_.at(slot) = txn;
         ipb_[group].push(slot);
@@ -61,11 +116,16 @@ void switch_t::run_reg_ops(size_t i) {
                 if (slot_op.has_value()) {
                     // violates serializability
                     sw_val_t& ref = regs_[i][j][slot_op.value()];
-                    if (ref.last_txn_id > txn.id) {
+                    printf("[DIRTY_TRACK] stage=%lu, reg=%lu, idx=%lu, ref.last_id: %lu, expected_id: %lu, my_id: %lu\n", i, j, slot_op.value(), ref.last_txn_id, stats::slot_hist.get_prior_access_id(i, j, slot_op.value(), txn.id), txn.id);
+                    if (ref.last_txn_id != stats::slot_hist.get_prior_access_id(i, j, slot_op.value(), txn.id)
+                        && ref.last_txn_id != txn.id) {
+                        printf("[DIRTY_TRACK] dirty!\n");
+                        stats::slot_hist.incr_slot_dirty(i, j, slot_op.value());
                         ref.dirty = true;
                         stats::num_dir_dirty_ops += 1;
                     }
                     if (ref.dirty) {
+                        printf("[DIRTY_TRACK] touched tainted value!\n");
                         stats::num_cum_dirty_ops += 1;
                     }
                     stats::num_ops += 1;
@@ -83,8 +143,8 @@ void switch_t::ipb_to_parser(size_t i) {
     }
 }
 
-static bool whole_pipe_lock(const sw_txn_t& txn) {
-    static constexpr size_t LOCK_PASS_THRESHOLD = std::numeric_limits<size_t>::max();
+[[maybe_unused]] static bool whole_pipe_lock(const sw_txn_t& txn) {
+    static constexpr size_t LOCK_PASS_THRESHOLD = 3; //std::numeric_limits<size_t>::max();
     static std::optional<sw_txn_id_t> holder = std::nullopt;
 
     if (!holder.has_value()) {
@@ -108,7 +168,40 @@ static bool whole_pipe_lock(const sw_txn_t& txn) {
 }
 
 bool switch_t::manage_locks(const sw_txn_t& txn) {
-    return whole_pipe_lock(txn);
+    // no whole-pipe locking, since our fine-grain locks must be disjoint.
+    // should be implemented on a single stage, just an impl hack.
+    static std::unordered_map<size_t, sw_txn_id_t> locks[N_STAGES][REGS_PER_STAGE];
+
+    // Did someone lock my modifications?
+    for (size_t i = 0; i<txn.locs.size(); ++i) {
+        tuple_loc_t tl = txn.locs[i];
+        auto& lmap = locks[tl.stage][tl.reg];
+        if (lmap.find(tl.idx) != lmap.end()) {
+            if (lmap[tl.idx] == txn.id) {
+                // Lock is held by me.
+                if (txn.pass_ct + 1 == txn.passes.size()) {
+                    // Time to release it.
+                    lmap.erase(tl.idx);
+                }
+            } else {
+                // Lock is held, and not me.
+                return false;
+            }
+        }
+    }
+    
+    if (txn.pass_ct == 0 && txn.one_lock.has_value()) {
+        tuple_loc_t tl = txn.one_lock.value();
+        auto& lmap = locks[tl.stage][tl.reg];
+        if (lmap.find(tl.idx) != lmap.end()) {
+            // Someone owns what I want to lock, I couldn't have locked if my first pass.
+            return false;
+        } else {
+            lmap.insert({tl.idx, txn.id});
+        }
+    }
+
+    return true;
 }
 
 #define LOOKUP_OPT(opt,var,dflt_val) ((opt).has_value() ? txn_pool_.at((opt).value()).var : dflt_val)
