@@ -63,6 +63,9 @@ private:
     std::unordered_map<size_t, db_key_t> backward_per_reg_[N_STAGES][REGS_PER_STAGE];
     std::vector<std::pair<db_key_t, size_t>> keys_sorted_;
     std::unordered_map<db_key_t, size_t> key_cts_;
+
+    void naive_spray_impl(const std::vector<txn_t>& txns);
+    void freq_heuristic_impl(const std::vector<txn_t>& txns);
 };
 
 batch_iter_t get_batch_iter(workload_e wtype);

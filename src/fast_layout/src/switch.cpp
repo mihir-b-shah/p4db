@@ -143,8 +143,9 @@ void switch_t::ipb_to_parser(size_t i) {
     }
 }
 
-[[maybe_unused]] static bool whole_pipe_lock(const sw_txn_t& txn) {
-    static constexpr size_t LOCK_PASS_THRESHOLD = 3; //std::numeric_limits<size_t>::max();
+// [[maybe_unused]] 
+static bool whole_pipe_lock(const sw_txn_t& txn) {
+    static constexpr size_t LOCK_PASS_THRESHOLD = 2; //std::numeric_limits<size_t>::max();
     static std::optional<sw_txn_id_t> holder = std::nullopt;
 
     if (!holder.has_value()) {
@@ -168,39 +169,7 @@ void switch_t::ipb_to_parser(size_t i) {
 }
 
 bool switch_t::manage_locks(const sw_txn_t& txn) {
-    // no whole-pipe locking, since our fine-grain locks must be disjoint.
-    // should be implemented on a single stage, just an impl hack.
-    static std::unordered_map<size_t, sw_txn_id_t> locks[N_STAGES][REGS_PER_STAGE];
-
-    // Did someone lock my modifications?
-    for (size_t i = 0; i<txn.locs.size(); ++i) {
-        tuple_loc_t tl = txn.locs[i];
-        auto& lmap = locks[tl.stage][tl.reg];
-        if (lmap.find(tl.idx) != lmap.end()) {
-            if (lmap[tl.idx] == txn.id) {
-                // Lock is held by me.
-                if (txn.pass_ct + 1 == txn.passes.size()) {
-                    // Time to release it.
-                    lmap.erase(tl.idx);
-                }
-            } else {
-                // Lock is held, and not me.
-                return false;
-            }
-        }
-    }
-    
-    if (txn.pass_ct == 0 && txn.one_lock.has_value()) {
-        tuple_loc_t tl = txn.one_lock.value();
-        auto& lmap = locks[tl.stage][tl.reg];
-        if (lmap.find(tl.idx) != lmap.end()) {
-            // Someone owns what I want to lock, I couldn't have locked if my first pass.
-            return false;
-        } else {
-            lmap.insert({tl.idx, txn.id});
-        }
-    }
-
+    // return whole_pipe_lock(txn);
     return true;
 }
 

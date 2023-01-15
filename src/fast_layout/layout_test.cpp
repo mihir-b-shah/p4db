@@ -5,7 +5,7 @@
 #include <map>
 
 int main() {
-    batch_iter_t iter = get_batch_iter(workload_e::INSTACART);
+    batch_iter_t iter = get_batch_iter(workload_e::SYN_HOT_8);
     std::vector<txn_t> batch = iter.next_batch();
     layout_t layout(batch);
             
