@@ -143,7 +143,7 @@ void switch_t::ipb_to_parser(size_t i) {
     }
 }
 
-// [[maybe_unused]] 
+[[maybe_unused]] 
 static bool whole_pipe_lock(const sw_txn_t& txn) {
     static constexpr size_t LOCK_PASS_THRESHOLD = 2; //std::numeric_limits<size_t>::max();
     static std::optional<sw_txn_id_t> holder = std::nullopt;
@@ -169,8 +169,8 @@ static bool whole_pipe_lock(const sw_txn_t& txn) {
 }
 
 bool switch_t::manage_locks(const sw_txn_t& txn) {
-    // return whole_pipe_lock(txn);
-    return true;
+    return whole_pipe_lock(txn);
+    // return true;
 }
 
 #define LOOKUP_OPT(opt,var,dflt_val) ((opt).has_value() ? txn_pool_.at((opt).value()).var : dflt_val)

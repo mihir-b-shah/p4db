@@ -9,14 +9,71 @@
 #include <sstream>
 #include <string>
 
-std::vector<txn_t> batch_iter_t::next_batch() {
-    if (all_txns_.size() - pos_ < MAX_BATCH) {
-        return {};
-    } else {
-        auto ret = std::vector<txn_t>(all_txns_.begin() + pos_, all_txns_.begin() + pos_ + MAX_BATCH);
-        pos_ += MAX_BATCH;
-        return ret;
+std::vector<std::pair<db_key_t, size_t>> get_key_cts(const std::vector<txn_t>& txns) {
+    std::map<db_key_t, size_t> cts;
+    for (const txn_t& txn : txns) {
+        for (db_key_t op : txn.ops) {
+            cts[op] += 1;
+        }
     }
+    std::vector<std::pair<db_key_t, size_t>> vec(cts.begin(), cts.end());
+    std::sort(vec.begin(), vec.end(), [](const auto& p1, const auto& p2){
+        return p2.second < p1.second;
+    });
+    return vec;
+}
+
+batch_iter_t::batch_iter_t(std::vector<txn_t> all_txns) : pos_(0) {
+    std::vector<std::pair<db_key_t, size_t>> key_cts_v = get_key_cts(all_txns);
+    key_cts_v.resize(static_cast<size_t>(key_cts_v.size() * FRAC_HOT));
+    std::unordered_set<db_key_t> is_hot;
+    for (const auto& pr : key_cts_v) {
+        is_hot.insert(pr.first);
+    }
+
+    for (const txn_t& raw_txn : all_txns) {
+        txn_t hot_txn;
+        hot_txn.ops.reserve(raw_txn.ops.size());
+        txn_t cold_txn;
+        cold_txn.ops.reserve(raw_txn.ops.size());
+
+        for (size_t i = 0; i<raw_txn.ops.size(); ++i) {
+            db_key_t k = raw_txn.ops[i];
+            if (is_hot.find(k) != is_hot.end()) {
+                hot_txn.ops.push_back(k);
+            } else {
+                cold_txn.ops.push_back(k);
+            }
+        }
+
+        hot_txns_comps_.push_back(hot_txn);
+        cold_txns_comps_.push_back(cold_txn);
+    }
+}
+
+std::vector<txn_t> batch_iter_t::next_batch() {
+    std::vector<txn_t> ret;
+    size_t start_pos = pos_;
+    std::unordered_set<db_key_t> locks;
+
+    assert(cold_txns_comps_.size() == hot_txns_comps_.size());
+    while (pos_ - start_pos < MAX_BATCH && pos_ < cold_txns_comps_.size()) {
+        const txn_t& hot_txn = hot_txns_comps_[pos_];
+        const txn_t& cold_txn = cold_txns_comps_[pos_];
+
+        for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
+            // no need to rollback acquire locks- if we stop, we're done anyway, 
+            if (locks.find(cold_txn.ops[i]) == locks.end()) {
+                locks.insert(cold_txn.ops[i]);
+            } else {
+                return ret;
+            }
+        }
+
+        ret.push_back(hot_txn);
+        pos_ += 1;
+    }
+    return ret;
 }
 
 static std::vector<txn_t> get_instacart_txns() {
@@ -109,39 +166,6 @@ static std::vector<txn_t> get_syn_adversarial_txns() {
     return raw_txns;
 }
 
-std::vector<std::pair<db_key_t, size_t>> get_key_cts(const std::vector<txn_t>& txns) {
-    std::map<db_key_t, size_t> cts;
-    for (const txn_t& txn : txns) {
-        for (db_key_t op : txn.ops) {
-            cts[op] += 1;
-        }
-    }
-    std::vector<std::pair<db_key_t, size_t>> vec(cts.begin(), cts.end());
-    std::sort(vec.begin(), vec.end(), [](const auto& p1, const auto& p2){
-        return p2.second < p1.second;
-    });
-    return vec;
-}
-
-static std::vector<txn_t> get_hot_txn_comps(const std::vector<txn_t>& raw_txns) {
-    std::vector<std::pair<db_key_t, size_t>> key_cts = get_key_cts(raw_txns);
-    key_cts.resize(static_cast<size_t>(key_cts.size() * FRAC_HOT));
-    std::unordered_map<db_key_t, size_t> hot_keys(key_cts.begin(), key_cts.end());
-
-    std::vector<txn_t> txns;
-    for (const txn_t& raw_txn : raw_txns) {
-        txn_t txn;
-        txn.ops.resize(raw_txn.ops.size());
-        auto it = std::copy_if(raw_txn.ops.begin(), raw_txn.ops.end(), txn.ops.begin(),
-            [&hot_keys](db_key_t k){ return hot_keys.find(k) != hot_keys.end(); });
-        txn.ops.resize(it - txn.ops.begin());
-        if (txn.ops.size() > 0) {
-            txns.push_back(txn);
-        }
-    }
-    return txns;
-}
-
 batch_iter_t get_batch_iter(workload_e wtype) {
     std::vector<txn_t> txns;
     switch (wtype) {
@@ -161,5 +185,5 @@ batch_iter_t get_batch_iter(workload_e wtype) {
         txns = get_syn_adversarial_txns();
         break;
     }
-    return batch_iter_t(get_hot_txn_comps(txns));
+    return batch_iter_t(txns);
 }

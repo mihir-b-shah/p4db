@@ -41,13 +41,16 @@ enum class workload_e {
     SYN_ADVERSARIAL,
 };
 
+std::vector<std::pair<db_key_t, size_t>> get_key_cts(const std::vector<txn_t>& txns);
+
 class batch_iter_t {
 public:
-    batch_iter_t(std::vector<txn_t> all_txns) : all_txns_(all_txns), pos_(0) {}
+    batch_iter_t(std::vector<txn_t> all_txns);
     std::vector<txn_t> next_batch();
 
 private:
-    std::vector<txn_t> all_txns_;
+    std::vector<txn_t> hot_txns_comps_;
+    std::vector<txn_t> cold_txns_comps_;
     size_t pos_;
 };
 
@@ -69,7 +72,6 @@ private:
 };
 
 batch_iter_t get_batch_iter(workload_e wtype);
-std::vector<std::pair<db_key_t, size_t>> get_key_cts(const std::vector<txn_t>& txns);
 
 /*  Each port is 100 GbE. A port group is 400 GbE.
     We'll act as if a parser can handle 400 GbE instead of needing 4 parsers of 100 GbE.

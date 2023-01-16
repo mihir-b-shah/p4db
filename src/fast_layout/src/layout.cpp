@@ -20,17 +20,14 @@ namespace batch_help {
 
         // guaranteed to be monotonic.
         bool valid() const {
-            static bool past = true;
-            bool ret = in_bounds() && visited_.find(get()) == visited_.end();
-            assert(past || !ret);
-            return ret;
+            return in_bounds() && visited_.find(get()) == visited_.end();
         }
 
         void advance() {
             assert(valid());
             visited_.insert(get());
             while (in_bounds() && !valid()) {
-                if (op_it_ == txns_[txn_it_].ops.size()-1) {
+                if (txns_[txn_it_].ops.size() == 0 || op_it_ == txns_[txn_it_].ops.size()-1) {
                     txn_it_ += 1;
                     op_it_ = 0;
                 } else {

@@ -4,8 +4,10 @@
 #include <cstdio>
 #include <map>
 
+#define N_NODES 3
+
 int main() {
-    batch_iter_t iter = get_batch_iter(workload_e::SYN_HOT_8);
+    batch_iter_t iter = get_batch_iter(workload_e::INSTACART);
     std::vector<txn_t> batch = iter.next_batch();
     layout_t layout(batch);
             
