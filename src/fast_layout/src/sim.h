@@ -60,6 +60,7 @@ public:
     size_t get_key_ct(db_key_t key) const;
     std::optional<tuple_loc_t> lookup(db_key_t key) const;
     db_key_t rev_lookup(size_t stage, size_t reg, size_t idx) const;
+    size_t num_keys() const { return forward_.size(); }
 
 private:
     std::unordered_map<db_key_t, tuple_loc_t> forward_;
