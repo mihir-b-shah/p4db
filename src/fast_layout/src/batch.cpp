@@ -23,7 +23,7 @@ std::vector<std::pair<db_key_t, size_t>> get_key_cts(const std::vector<txn_t>& t
     return vec;
 }
 
-batch_iter_t::batch_iter_t(std::vector<txn_t> all_txns) : pos_(0) {
+batch_iter_t::batch_iter_t(std::vector<txn_t> all_txns) {
     std::vector<std::pair<db_key_t, size_t>> key_cts_v = get_key_cts(all_txns);
     key_cts_v.resize(static_cast<size_t>(key_cts_v.size() * FRAC_HOT));
     std::unordered_set<db_key_t> is_hot;
@@ -46,32 +46,47 @@ batch_iter_t::batch_iter_t(std::vector<txn_t> all_txns) : pos_(0) {
             }
         }
 
-        hot_txns_comps_.push_back(hot_txn);
-        cold_txns_comps_.push_back(cold_txn);
+        txn_comps_.push_back({hot_txn, cold_txn});
     }
 }
 
 std::vector<txn_t> batch_iter_t::next_batch() {
+    static constexpr size_t LOOKAHEAD = 1000;
+
     std::vector<txn_t> ret;
-    size_t start_pos = pos_;
     std::unordered_set<db_key_t> locks;
 
-    assert(cold_txns_comps_.size() == hot_txns_comps_.size());
-    while (pos_ - start_pos < MAX_BATCH && pos_ < cold_txns_comps_.size()) {
-        const txn_t& hot_txn = hot_txns_comps_[pos_];
-        const txn_t& cold_txn = cold_txns_comps_[pos_];
+    while (ret.size() < MAX_BATCH && txn_comps_.size() > 0) {
+        size_t p = 0;
+        size_t bef_batch_size = ret.size();
 
-        for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
-            // no need to rollback acquire locks- if we stop, we're done anyway, 
-            if (locks.find(cold_txn.ops[i]) == locks.end()) {
-                locks.insert(cold_txn.ops[i]);
-            } else {
-                return ret;
+        for (auto it = txn_comps_.begin(); it != txn_comps_.end(); ++it) {
+            if (p++ >= LOOKAHEAD) {
+                break;
+            }
+
+            const txn_t& hot_txn = it->first;
+            const txn_t& cold_txn = it->second;
+            
+            bool disjoint = true;
+            for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
+                disjoint &= locks.find(cold_txn.ops[i]) == locks.end();
+            }
+            if (disjoint) {
+                for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
+                    locks.insert(cold_txn.ops[i]);
+                }
+                ret.push_back(hot_txn);
+                txn_comps_.erase(it);
+                break;
             }
         }
 
-        ret.push_back(hot_txn);
-        pos_ += 1;
+        
+        if (ret.size() == bef_batch_size) {
+            // nothing happened, exit.
+            break;
+        }
     }
     return ret;
 }

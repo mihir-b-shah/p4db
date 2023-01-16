@@ -11,6 +11,9 @@ namespace batch_help {
     class uniq_op_iter_t {
     public:
         uniq_op_iter_t(const std::vector<txn_t>& txns) : txns_(txns), txn_it_(0), op_it_(0) {
+            while (txn_it_ < txns_.size() && txns_[txn_it_].ops.size() == 0) {
+                txn_it_ += 1;
+            }
             assert(txns_.size() == 0 || valid());
         }
 
@@ -27,9 +30,11 @@ namespace batch_help {
             assert(valid());
             visited_.insert(get());
             while (in_bounds() && !valid()) {
-                if (txns_[txn_it_].ops.size() == 0 || op_it_ == txns_[txn_it_].ops.size()-1) {
-                    txn_it_ += 1;
-                    op_it_ = 0;
+                if (op_it_ == txns_[txn_it_].ops.size()-1) {
+                    do {
+                        txn_it_ += 1;
+                        op_it_ = 0;
+                    } while (txn_it_ < txns_.size() && txns_[txn_it_].ops.size() == 0);
                 } else {
                     op_it_ += 1;
                 }

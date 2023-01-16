@@ -8,7 +8,7 @@
 #define PERCENT_TICKS 100
 
 int main() {
-    batch_iter_t iter = get_batch_iter(workload_e::INSTACART);
+    batch_iter_t iter = get_batch_iter(workload_e::YCSB);
     std::map<size_t, size_t> pass_cts;
     std::vector<txn_t> batch;
     std::vector<size_t> sizes;
@@ -23,7 +23,6 @@ int main() {
             }
             pass_cts[sw_txn.passes.size()] += 1;
         }
-        break;
     }
 
     std::sort(sizes.begin(), sizes.end());

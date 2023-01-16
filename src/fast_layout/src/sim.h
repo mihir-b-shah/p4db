@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <list>
 #include <utility>
 #include <queue>
 #include <optional>
@@ -49,9 +50,8 @@ public:
     std::vector<txn_t> next_batch();
 
 private:
-    std::vector<txn_t> hot_txns_comps_;
-    std::vector<txn_t> cold_txns_comps_;
-    size_t pos_;
+    // first is hot, second is cold
+    std::list<std::pair<txn_t, txn_t>> txn_comps_;
 };
 
 class layout_t {
