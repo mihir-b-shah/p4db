@@ -1,0 +1,8 @@
+Let's trace our code, with an emphasis of which components need to change.
+
+Starts off in ycsb() in benchmarks/ycsb/ycsb.cpp.
+Then constructs a Database, defined in db/database.hpp.
+	- Makes a Communicator
+	- Makes a MessageHandler from the comm
+
+
