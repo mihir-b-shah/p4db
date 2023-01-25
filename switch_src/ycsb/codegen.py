@@ -426,7 +426,7 @@ class Ingress(Snippet):
 
 if __name__ == '__main__':
     NUM_INSTR = 8  # 16
-    NUM_REGS = 20  # 40  # 10 / 40
+    NUM_REGS = 80  # 40  # 10 / 40
     REG_SIZE = int(65536/2)
 
     assert(NUM_REGS > 1)
