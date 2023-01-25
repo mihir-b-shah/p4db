@@ -2,8 +2,6 @@
 
 #include "comm/comm.hpp"
 #include "comm/msg.hpp"
-#include "datastructures/array_hashmap.hpp"
-#include "datastructures/stupid_hashmap.hpp"
 #include "db/config.hpp"
 #include "db/defs.hpp"
 #include "db/errors.hpp"
@@ -18,6 +16,7 @@
 #include <iostream>
 #include <pthread.h>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 
@@ -39,7 +38,7 @@ struct MessageHandler {
 
     std::atomic<msg::id_t::type> next_id{0};
     // ArrayHashMap<msg::id_t, AbstractFuture*, NUM_FUTURES> open_futures;    // HINT Not 100% threadsafe
-    StupidHashMap<msg::id_t, AbstractFuture*, NUM_FUTURES> open_futures;
+    std::unordered_map<msg::id_t, AbstractFuture*, NUM_FUTURES> open_futures;
 
 
     MessageHandler(Database& db, Communicator* comm);

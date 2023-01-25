@@ -3,7 +3,6 @@ subdir('benchmarks')
 subdir('stats')
 subdir('comm')
 subdir('table')
-subdir('datastructures')
 subdir('dpdk_lib')
 subdir('declustered_layout')
 
