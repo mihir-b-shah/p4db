@@ -86,6 +86,7 @@ bool switch_t::ipb_almost_full(size_t port, double thr) {
 }
 
 bool switch_t::send(sw_txn_t txn) {
+    assert(txn.passes.size() > 0);
     static size_t incr_id = 1;
     size_t group = port_to_group(txn.port);
     if (ipb_[group].size() < IPB_SIZE) {
@@ -112,20 +113,22 @@ void switch_t::run_reg_ops(size_t i) {
         sw_txn_t& txn = txn_pool_.at(txn_slot);
         if (txn.valid) {
             for (size_t j = 0; j<REGS_PER_STAGE; ++j) {
-                std::optional<size_t> slot_op = txn.passes[txn.pass_ct].grid[i][j];
+                auto& s1 = txn.passes[txn.pass_ct].grid;
+                std::optional<size_t> slot_op = s1[i][j];
+                
                 if (slot_op.has_value()) {
                     // violates serializability
                     sw_val_t& ref = regs_[i][j][slot_op.value()];
-                    printf("[DIRTY_TRACK] stage=%lu, reg=%lu, idx=%lu, ref.last_id: %lu, expected_id: %lu, my_id: %lu\n", i, j, slot_op.value(), ref.last_txn_id, stats::slot_hist.get_prior_access_id(i, j, slot_op.value(), txn.id), txn.id);
+                    // printf("[DIRTY_TRACK] stage=%lu, reg=%lu, idx=%lu, ref.last_id: %lu, expected_id: %lu, my_id: %lu\n", i, j, slot_op.value(), ref.last_txn_id, stats::slot_hist.get_prior_access_id(i, j, slot_op.value(), txn.id), txn.id);
                     if (ref.last_txn_id != stats::slot_hist.get_prior_access_id(i, j, slot_op.value(), txn.id)
                         && ref.last_txn_id != txn.id) {
-                        printf("[DIRTY_TRACK] dirty!\n");
+                        // printf("[DIRTY_TRACK] dirty!\n");
                         stats::slot_hist.incr_slot_dirty(i, j, slot_op.value());
                         ref.dirty = true;
                         stats::num_dir_dirty_ops += 1;
                     }
                     if (ref.dirty) {
-                        printf("[DIRTY_TRACK] touched tainted value!\n");
+                        // printf("[DIRTY_TRACK] touched tainted value!\n");
                         stats::num_cum_dirty_ops += 1;
                     }
                     stats::num_ops += 1;
@@ -195,7 +198,7 @@ void switch_t::print_state() {
 
 void switch_t::run_cycle() {
     stats::num_cycles += 1;
-    print_state();
+    // print_state();
 
     run_reg_ops(N_STAGES-1);
     if (ingr_pipe_[N_STAGES-1].has_value()) {

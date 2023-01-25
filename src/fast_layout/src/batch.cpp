@@ -26,6 +26,8 @@ std::vector<std::pair<db_key_t, size_t>> get_key_cts(const std::vector<txn_t>& t
 batch_iter_t::batch_iter_t(std::vector<txn_t> all_txns) {
     std::vector<std::pair<db_key_t, size_t>> key_cts_v = get_key_cts(all_txns);
     key_cts_v.resize(static_cast<size_t>(key_cts_v.size() * FRAC_HOT));
+    printf("key_cts cutoff: %lu\n", key_cts_v.back().second);
+
     std::unordered_set<db_key_t> is_hot;
     for (const auto& pr : key_cts_v) {
         is_hot.insert(pr.first);
@@ -51,7 +53,8 @@ batch_iter_t::batch_iter_t(std::vector<txn_t> all_txns) {
 }
 
 std::vector<txn_t> batch_iter_t::next_batch() {
-    static constexpr size_t LOOKAHEAD = 1000;
+    /*
+    static constexpr size_t LOOKAHEAD = 10;
 
     std::vector<txn_t> ret;
     std::unordered_set<db_key_t> locks;
@@ -76,7 +79,9 @@ std::vector<txn_t> batch_iter_t::next_batch() {
                 for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
                     locks.insert(cold_txn.ops[i]);
                 }
-                ret.push_back(hot_txn);
+                if (hot_txn.ops.size() > 0) {
+                    ret.push_back(hot_txn);
+                }
                 txn_comps_.erase(it);
                 break;
             }
@@ -87,6 +92,15 @@ std::vector<txn_t> batch_iter_t::next_batch() {
             // nothing happened, exit.
             break;
         }
+    }
+    */
+
+    std::vector<txn_t> ret;
+    while (ret.size() < MAX_BATCH && txn_comps_.size() > 0) {
+        if (txn_comps_.front().first.ops.size() > 0) {
+            ret.push_back(txn_comps_.front().first);
+        }
+        txn_comps_.pop_front();
     }
     return ret;
 }
@@ -137,14 +151,33 @@ static std::vector<txn_t> get_ycsb_txns() {
     return raw_txns;
 }
 
+template <typename RandF, size_t N>
+void gen_unique_keys(const RandF& rand_key_func, txn_t& txn) {
+    db_key_t touched[N];
+    for (size_t i = 0; i<N; ++i) {
+        while (1) {
+            touched[i] = rand_key_func(i);
+            bool unique = true;
+            for (size_t j = 0; j<i; ++j) {
+                unique &= touched[i] != touched[j];
+            }
+            if (unique) {
+                break;
+            }
+        }
+        txn.ops.push_back(touched[i]);
+    }
+}
+
 static std::vector<txn_t> get_syn_unif_txns() {
     std::vector<txn_t> raw_txns;
 
+    auto key_gen = [](size_t j){
+        return rand() % 100000;
+    };
     for (size_t i = 0; i<100000; ++i) {
         txn_t txn;
-        for (size_t j = 0; j<8; ++j) {
-            txn.ops.push_back(rand() % 100000);
-        }
+        gen_unique_keys<decltype(key_gen), 8>(key_gen, txn);
         raw_txns.push_back(txn);
     }
     return raw_txns;
@@ -153,12 +186,16 @@ static std::vector<txn_t> get_syn_unif_txns() {
 static std::vector<txn_t> get_syn_hot_8_txns() {
     std::vector<txn_t> raw_txns;
 
+    auto key_gen = [](size_t j) {
+        if (j < 8) {
+            return rand() % 100;
+        } else {
+            return rand() % 1000000000;
+        }
+    };
     for (size_t i = 0; i<100000; ++i) {
         txn_t txn;
-        for (size_t j = 0; j<8; ++j) {
-            txn.ops.push_back(rand() % 100);
-        }
-        txn.ops.push_back(rand() % 1000000000);
+        gen_unique_keys<decltype(key_gen), 9>(key_gen, txn);
         raw_txns.push_back(txn);
     }
     return raw_txns;

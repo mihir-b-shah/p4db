@@ -14,7 +14,7 @@
 
 typedef size_t db_key_t;
 
-#define N_STAGES 19
+#define N_STAGES 18
 #define REGS_PER_STAGE 4
 #define SLOTS_PER_REG (14000000/(REGS_PER_STAGE*N_STAGES))
 #define MAX_BATCH 10000
