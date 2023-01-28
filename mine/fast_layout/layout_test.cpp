@@ -7,7 +7,7 @@
 #define N_NODES 3
 
 int main() {
-    batch_iter_t iter = get_batch_iter(workload_e::INSTACART);
+    batch_iter_t iter = get_batch_iter(workload_e::YCSB_99_8);
     std::vector<txn_t> batch = iter.next_batch();
     layout_t layout(batch);
             

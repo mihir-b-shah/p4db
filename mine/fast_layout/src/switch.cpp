@@ -12,53 +12,77 @@ namespace stats {
     size_t num_cycles = 0;
     size_t num_txns = 0;
     size_t num_passes = 0;
-    size_t num_dir_dirty_ops = 0;
-    size_t num_cum_dirty_ops = 0;
     size_t num_ops = 0;
 
-    class slot_hist_t {
-    public:
-        ~slot_hist_t() {
-            // print stats at end, but before our data structures are destructed.
-            printf("-------- Dirty stats ---------\n");
-            size_t total = 0;
-            for (size_t i = 0; i<N_STAGES; ++i) {
-                for (size_t j = 0; j<REGS_PER_STAGE; ++j) {
-                    for (const auto& pr : dirty_by_slot_[i][j]) {
-                        total += pr.second;
-                        printf("stage=%2lu reg=%2lu idx=%2lu: %lu\n", i, j, pr.first, pr.second);
-                    }
-                }
-            }
-            printf("Total dirty ops (check): %lu\n", total);
-            printf("-----------------------------\n");
-        }
+	class serial_checker_t {
+	public:
+		serial_checker_t() : max_tid_(0) {}
+		~serial_checker_t() {
+			// a DAG is guaranteed to have a topological order, which is our serializable order.
+			// this is sufficient according to google :)
+			for (size_t i = 1; i<=max_tid_; ++i) {
+				colors_.insert({i, UNVISITED});
+			}
 
-        sw_txn_id_t get_prior_access_id(size_t stage, size_t reg, size_t idx, sw_txn_id_t id) {
-            const std::vector<sw_txn_id_t>& v = access_hist_[stage][reg][idx];
-            // my id should be there. return the previous one.
-            auto it = std::lower_bound(v.begin(), v.end(), id);
-            assert(*it == id);
-            return it == v.begin() ? sw_val_t::START_TXN_ID : *(it-1);
-        }
+			bool ok = true;
+			for (size_t i = 1; i<=max_tid_; ++i) {
+				assert(colors_[i] == UNVISITED || colors_[i] == VISITED);
+				if (colors_[i] == UNVISITED) {
+					if (!walk_graph(i)) {
+						ok = false;
+						break;
+					}
+				}
+			}
+			
+			if (ok) {
+				printf("Serializable history.\n");
+			} else {
+				assert(false && "Unserializable history.");
+			}
+		}
 
-        std::unordered_map<size_t, std::vector<sw_txn_id_t>>& get_reg_hist_map(size_t stage, size_t reg) {
-            return access_hist_[stage][reg];
-        }
+		void add_dep(sw_txn_id_t tid, sw_txn_id_t old) {
+			max_tid_ = std::max(max_tid_, tid);
+			if (deps_.find(tid) == deps_.end()) {
+				std::vector<sw_txn_id_t> v;
+				deps_.insert({tid, v});
+			}
+			deps_[tid].push_back(old);
+		}
 
-        void incr_slot_dirty(size_t stage, size_t reg, size_t idx) {
-            auto& dmap = dirty_by_slot_[stage][reg];
-            if (dmap.find(idx) == dmap.end()) {
-                dmap.insert({idx, 0});
-            }
-            dmap[idx] += 1;
-        }
+	private:
+		bool walk_graph(size_t u) {
+			const std::vector<sw_txn_id_t>& next = deps_[u];
+			colors_[u] = VISITING;
 
-    private:
-        std::unordered_map<size_t, std::vector<sw_txn_id_t>> access_hist_[N_STAGES][REGS_PER_STAGE];
-        std::unordered_map<size_t, size_t> dirty_by_slot_[N_STAGES][REGS_PER_STAGE];
-    };
-    slot_hist_t slot_hist;
+			for (sw_txn_id_t v : next) {
+				if (colors_[v] == UNVISITED) {
+					if (!walk_graph(v)) {
+						return false;
+					}
+				} else if (colors_[v] == VISITING) {
+					// cycle detected.
+					return false;
+				}
+			}
+
+			colors_[u] = VISITED;
+			return true;
+		}
+
+		enum color_e {
+			UNVISITED,
+			VISITING,
+			VISITED,
+		};
+
+		std::unordered_map<sw_txn_id_t, std::vector<sw_txn_id_t>> deps_;
+		std::unordered_map<sw_txn_id_t, color_e> colors_;
+		size_t max_tid_;
+	};
+
+	serial_checker_t checker;
 }
 
 static void print_stats() {
@@ -66,8 +90,6 @@ static void print_stats() {
     printf("Num cycles: %lu\n", stats::num_cycles);
     printf("Num txns: %lu\n", stats::num_txns);
     printf("Num passes: %lu\n", stats::num_passes);
-    printf("Num direct dirty ops: %lu\n", stats::num_dir_dirty_ops);
-    printf("Num cumulative dirty ops: %lu\n", stats::num_cum_dirty_ops);
     printf("Num ops: %lu\n", stats::num_ops);
     printf("--------------------------------\n");
 }
@@ -91,16 +113,22 @@ bool switch_t::send(sw_txn_t txn) {
     size_t group = port_to_group(txn.port);
     if (ipb_[group].size() < IPB_SIZE) {
         txn.id = incr_id++;
-        for (const tuple_loc_t& loc : txn.locs) {
-            auto& reg_hist = stats::slot_hist.get_reg_hist_map(loc.stage, loc.reg);
-            if (reg_hist.find(loc.idx) == reg_hist.end()) {
-                reg_hist.insert({loc.idx, {}});
-            }
-            reg_hist[loc.idx].push_back(txn.id);
-        }
         txn_pool_t::slot_id_t slot = txn_pool_.alloc();
         txn_pool_.at(slot) = txn;
         ipb_[group].push(slot);
+
+		/*
+        printf("txn %lu entering: ", txn.id);
+        for (size_t i = 0; i<txn.locs.size(); ++i) {
+            printf("{%lu,%lu,%lu} ", txn.locs[i].stage, txn.locs[i].reg, txn.locs[i].idx);
+        }
+        printf("| passes: %lu\n", txn.passes.size());
+        printf("txn %lu entering ORIG: ", txn.id);
+        for (size_t i = 0; i<txn.orig_txn.ops.size(); ++i) {
+            printf("k=%lu ", txn.orig_txn.ops[i]);
+        }
+        printf("| passes: %lu\n", txn.passes.size());
+		*/
         return true;
     } else {
         return false;
@@ -117,20 +145,8 @@ void switch_t::run_reg_ops(size_t i) {
                 std::optional<size_t> slot_op = s1[i][j];
                 
                 if (slot_op.has_value()) {
-                    // violates serializability
                     sw_val_t& ref = regs_[i][j][slot_op.value()];
-                    // printf("[DIRTY_TRACK] stage=%lu, reg=%lu, idx=%lu, ref.last_id: %lu, expected_id: %lu, my_id: %lu\n", i, j, slot_op.value(), ref.last_txn_id, stats::slot_hist.get_prior_access_id(i, j, slot_op.value(), txn.id), txn.id);
-                    if (ref.last_txn_id != stats::slot_hist.get_prior_access_id(i, j, slot_op.value(), txn.id)
-                        && ref.last_txn_id != txn.id) {
-                        // printf("[DIRTY_TRACK] dirty!\n");
-                        stats::slot_hist.incr_slot_dirty(i, j, slot_op.value());
-                        ref.dirty = true;
-                        stats::num_dir_dirty_ops += 1;
-                    }
-                    if (ref.dirty) {
-                        // printf("[DIRTY_TRACK] touched tainted value!\n");
-                        stats::num_cum_dirty_ops += 1;
-                    }
+					stats::checker.add_dep(txn.id, ref.last_txn_id);
                     stats::num_ops += 1;
                     ref.last_txn_id = txn.id;
                 }
@@ -146,34 +162,121 @@ void switch_t::ipb_to_parser(size_t i) {
     }
 }
 
-[[maybe_unused]] 
-static bool whole_pipe_lock(const sw_txn_t& txn) {
-    static constexpr size_t LOCK_PASS_THRESHOLD = 2; //std::numeric_limits<size_t>::max();
-    static std::optional<sw_txn_id_t> holder = std::nullopt;
-
-    if (!holder.has_value()) {
-        // only acquire for multi-pass
-        if (txn.passes.size() >= LOCK_PASS_THRESHOLD) {
-            holder = txn.id;
-        }
-        return true;
-    } else {
-        if (holder.value() == txn.id) {
-            // there's a lock, it's held by me
-            if (txn.passes.size() == txn.pass_ct + 1) {
-                // last pass, release it.
-                holder = std::nullopt;
-            }
-            return true;
-        } else {
-            return false;
-        }
-    }
+namespace helpers {
+	template <typename F>
+	class defer_action_t {
+	public:
+		defer_action_t(const F& action) : action_(action) {}
+		~defer_action_t() {
+			action_();
+		}
+	private:
+		const F& action_;
+	};
 }
 
-bool switch_t::manage_locks(const sw_txn_t& txn) {
-    return whole_pipe_lock(txn);
-    // return true;
+static void print_bitset(const char* prefix, std::bitset<N_LOCKS> bset) {
+	printf("%s: {", prefix);
+	for (size_t i = 0; i<N_LOCKS; ++i) {
+		if (bset[i]) {
+			printf("%lu, ", i);
+		}
+	}
+	printf("}");
+}
+
+static bool whole_pipe_lock(sw_txn_t& txn) {
+	static std::optional<sw_txn_id_t> holder = std::nullopt;
+	if (!holder.has_value()) {
+		// only acquire for multi-pass
+		if (txn.passes.size() >= 2) {
+			holder = txn.id;
+		}
+		return true;
+	} else {
+		if (holder.value() == txn.id) {
+			// there's a lock, it's held by me
+			if (txn.passes.size() == txn.pass_ct + 1) {
+				// last pass, release it.
+				holder = std::nullopt;
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+
+/*	being able to lock like normal at fine grain is optimal, but
+	probably not possible. */
+static bool granular_lock_OPT(sw_txn_t& txn) {
+	static std::bitset<N_LOCKS> locks;
+	if (txn.pass_ct == 0) {
+		if ((locks & txn.locks_check).none()) {
+			assert((locks & txn.locks_wanted) == 0);
+			locks |= txn.locks_wanted;
+			return true;
+		} else {
+			return false;
+		}
+	} else if (txn.pass_ct == txn.passes.size()-1) {
+		assert((locks & txn.locks_wanted) == txn.locks_wanted);
+		locks ^= txn.locks_wanted;
+		return true;
+	} else {
+		return true;
+	}
+}
+
+static bool granular_lock_real(sw_txn_t& txn) {
+	static std::bitset<N_LOCKS> locks;
+
+	printf("Txn %lu, p %lu | ", txn.id, txn.pass_ct);
+	print_bitset("lglob", locks);
+	print_bitset(" chk", txn.locks_check);
+	print_bitset(" want", txn.locks_wanted);
+	print_bitset(" undo", txn.locks_undo);
+	printf("\n");
+
+	if (txn.pass_ct == 0) {
+		if (txn.locks_undo.none()) {
+			// I'm not coming around to undo stuff, full speed ahead!
+			std::bitset<N_LOCKS> before = locks;
+			locks |= txn.locks_wanted;
+
+			if ((before & txn.locks_check).none()) {
+				// ok great, it worked.
+				assert((before & txn.locks_wanted) == 0);
+				printf("Txn %lu, p %lu | decided TRUE (1)\n", txn.id, txn.pass_ct);
+				return true;
+			} else {
+				txn.locks_undo = (~before) & txn.locks_wanted;
+				printf("Txn %lu, p %lu | decided FALSE (2)\n", txn.id, txn.pass_ct);
+				return false;
+			}
+		} else {
+			// Ok just to undo.
+			locks ^= txn.locks_undo;
+			txn.locks_undo.reset();
+			printf("Txn %lu, p %lu | decided FALSE (3)\n", txn.id, txn.pass_ct);
+			return false;
+		}
+	} else if (txn.pass_ct == txn.passes.size()-1) {
+		assert((locks & txn.locks_wanted) == txn.locks_wanted);
+		locks ^= txn.locks_wanted;
+		printf("Txn %lu, p %lu | decided TRUE (4)\n", txn.id, txn.pass_ct);
+		return true;
+	} else {
+		printf("Txn %lu, p %lu | decided TRUE (5)\n", txn.id, txn.pass_ct);
+		return true;
+	}
+}
+
+bool switch_t::manage_locks(sw_txn_t& txn) {
+    // return whole_pipe_lock(txn);
+	// return granular_lock_OPT(txn);
+	return granular_lock_real(txn);
+	// return true;
 }
 
 #define LOOKUP_OPT(opt,var,dflt_val) ((opt).has_value() ? txn_pool_.at((opt).value()).var : dflt_val)
@@ -186,7 +289,7 @@ void switch_t::print_state() {
     if (LOOKUP_OPT(ingr_pipe_[N_STAGES-1], valid, 0) && 
         LOOKUP_OPT(ingr_pipe_[N_STAGES-1], passes.size(), 0) == 
             1 + LOOKUP_OPT(ingr_pipe_[N_STAGES-1], pass_ct, 0)) {
-        printf("txn leaving has %lu passes, %lu ops\n", LOOKUP_OPT(ingr_pipe_[N_STAGES-1], passes.size(), 0), LOOKUP_OPT(ingr_pipe_[N_STAGES-1], orig_txn.ops.size(), 0));
+        printf("txn %lu leaving has %lu passes, %lu ops\n", LOOKUP_OPT(ingr_pipe_[N_STAGES-1], id, 0), LOOKUP_OPT(ingr_pipe_[N_STAGES-1], passes.size(), 0), LOOKUP_OPT(ingr_pipe_[N_STAGES-1], orig_txn.ops.size(), 0));
     }
     
     for (size_t i = 0; i<N_STAGES; ++i) {
@@ -198,7 +301,7 @@ void switch_t::print_state() {
 
 void switch_t::run_cycle() {
     stats::num_cycles += 1;
-    // print_state();
+    print_state();
 
     run_reg_ops(N_STAGES-1);
     if (ingr_pipe_[N_STAGES-1].has_value()) {

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <map>
+#include <iostream>
 #include <fstream>
 #include <cassert>
 #include <cstdlib>
@@ -25,8 +26,9 @@ std::vector<std::pair<db_key_t, size_t>> get_key_cts(const std::vector<txn_t>& t
 
 batch_iter_t::batch_iter_t(std::vector<txn_t> all_txns) {
     std::vector<std::pair<db_key_t, size_t>> key_cts_v = get_key_cts(all_txns);
+	size_t n_keys = key_cts_v.size();
     key_cts_v.resize(static_cast<size_t>(key_cts_v.size() * FRAC_HOT));
-    printf("key_cts cutoff: %lu\n", key_cts_v.back().second);
+    printf("n_keys: %lu, key_cts cutoff: %lu\n", n_keys, key_cts_v.back().second);
 
     std::unordered_set<db_key_t> is_hot;
     for (const auto& pr : key_cts_v) {
@@ -53,15 +55,15 @@ batch_iter_t::batch_iter_t(std::vector<txn_t> all_txns) {
 }
 
 std::vector<txn_t> batch_iter_t::next_batch() {
-    /*
-    static constexpr size_t LOOKAHEAD = 10;
+    static constexpr size_t LOOKAHEAD = 1;
 
     std::vector<txn_t> ret;
     std::unordered_set<db_key_t> locks;
 
     while (ret.size() < MAX_BATCH && txn_comps_.size() > 0) {
         size_t p = 0;
-        size_t bef_batch_size = ret.size();
+        size_t bef_considered_size = ret.size();
+		size_t considered_size = ret.size();
 
         for (auto it = txn_comps_.begin(); it != txn_comps_.end(); ++it) {
             if (p++ >= LOOKAHEAD) {
@@ -71,38 +73,36 @@ std::vector<txn_t> batch_iter_t::next_batch() {
             const txn_t& hot_txn = it->first;
             const txn_t& cold_txn = it->second;
             
-            bool disjoint = true;
+			size_t n_conflicts = 0;
             for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
-                disjoint &= locks.find(cold_txn.ops[i]) == locks.end();
+                n_conflicts += locks.find(cold_txn.ops[i]) != locks.end();
             }
-            if (disjoint) {
+			// printf("n_conflicts: %lu\n", n_conflicts);
+            if (n_conflicts == 0) {
                 for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
                     locks.insert(cold_txn.ops[i]);
                 }
-                if (hot_txn.ops.size() > 0) {
-                    ret.push_back(hot_txn);
+                if (hot_txn.ops.size() > 0 && hot_txn.ops.size() < N_MAX_HOT_OPS) {
+					ret.push_back(hot_txn);
                 }
+				considered_size += 1;
                 txn_comps_.erase(it);
                 break;
             }
         }
 
         
-        if (ret.size() == bef_batch_size) {
+        if (bef_considered_size == considered_size) {
             // nothing happened, exit.
             break;
         }
     }
-    */
-
-    std::vector<txn_t> ret;
-    while (ret.size() < MAX_BATCH && txn_comps_.size() > 0) {
-        if (txn_comps_.front().first.ops.size() > 0) {
-            ret.push_back(txn_comps_.front().first);
-        }
-        txn_comps_.pop_front();
-    }
-    return ret;
+	
+	if (ret.size() == 0 && txn_comps_.size() > 0) {
+		// any more txns to run?
+		return next_batch();
+	}
+	return ret;
 }
 
 static std::vector<txn_t> get_instacart_txns() {
@@ -131,8 +131,12 @@ static std::vector<txn_t> get_instacart_txns() {
     return raw_txns;
 }
 
-static std::vector<txn_t> get_ycsb_txns() {
-    std::ifstream fin("../../ycsb/zipfian_1B.csv");
+static std::vector<txn_t> get_ycsb_txns(size_t key_ct, size_t zipf_const, size_t txn_size) {
+	char fname_buf[100];
+	std::sprintf(fname_buf, "../../ycsb/zipfian_k%luB_z%lu_n%lu.csv", key_ct, zipf_const, txn_size);
+    printf("fname: %s\n", const_cast<const char*>(fname_buf));
+
+    std::ifstream fin(const_cast<const char*>(fname_buf));
     std::string buf;
     std::vector<txn_t> raw_txns;
 
@@ -145,9 +149,20 @@ static std::vector<txn_t> get_ycsb_txns() {
         std::istringstream ss(buf);
         raw_txns.emplace_back();
         while (std::getline(ss, access, ',')) {
-            raw_txns.back().ops.push_back(std::stoull(access));
+			db_key_t k = std::stoull(access);
+			bool dupl = false;
+			for (db_key_t prev : raw_txns.back().ops) {
+				if (k == prev) {
+					dupl = true;
+				}
+			}
+			if (!dupl) {
+				raw_txns.back().ops.push_back(k);
+			}
         }
     }
+
+	printf("raw_txns built.\n");
     return raw_txns;
 }
 
@@ -224,8 +239,14 @@ batch_iter_t get_batch_iter(workload_e wtype) {
     case workload_e::INSTACART:
         txns = get_instacart_txns();
         break;
-    case workload_e::YCSB:
-        txns = get_ycsb_txns();
+    case workload_e::YCSB_80_8:
+        txns = get_ycsb_txns(1, 80, 8);
+        break;
+    case workload_e::YCSB_99_8:
+        txns = get_ycsb_txns(1, 99, 8);
+        break;
+    case workload_e::YCSB_99_16:
+        txns = get_ycsb_txns(1, 99, 16);
         break;
     case workload_e::SYN_UNIF:
         txns = get_syn_unif_txns();

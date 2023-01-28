@@ -26,17 +26,5 @@ int main(int argc, char** argv) {
             using namespace benchmark::ycsb;
             return ycsb();
         }
-        case BenchmarkType::SMALLBANK: {
-            using namespace benchmark::smallbank;
-            return smallbank();
-        }
-        case BenchmarkType::TPCC: {
-            using namespace benchmark::tpcc;
-            return tpcc();
-        }
-        case BenchmarkType::MICRO_RECIRC: {
-            using namespace benchmark::micro_recirc;
-            return micro_recirc();
-        }
     }
 }

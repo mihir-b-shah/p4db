@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <bitset>
 #include <list>
 #include <utility>
 #include <queue>
@@ -15,10 +16,11 @@
 typedef size_t db_key_t;
 
 #define N_STAGES 18
-#define REGS_PER_STAGE 4
+#define REGS_PER_STAGE 2
 #define SLOTS_PER_REG (14000000/(REGS_PER_STAGE*N_STAGES))
 #define MAX_BATCH 10000
-#define FRAC_HOT 0.01
+#define FRAC_HOT 0.001
+#define N_MAX_HOT_OPS 8
 
 struct tuple_loc_t {
     size_t stage;
@@ -36,7 +38,9 @@ struct txn_t {
 
 enum class workload_e {
     INSTACART,
-    YCSB,
+    YCSB_80_8,
+    YCSB_99_8,
+    YCSB_99_16,
     SYN_UNIF,
     SYN_HOT_8,
     SYN_ADVERSARIAL,
@@ -54,6 +58,8 @@ private:
     std::list<std::pair<txn_t, txn_t>> txn_comps_;
 };
 
+typedef std::unordered_map<db_key_t, std::unordered_map<db_key_t, size_t>> adj_mat_t;
+
 class layout_t {
 public:
     layout_t(const std::vector<txn_t>& txns);
@@ -69,7 +75,7 @@ private:
     std::unordered_map<db_key_t, size_t> key_cts_;
 
     void naive_spray_impl(const std::vector<txn_t>& txns);
-    void freq_heuristic_impl(const std::vector<txn_t>& txns);
+    void freq_heuristic_impl(const adj_mat_t& adj_mat);
 };
 
 batch_iter_t get_batch_iter(workload_e wtype);
@@ -89,16 +95,15 @@ batch_iter_t get_batch_iter(workload_e wtype);
 #define N_PORT_GROUPS 8
 #define RECIRC_PORT 8
 #define IPB_SIZE 500
+#define N_LOCKS 31
 
 typedef size_t sw_txn_id_t;
 
 struct sw_val_t {
     inline static constexpr sw_txn_id_t START_TXN_ID = 0;
-
-    bool dirty;
     size_t last_txn_id;
 
-    sw_val_t() : dirty(false), last_txn_id(START_TXN_ID) {}
+    sw_val_t() : last_txn_id(START_TXN_ID) {}
 };
 
 struct sw_pass_txn_t {
@@ -110,7 +115,12 @@ struct sw_txn_t {
     sw_txn_id_t id;
     size_t pass_ct;
     txn_t orig_txn;
+
     bool valid;
+	std::bitset<N_LOCKS> locks_check;
+	std::bitset<N_LOCKS> locks_wanted;
+	std::bitset<N_LOCKS> locks_undo;
+
     std::vector<tuple_loc_t> locs;
     std::vector<sw_pass_txn_t> passes;
     std::optional<tuple_loc_t> one_lock;
@@ -119,6 +129,8 @@ struct sw_txn_t {
     sw_txn_t() : id(0), pass_ct(0), valid(true) {}
     sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn);
 };
+
+std::vector<sw_txn_t> prepare_txns_sw(size_t port, const std::vector<txn_t>& txns, const layout_t& lay);
 
 class switch_t {
 public:
@@ -140,7 +152,7 @@ private:
     
     void run_reg_ops(size_t i);
     void ipb_to_parser(size_t i);
-    bool manage_locks(const sw_txn_t& txn);
+    bool manage_locks(sw_txn_t& txn);
     void print_state();
 };
 

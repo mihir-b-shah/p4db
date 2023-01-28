@@ -10,7 +10,7 @@ Frequencies range from 1.4k occurrences to 28 occurrences.
 But 28 is still a lot!
 */
 int main() {
-    batch_iter_t iter = get_batch_iter(workload_e::SYN_HOT_8);
+    batch_iter_t iter = get_batch_iter(workload_e::INSTACART);
     std::vector<txn_t> batch;
     while ((batch = iter.next_batch()).size() != 0) {
         printf("Batch size: %lu\n", batch.size());

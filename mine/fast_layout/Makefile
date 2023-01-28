@@ -1,7 +1,7 @@
 CXX=g++-11
 CFLAGS=-std=c++2a -O0 -g -MD -Wall -I. -Isrc/ -fsanitize=address
 
-RM = rm -f
+RM = /usr/bin/rm -f
 LIB = src/libp4txn.a
 SRCS = $(wildcard *.cpp)
 HS = $(wildcard *.h)
