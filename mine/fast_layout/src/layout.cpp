@@ -4,6 +4,7 @@
 #include <array>
 #include <cassert>
 #include <cstdio>
+#include <cstdlib>
 #include <utility>
 #include <optional>
 
@@ -131,12 +132,32 @@ void layout_t::freq_heuristic_impl(const adj_mat_t& adj_mat) {
     }
 }
 
+void layout_t::random_spray_impl(const std::vector<txn_t>& txns) {
+    size_t idx_to_alloc[N_STAGES][REGS_PER_STAGE] = {{0}};
+	for (const auto& pr : keys_sorted_) {
+		size_t rnd = rand() % (N_STAGES*REGS_PER_STAGE);
+
+		size_t stage = rnd / REGS_PER_STAGE;
+		size_t reg = rnd % REGS_PER_STAGE;
+		size_t idx = idx_to_alloc[stage][reg]++;
+
+		db_key_t k = pr.first;
+		tuple_loc_t tl = {stage, reg, idx};
+		forward_.insert({k, tl});
+		backward_per_reg_[stage][reg].insert({idx, k});
+	}
+}
+
 layout_t::layout_t(const std::vector<txn_t>& txns)
-    : keys_sorted_(get_key_cts(txns)), key_cts_(keys_sorted_.begin(), keys_sorted_.end()) {
+    :	keys_sorted_(get_key_cts(txns)), 
+		key_cts_(keys_sorted_.begin(), keys_sorted_.end()) {
 
     // naive_spray_impl(txns);
+
 	const adj_mat_t adj_mat = get_adj_mat(txns);
     freq_heuristic_impl(adj_mat);
+
+	// random_spray_impl(txns);
 }
 
 size_t layout_t::get_key_ct(db_key_t key) const {

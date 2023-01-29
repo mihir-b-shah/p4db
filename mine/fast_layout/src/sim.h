@@ -15,7 +15,7 @@
 
 typedef size_t db_key_t;
 
-#define N_STAGES 18
+#define N_STAGES 6
 #define REGS_PER_STAGE 2
 #define SLOTS_PER_REG (14000000/(REGS_PER_STAGE*N_STAGES))
 #define MAX_BATCH 10000
@@ -76,6 +76,7 @@ private:
 
     void naive_spray_impl(const std::vector<txn_t>& txns);
     void freq_heuristic_impl(const adj_mat_t& adj_mat);
+    void random_spray_impl(const std::vector<txn_t>& txns);
 };
 
 batch_iter_t get_batch_iter(workload_e wtype);
@@ -95,7 +96,7 @@ batch_iter_t get_batch_iter(workload_e wtype);
 #define N_PORT_GROUPS 8
 #define RECIRC_PORT 8
 #define IPB_SIZE 500
-#define N_LOCKS 31
+#define N_LOCKS 3
 
 typedef size_t sw_txn_id_t;
 
