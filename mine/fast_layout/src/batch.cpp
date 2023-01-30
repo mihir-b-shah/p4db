@@ -82,7 +82,9 @@ std::vector<txn_t> batch_iter_t::next_batch() {
                 for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
                     locks.insert(cold_txn.ops[i]);
                 }
+				printf("Considering cold=%lu, hot=%lu.\n", cold_txn.ops.size(), hot_txn.ops.size());
                 if (hot_txn.ops.size() > 0 && hot_txn.ops.size() < N_MAX_HOT_OPS) {
+					printf("Taken.\n");
 					ret.push_back(hot_txn);
                 }
 				considered_size += 1;
@@ -188,11 +190,15 @@ static std::vector<txn_t> get_syn_unif_txns() {
     std::vector<txn_t> raw_txns;
 
     auto key_gen = [](size_t j){
-        return rand() % 100000;
+		if (rand() % 2 == 0) {
+			return rand() % 800;
+		} else {
+			return rand() % 1000000;
+		}
     };
     for (size_t i = 0; i<100000; ++i) {
         txn_t txn;
-        gen_unique_keys<decltype(key_gen), 8>(key_gen, txn);
+        gen_unique_keys<decltype(key_gen), 12>(key_gen, txn);
         raw_txns.push_back(txn);
     }
     return raw_txns;

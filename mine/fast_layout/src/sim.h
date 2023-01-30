@@ -15,7 +15,7 @@
 
 typedef size_t db_key_t;
 
-#define N_STAGES 6
+#define N_STAGES 18
 #define REGS_PER_STAGE 2
 #define SLOTS_PER_REG (14000000/(REGS_PER_STAGE*N_STAGES))
 #define MAX_BATCH 10000
@@ -58,8 +58,6 @@ private:
     std::list<std::pair<txn_t, txn_t>> txn_comps_;
 };
 
-typedef std::unordered_map<db_key_t, std::unordered_map<db_key_t, size_t>> adj_mat_t;
-
 class layout_t {
 public:
     layout_t(const std::vector<txn_t>& txns);
@@ -75,7 +73,8 @@ private:
     std::unordered_map<db_key_t, size_t> key_cts_;
 
     void naive_spray_impl(const std::vector<txn_t>& txns);
-    void freq_heuristic_impl(const adj_mat_t& adj_mat);
+    void freq_heuristic_impl(const std::vector<txn_t>& txns);
+    void better_random_impl(const std::vector<txn_t>& txns);
     void random_spray_impl(const std::vector<txn_t>& txns);
 };
 

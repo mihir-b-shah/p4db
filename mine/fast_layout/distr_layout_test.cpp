@@ -5,7 +5,7 @@
 #include <map>
 #include <algorithm>
 
-#define N_NODES 3
+#define N_NODES 6
 
 int main() {
     batch_iter_t iter = get_batch_iter(workload_e::YCSB_99_16);
@@ -51,9 +51,6 @@ int main() {
 			}
 		}
 	}
-
-	printf("freqs[0]: %lu, freqs[1]: %lu, freqs[2]: %lu\n", freqs[0], freqs[1], freqs[2]);
-	printf("n_t0: %lu, n_t1: %lu, n_t2: %lu\n", node_subtxns[0].size(), node_subtxns[1].size(), node_subtxns[2].size());
 
 	std::vector<std::vector<size_t>> pass_cts_ids(all_txns.size());
 

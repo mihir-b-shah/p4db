@@ -7,7 +7,7 @@
 #define N_NODES 3
 
 int main() {
-    batch_iter_t iter = get_batch_iter(workload_e::YCSB_99_16);
+    batch_iter_t iter = get_batch_iter(workload_e::SYN_UNIF);
 
 	std::vector<txn_t> all_txns;
     std::vector<txn_t> batch;
@@ -23,6 +23,7 @@ int main() {
     for (const txn_t& txn : all_txns) {
         sw_txn_t sw_txn(0, layout, txn);
 
+		/*
         printf("txn: ");
         for (size_t i = 0; i<txn.ops.size(); ++i) {
 			std::optional<tuple_loc_t> tl = layout.lookup(txn.ops[i]);
@@ -44,6 +45,7 @@ int main() {
 			}
 			pass2m_freqs[freq_idx] = freq;
         }
+		*/
 
         if (pass_cts.find(sw_txn.passes.size()) == pass_cts.end()) {
             pass_cts.insert({sw_txn.passes.size(), 0});
