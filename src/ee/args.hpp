@@ -5,7 +5,6 @@
 
 #include <array>
 #include <cstdint>
-#include <variant>
 
 struct Txn {
 	struct OP {

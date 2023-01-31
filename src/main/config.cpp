@@ -5,12 +5,16 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
 #include <unistd.h>
 #include <netdb.h> 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fstream>
+#include <cassert>
+#include <cstdlib>
+#include <sstream>
+#include <string>
 
 class BetterParseResult : public cxxopts::ParseResult {
 public:
@@ -122,4 +126,35 @@ void Config::parse_cli(int argc, char** argv) {
     }
 
 	// read txns in from trace.	
+    std::ifstream fin(trace_fname);
+    std::string buf;
+
+    while (!fin.eof()) {
+        std::getline(fin, buf);
+        if (buf.size() == 0) {
+            continue;
+        }
+        std::string access;
+        std::istringstream ss(buf);
+        trace_txns.emplace_back();
+		Txn& txn = trace_txns.back();
+		size_t i = 0;
+        while (std::getline(ss, access, ',')) {
+			if (txn.ops[NUM_OPS-1].mode != AccessMode::INVALID) {
+				assert(false && "Txn is already full- error.");
+			}
+			Txn::OP op;	
+			/*	We decide the mode based on rw percentage, from the config.
+				The value is just a txn number, so we can do easy serializability
+				checking */
+			op.id = std::stoull(access);
+			if ((rand() % 100) < write_prob) {
+				op.mode = AccessMode::WRITE;
+			} else {
+				op.mode = AccessMode::READ;
+			}
+			op.value = static_cast<uint32_t>(1 + trace_txns.size());
+			txn.ops[i++] = op;
+        }
+    }
 }

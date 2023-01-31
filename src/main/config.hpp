@@ -5,6 +5,7 @@
 #include "comm/msg.hpp"
 #include "comm/server.hpp"
 #include "ee/defs.hpp"
+#include "ee/args.hpp"
 #include "utils/util.hpp"
 
 #include <vector>
@@ -38,4 +39,5 @@ public:
 	uint64_t hot_size;
 
 	std::string trace_fname;
+	std::vector<Txn> trace_txns;
 };

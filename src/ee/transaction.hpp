@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <vector>
+#include <cassert>
 
 enum RC {
 	COMMIT,
@@ -79,8 +80,11 @@ struct TransactionBase {
 		for (size_t i = 0; auto& op : arg.ops) {
 			if (op.mode == AccessMode::WRITE) {
 				ops[i] = write(kvs, KV::pk(op.id));
-			} else {
+			} else if (op.mode == AccessMode::READ) {
 				ops[i] = read(kvs, KV::pk(op.id));
+			} else {
+				assert(op.mode == AccessMode::INVALID);
+				ops[i] = nullptr;
 			}
 			check(ops[i]);
 			++i;
@@ -92,11 +96,13 @@ struct TransactionBase {
 				auto x = ops[i]->get();
 				check(x);
 				x->value = op.value;
-			} else {
+			} else if (op.mode == AccessMode::READ) {
 				const auto x = ops[i]->get();
 				check(x);
 				const auto value = x->value;
 				do_not_optimize(value);
+			} else {
+				break;
 			}
 			++i;
 		}
