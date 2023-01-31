@@ -1,7 +1,8 @@
 #pragma once
 
-#include "db/types.hpp"
-#include "db/util.hpp"
+#include "ee/types.hpp"
+#include "utils/ts_factory.hpp"
+#include "utils/util.hpp"
 
 #include <cstdint>
 
@@ -28,21 +29,7 @@ struct node_t {
     }
 };
 
-
-struct id_t {
-    using type = uint64_t;
-
-    type value;
-    operator type() const {
-        return value;
-    }
-
-    struct hash {
-        std::size_t operator()(const id_t& id) const {
-            return id.value;
-        }
-    };
-};
+typedef uint64_t id_t;
 
 enum class Type : uint32_t {
     INIT = 0x00010001,

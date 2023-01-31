@@ -251,6 +251,7 @@ static bool granular_lock_real(sw_txn_t& txn) {
 				return true;
 			} else {
 				txn.locks_undo = (~before) & txn.locks_wanted;
+				// do a fast recirc.
 				printf("Txn %lu, p %lu | decided FALSE (2)\n", txn.id, txn.pass_ct);
 				return false;
 			}
@@ -274,8 +275,8 @@ static bool granular_lock_real(sw_txn_t& txn) {
 
 bool switch_t::manage_locks(sw_txn_t& txn) {
     // return whole_pipe_lock(txn);
-	return granular_lock_OPT(txn);
-	// return granular_lock_real(txn);
+	// return granular_lock_OPT(txn);
+	return granular_lock_real(txn);
 	// return true;
 }
 

@@ -1,6 +1,6 @@
 #include "collector.hpp"
 
-#include "db/config.hpp"
+#include "main/config.hpp"
 #include "scheduler.hpp"
 
 #include <fstream>

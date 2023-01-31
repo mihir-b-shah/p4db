@@ -1,0 +1,2 @@
+config.table_size = 1B (ycsb)
+config.table_size = ~30000 (instacart)

@@ -1,6 +1,6 @@
 #include "udp.hpp"
 
-#include "db/config.hpp"
+#include "main/config.hpp"
 #include "msg_handler.hpp"
 #include "stats/context.hpp"
 

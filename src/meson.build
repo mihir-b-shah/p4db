@@ -1,10 +1,10 @@
-subdir('db')
-subdir('benchmarks')
+subdir('utils')
+subdir('main')
 subdir('stats')
 subdir('comm')
-subdir('table')
+subdir('ee')
 subdir('dpdk_lib')
-subdir('declustered_layout')
+subdir('layout')
 
 
 project_headers += files(
@@ -14,6 +14,3 @@ project_headers += files(
 project_sources += files(
     
 )
-
-
-main_source = files('main.cpp')

@@ -1,8 +1,8 @@
 #pragma once
 
 
-#include "db/defs.hpp"
-#include "db/util.hpp"
+#include "ee/defs.hpp"
+#include "utils/util.hpp"
 
 #include <array>
 #include <string_view>
@@ -23,41 +23,8 @@ struct Counter {
         remote_lock_success,
         remote_lock_waiting,
         switch_aborts,
-
-        tpcc_no_txns,
-        tpcc_no_warehouse_read,
-        tpcc_no_district_write,
-        tpcc_no_customer_read,
-        tpcc_no_warehouse_f_get,
-        tpcc_no_district_f_get,
-        tpcc_no_customer_f_get,
-        tpcc_no_stock_acquired,
-        tpcc_no_item_acquired,
-        tpcc_no_commits,
-
-        tpcc_pay_txns,
-        tpcc_pay_warehouse_write,
-        tpcc_pay_warehouse_read,
-        tpcc_pay_district_write,
-        tpcc_pay_district_read,
-        tpcc_pay_customer_write,
-        tpcc_pay_warehouse_f_get,
-        tpcc_pay_district_f_get,
-        tpcc_pay_customer_f_get,
-        tpcc_pay_commits,
-
-        micro_recirc_recircs,
-
-        ycsb_read_commits,
-        ycsb_write_commits,
-
-        smallbank_amalgamate_commits,
-        smallbank_balance_commits,
-        smallbank_deposit_checking_commits,
-        smallbank_send_payment_commits,
-        smallbank_write_check_commits,
-        smallbank_transact_saving_commits,
-
+        read_commits,
+        write_commits,
         __MAX
     };
 
@@ -70,40 +37,8 @@ struct Counter {
         "remote_lock_success",
         "remote_lock_waiting",
         "switch_aborts",
-
-        "tpcc_no_txns",
-        "tpcc_no_warehouse_read",
-        "tpcc_no_district_write",
-        "tpcc_no_customer_read",
-        "tpcc_no_warehouse_f_get",
-        "tpcc_no_district_f_get",
-        "tpcc_no_customer_f_get",
-        "tpcc_no_stock_acquired",
-        "tpcc_no_item_acquired",
-        "tpcc_no_commits",
-
-        "tpcc_pay_txns",
-        "tpcc_pay_warehouse_write",
-        "tpcc_pay_warehouse_read",
-        "tpcc_pay_district_write",
-        "tpcc_pay_district_read",
-        "tpcc_pay_customer_write",
-        "tpcc_pay_warehouse_f_get",
-        "tpcc_pay_district_f_get",
-        "tpcc_pay_customer_f_get",
-        "tpcc_pay_commits",
-
-        "micro_recirc_recircs",
-
-        "ycsb_read_commits",
-        "ycsb_write_commits",
-
-        "smallbank_amalgamate_commits",
-        "smallbank_balance_commits",
-        "smallbank_deposit_checking_commits",
-        "smallbank_send_payment_commits",
-        "smallbank_write_check_commits",
-        "smallbank_transact_saving_commits",
+        "read_commits",
+        "write_commits",
     };
 
     // std::atomic<uint64_t> counters[__MAX]{};

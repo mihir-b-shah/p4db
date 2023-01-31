@@ -1,8 +1,8 @@
 #pragma once
 
 
-#include "db/defs.hpp"
-#include "db/util.hpp"
+#include "ee/defs.hpp"
+#include "utils/util.hpp"
 
 #include <array>
 #include <atomic>

@@ -1,6 +1,6 @@
 #include "tuple_put_res.hpp"
 
-#include "db/config.hpp"
+#include "main/config.hpp"
 
 
 TuplePutResHandler::TuplePutResHandler() : counts(Config::instance().num_txn_workers) {}

@@ -1,12 +1,13 @@
 #include "msg_handler.hpp"
 
-#include "db/config.hpp"
-#include "db/database.hpp"
+#include "main/config.hpp"
+#include "ee/database.hpp"
 
 
 MessageHandler::MessageHandler(Database& db, Communicator* comm)
     : db(db), comm(comm), tid(comm->mh_tid), init(comm), barrier(comm) {
     comm->set_handler(this);
+	open_futures.reserve(NUM_FUTURES);
 }
 
 
@@ -16,7 +17,8 @@ msg::id_t MessageHandler::set_new_id(msg::Header* msg) {
 
 void MessageHandler::add_future(msg::id_t msg_id, AbstractFuture* future) {
     //printf("Inserting for msg_id=%lu, future=%p\n", msg_id.value, future);
-    open_futures.insert(msg_id, future);
+	// TODO: does open_futures need to be atomic?
+    open_futures.insert({msg_id, future});
 }
 
 
@@ -77,9 +79,10 @@ void MessageHandler::handle(Pkt_t* pkt, msg::TupleGetRes* res) {
 
     try {
         //printf("LINE: %d Erasing msg_id %lu\n", __LINE__, res->msg_id.value);
-        auto future = open_futures.erase(res->msg_id);
-        //printf("LINE: %d Erased msg_id %lu with val=%p\n", __LINE__, res->msg_id.value, future);
+		AbstractFuture* future = open_futures[res->msg_id];
+        open_futures.erase(res->msg_id);
         future->set_pkt(pkt);
+        //printf("LINE: %d Erased msg_id %lu with val=%p\n", __LINE__, res->msg_id.value, future);
     } catch (...) {
         std::cerr << "Received msg_id=" << res->msg_id << " without future.\n";
         pkt->free();
@@ -118,9 +121,10 @@ void MessageHandler::handle(Pkt_t* pkt, msg::SwitchTxn* txn) {
 
     try {
         //printf("LINE: %d Erasing msg_id %lu\n", __LINE__, txn->msg_id.value);
-        auto future = open_futures.erase(txn->msg_id);
-        //printf("LINE: %d Erased msg_id %lu with val=%p\n", __LINE__, txn->msg_id.value, future);
+		AbstractFuture* future = open_futures[txn->msg_id];
+        open_futures.erase(txn->msg_id);
         future->set_pkt(pkt);
+        //printf("LINE: %d Erased msg_id %lu with val=%p\n", __LINE__, txn->msg_id.value, future);
     } catch (...) {
         std::cerr << "Received msg_id=" << txn->msg_id << " without future.\n";
         pkt->free();

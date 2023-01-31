@@ -2,9 +2,9 @@
 
 
 #include "comm/msg.hpp"
-#include "db/errors.hpp"
-#include "db/hex_dump.hpp"
-#include "db/spinlock.hpp"
+#include "ee/errors.hpp"
+#include "utils/hex_dump.hpp"
+#include "utils/spinlock.hpp"
 #include "dpdk_lib/dpdk.hpp"
 #include "server.hpp"
 

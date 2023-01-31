@@ -204,9 +204,9 @@ layout_t::layout_t(const std::vector<txn_t>& txns)
 		key_cts_(keys_sorted_.begin(), keys_sorted_.end()) {
 
     // naive_spray_impl(txns);
-    freq_heuristic_impl(txns);
+    // freq_heuristic_impl(txns);
 	// better_random_impl(txns);
-	// random_spray_impl(txns);
+	random_spray_impl(txns);
 }
 
 size_t layout_t::get_key_ct(db_key_t key) const {

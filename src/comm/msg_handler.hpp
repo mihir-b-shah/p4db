@@ -2,10 +2,10 @@
 
 #include "comm/comm.hpp"
 #include "comm/msg.hpp"
-#include "db/config.hpp"
-#include "db/defs.hpp"
-#include "db/errors.hpp"
-#include "db/future.hpp"
+#include "main/config.hpp"
+#include "ee/defs.hpp"
+#include "ee/errors.hpp"
+#include "ee/future.hpp"
 #include "handlers/barrier.hpp"
 #include "handlers/init.hpp"
 #include "handlers/tuple_put_res.hpp"
@@ -35,11 +35,8 @@ struct MessageHandler {
     BarrierHandler barrier;
     TuplePutResHandler putresponses;
 
-
-    std::atomic<msg::id_t::type> next_id{0};
-    // ArrayHashMap<msg::id_t, AbstractFuture*, NUM_FUTURES> open_futures;    // HINT Not 100% threadsafe
-    std::unordered_map<msg::id_t, AbstractFuture*, NUM_FUTURES> open_futures;
-
+    std::atomic<msg::id_t> next_id{0};
+	std::unordered_map<msg::id_t, AbstractFuture*> open_futures;
 
     MessageHandler(Database& db, Communicator* comm);
     MessageHandler(MessageHandler&&) = default;

@@ -100,7 +100,7 @@ subdir('src')
 
 
 p4db_bin = executable('p4db', 
-    main_source + project_sources, 
+    project_sources, 
     include_directories : project_includes, 
     dependencies : project_deps,
     link_with : project_libs

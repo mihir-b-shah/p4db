@@ -1,10 +1,16 @@
 
-
 project_headers += files(
-    'zipf.hpp',
-    'dist.hpp',
+    'buffers.hpp',
+    'hex_dump.hpp',
+    'mempools.hpp',
+    'spinlock.hpp',
+    'ts_factory.hpp',
+    'util.hpp',
 )
 
 
-project_sources += files(
+project_sources += files (
+    'hex_dump.cpp',
+    'util.cpp',
+	'ts_factory.cpp',
 )

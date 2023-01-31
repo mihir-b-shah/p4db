@@ -95,7 +95,7 @@ batch_iter_t get_batch_iter(workload_e wtype);
 #define N_PORT_GROUPS 8
 #define RECIRC_PORT 8
 #define IPB_SIZE 500
-#define N_LOCKS 3
+#define N_LOCKS 31
 
 typedef size_t sw_txn_id_t;
 

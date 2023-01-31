@@ -1,6 +1,6 @@
 #include "barrier.hpp"
 
-#include "db/config.hpp"
+#include "main/config.hpp"
 
 
 BarrierHandler::BarrierHandler(Communicator* comm) : comm(comm) {
