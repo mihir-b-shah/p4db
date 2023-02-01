@@ -1,0 +1,112 @@
+
+/*
+Needs to generate w.r.t. remote key frac, for the hot and cold set.
+For reasonable results, this should be a spectrum.
+e.g. 100% for hot set --> 0% for cold set.
+- we want it to decay with the key popularity.
+*/
+
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+	static final int K_ZIPF = 80;
+	static final int N_OPS = 16;
+	static final int N_TXNS = 100_000;
+	static final int N_NODES = 2;
+	static final int N_KEYS = 100_000_000;
+	static final int HOT_LIM_P_DIST = 100;
+	static final int COLD_LIM_P_DIST = 0;
+
+	/*
+	genKey() 16 times.
+	*/
+
+	static String getTxnLine(long[] arr) {
+		StringBuilder line = new StringBuilder();
+		for (int i = 0; i<N_OPS; ++i) {
+			line.append(arr[i]);
+			line.append(',');
+		}
+		line.deleteCharAt(line.length()-1);
+		return line.toString();
+	}
+
+	static void genUniqueKeys(long[] fill, ScrambledZipfianGenerator suppl) {
+		for (int i = 0; i<N_OPS; ++i) {
+			while (true) {
+				fill[i] = suppl.nextValue();
+				boolean unique = true;
+				for (int j = 0; j<i; ++j) {
+					unique &= (fill[i] != fill[j]);
+				}
+				if (unique) {
+					break;
+				}
+			}
+		}
+	}
+
+	static long getKey(long keyBase, int node) {
+		return (N_KEYS/N_NODES * node) + keyBase;
+	}
+
+	public static void main(String[] args) throws IOException {
+		ScrambledZipfianGenerator[] generators = new ScrambledZipfianGenerator[N_NODES];
+		long[][][] txns = new long[N_NODES][N_TXNS][N_OPS];
+
+		for (int i = 0; i<N_NODES; ++i) {
+			HashMap<Long, Integer> keyCts = new HashMap<>();
+			generators[i] = new ScrambledZipfianGenerator(0, (N_KEYS-1)/N_NODES, (double) K_ZIPF/100);
+			for (int t = 0; t<N_TXNS; ++t) {
+				genUniqueKeys(txns[i][t], generators[i]);
+			}
+
+			long[][] nodeTxns = txns[i];
+			int maxCt = 0;
+
+			for (long[] txn : nodeTxns) {
+				for (long op : txn) {
+					if (!keyCts.containsKey(op)) {
+						keyCts.put(op, 0);
+					}
+					keyCts.put(op, 1+keyCts.get(op));
+					maxCt = Math.max(maxCt, keyCts.get(op));
+				}
+			}
+
+			String fname = String.format("node%d_z%d_N%d_n%d_k%d_h%d_c%d_txns.csv",
+				i, K_ZIPF, N_TXNS, N_OPS, N_KEYS, HOT_LIM_P_DIST, COLD_LIM_P_DIST);
+			PrintWriter outFile = new PrintWriter(new File(fname));
+
+			outFile.println(keyCts.toString());
+			for (Map.Entry<Long, Integer> entry : keyCts.entrySet()) {
+				System.out.printf("v: %d\n", entry.getValue());
+				entry.setValue(COLD_LIM_P_DIST+(HOT_LIM_P_DIST - COLD_LIM_P_DIST)*entry.getValue()/maxCt);
+				assert(entry.getValue() >= COLD_LIM_P_DIST && entry.getValue() <= HOT_LIM_P_DIST);
+			}
+			outFile.println(keyCts.toString());
+
+			for (long[] txn : nodeTxns) {
+				for (int j = 0; j<txn.length; ++j) {
+					int distFrac = keyCts.get(txn[j]);
+					int rand = (int) (100*Math.random());
+					outFile.printf("op: %d, rand: %d, distFrac: %d\n", txn[j], rand, distFrac);
+					if (rand < distFrac) {
+						// randomly pick something from one of our nodes.
+						txn[j] = getKey(txn[j], (int) (Math.random()*N_NODES));
+					} else {
+						// its my version
+						txn[j] = getKey(txn[j], i);
+					}
+				}
+
+				outFile.println(getTxnLine(txn));
+			}
+			outFile.flush();
+			outFile.close();
+			System.out.printf("Done! %d\n", nodeTxns.length);
+		}
+	}
+}

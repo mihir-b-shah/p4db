@@ -22,15 +22,23 @@ int main(int argc, char** argv) {
     std::vector<std::thread> workers;
     workers.reserve(config.num_txn_workers);
 
-	// TODO: feed the txns.
-	std::vector<Txn> txns;
+	std::vector<std::vector<Txn>> per_core_txns(config.num_txn_workers);
+	for (size_t i = 0; i < config.num_txn_workers; ++i) {
+		per_core_txns[i].reserve(config.trace_txns.size() / config.num_txn_workers);
+	}
+	for (size_t j = 0; j < config.num_txns; ++j) {
+		for (size_t i = 0; i < config.num_txn_workers; ++i) {
+			const Txn& txn = config.trace_txns[(j*config.num_txn_workers+i) % config.trace_txns.size()];
+			per_core_txns[i].push_back(txn);
+		}
+	}
 
     for (uint32_t i = 0; i < config.num_txn_workers; ++i) {
         workers.emplace_back(std::thread([&, i]() {
             const WorkerContext::guard worker_ctx;
             pin_worker(i);
 			db.msg_handler->barrier.wait_workers();
-			txn_executor(db, txns);
+			txn_executor(db, per_core_txns[i]);
         }));
     }
 
