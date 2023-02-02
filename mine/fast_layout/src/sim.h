@@ -16,11 +16,11 @@
 typedef size_t db_key_t;
 
 #define N_STAGES 18
-#define REGS_PER_STAGE 2
+#define REGS_PER_STAGE 1
 #define SLOTS_PER_REG (14000000/(REGS_PER_STAGE*N_STAGES))
 #define MAX_BATCH 10000
 #define FRAC_HOT 0.001
-#define N_MAX_HOT_OPS 8
+#define N_MAX_HOT_OPS 12
 
 struct tuple_loc_t {
     size_t stage;

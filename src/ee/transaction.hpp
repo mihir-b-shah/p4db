@@ -49,7 +49,6 @@ struct TransactionBase {
         db.get_casted(KV::TABLE_NAME, kvs);
 	}
 
-
     RC execute(Txn& arg) {
         ts = ts_factory.get();
         // std::stringstream ss;

@@ -131,53 +131,22 @@ void layout_t::freq_heuristic_impl(const std::vector<txn_t>& txns) {
 }
 
 void layout_t::better_random_impl(const std::vector<txn_t>& txns) { 
-	typedef std::unordered_map<db_key_t, std::unordered_map<db_key_t, size_t>> adj_mat_t;
-	adj_mat_t adj_mat;
-    for (const txn_t& txn : txns) {
-        for (db_key_t op : txn.ops) {
-            if (adj_mat.find(op) == adj_mat.end()) {
-                adj_mat.insert({op, {}});
-            }
-            for (db_key_t op2 : txn.ops) {
-                if (op != op2) {
-                    if (adj_mat[op].find(op2) == adj_mat[op].end()) {
-                        adj_mat[op].insert({op2, 0});
-                    }
-                    adj_mat[op][op2] += 1;
-                }
-            }
-        }
-    }
-
     size_t idx_to_alloc[N_STAGES][REGS_PER_STAGE] = {{0}};
     for (const auto& pr : keys_sorted_) {
         db_key_t k = pr.first;
-        const std::unordered_map<db_key_t, size_t>& adj_freqs = adj_mat.find(k)->second;
-        // printf("k: %lu, adj_mat.size(): %lu\n", k, adj_freqs.size());
-
-        size_t reg_freqs[N_STAGES][REGS_PER_STAGE] = {{0}};
-
-        for (const auto& adj : adj_freqs) {
-            if (forward_.find(adj.first) != forward_.end()) {
-                tuple_loc_t tl = forward_[adj.first];
-                // printf("\t\ts=%lu, r=%lu, i=%lu\n", tl.stage, tl.reg, tl.idx);
-                reg_freqs[tl.stage][tl.reg] += 1;
-            }
-        }
 
         size_t s_low = 0;
         size_t r_low = 0;
         for (size_t s = 0; s<N_STAGES; ++s) {
             for (size_t r = 0; r<REGS_PER_STAGE; ++r) {
-                if (reg_freqs[s][r] < reg_freqs[s_low][r_low]) {
-                    s_low = s;
-                    r_low = r;
-                }
+                if (idx_to_alloc[s_low][r_low] > idx_to_alloc[s][r]) {
+					s_low = s;
+					r_low = r;
+				}
             }
         }
 
         tuple_loc_t loc = {s_low, r_low, idx_to_alloc[s_low][r_low]++};
-        // printf("\tassigned: s=%lu, r=%lu, i=%lu: freq=%lu\n", loc.stage, loc.reg, loc.idx, reg_freqs[s_low][r_low]);
         forward_[k] = loc;
         backward_per_reg_[loc.stage][loc.reg].insert({loc.idx, k});
     }
