@@ -41,3 +41,5 @@ public:
 	std::string trace_fname;
 	std::vector<Txn> trace_txns;
 };
+
+void load_txns(Config& config);

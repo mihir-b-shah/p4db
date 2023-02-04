@@ -7,7 +7,7 @@ project_headers += files(
     'errors.hpp',
     'future.hpp',
 	'table.hpp',
-    'transaction.hpp',
+    'executor.hpp',
     'types.hpp',
 	'partition.hpp',
     'undolog.hpp',
@@ -18,4 +18,5 @@ project_headers += files(
 project_sources += files (
     'undolog.cpp',
 	'switch.cpp',
+    'executor.cpp',
 )

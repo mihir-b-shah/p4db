@@ -72,7 +72,6 @@ void UDPCommunicator::send(msg::node_t target, Pkt_t*& pkt) {
     {
         const std::lock_guard<lock_t> lock(mutex); // Interestingly locking is faster
         len = sendto(sock, pkt, pkt->size(), 0, (const struct sockaddr*)&addresses[target], sizeof(struct sockaddr_in));
-        //printf("Sent msg of size %d\n", len);
     }
 
     if (len != pkt->size()) {

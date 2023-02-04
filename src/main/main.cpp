@@ -1,13 +1,22 @@
 
 #include "main/config.hpp"
 #include "ee/database.hpp"
-#include "ee/transaction.hpp"
+#include "ee/executor.hpp"
 #include "ee/table.hpp"
+
+#include <cassert>
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <cstring>
+#include <iostream>
 
 int main(int argc, char** argv) {
     auto& config = Config::instance();
     config.parse_cli(argc, argv);
+
 	// config should get the txns from the trace.
+	load_txns(config);
 
     Database db;
 	auto table = db.make_table<StructTable>(KV::TABLE_NAME, config.table_size);

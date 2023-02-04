@@ -12,10 +12,11 @@ import java.util.*;
 public class Main {
 
 	static final int K_ZIPF = 80;
+	static final double K_ROOT_RELAX = 0.1;
 	static final int N_OPS = 16;
 	static final int N_TXNS = 100_000;
 	static final int N_NODES = 2;
-	static final int N_KEYS = 100_000_000;
+	static final int N_KEYS = 10_000_000;
 	static final int HOT_LIM_P_DIST = 100;
 	static final int COLD_LIM_P_DIST = 0;
 
@@ -80,19 +81,21 @@ public class Main {
 				i, K_ZIPF, N_TXNS, N_OPS, N_KEYS, HOT_LIM_P_DIST, COLD_LIM_P_DIST);
 			PrintWriter outFile = new PrintWriter(new File(fname));
 
-			outFile.println(keyCts.toString());
+			/*
 			for (Map.Entry<Long, Integer> entry : keyCts.entrySet()) {
-				System.out.printf("v: %d\n", entry.getValue());
-				entry.setValue(COLD_LIM_P_DIST+(HOT_LIM_P_DIST - COLD_LIM_P_DIST)*entry.getValue()/maxCt);
+				System.out.println(entry.getValue());
+				double v = (double) entry.getValue()/maxCt;
+				v = Math.pow(v, K_ROOT_RELAX);
+				entry.setValue(COLD_LIM_P_DIST+(int) ((HOT_LIM_P_DIST - COLD_LIM_P_DIST)*v));
 				assert(entry.getValue() >= COLD_LIM_P_DIST && entry.getValue() <= HOT_LIM_P_DIST);
 			}
-			outFile.println(keyCts.toString());
+			*/
 
 			for (long[] txn : nodeTxns) {
 				for (int j = 0; j<txn.length; ++j) {
-					int distFrac = keyCts.get(txn[j]);
+					int distFrac = 10; // TODO keyCts.get(txn[j]);
 					int rand = (int) (100*Math.random());
-					outFile.printf("op: %d, rand: %d, distFrac: %d\n", txn[j], rand, distFrac);
+					// outFile.printf("op: %d, rand: %d, distFrac: %d\n", txn[j], rand, distFrac);
 					if (rand < distFrac) {
 						// randomly pick something from one of our nodes.
 						txn[j] = getKey(txn[j], (int) (Math.random()*N_NODES));
@@ -104,6 +107,7 @@ public class Main {
 
 				outFile.println(getTxnLine(txn));
 			}
+
 			outFile.flush();
 			outFile.close();
 			System.out.printf("Done! %d\n", nodeTxns.length);

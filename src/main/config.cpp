@@ -52,6 +52,7 @@ void Config::parse_cli(int argc, char** argv) {
         ("verify", "Run verification, like table consistency checks for TPC-C ", cxxopts::value<bool>()->default_value("false"))
         ("num_txns", "", cxxopts::value<uint64_t>())
         ("write_prob", "", cxxopts::value<int>())
+        ("table_size", "", cxxopts::value<uint64_t>())
         ("hot_size", "", cxxopts::value<uint64_t>())
 		("trace_fname", "", cxxopts::value<std::string>())
         ("h,help", "Print usage")
@@ -68,27 +69,31 @@ void Config::parse_cli(int argc, char** argv) {
     num_nodes = result.as<uint32_t>("num_nodes");
     num_txn_workers = result.as<uint32_t>("num_txn_workers");
 
-    int coord_sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    struct hostent* coord = gethostbyname("candyland.cs.utexas.edu");
-    struct sockaddr_in coord_addr; 
-    memset(&coord_addr, 0, sizeof(coord_addr));
-    coord_addr.sin_family = AF_INET;
-    memcpy(&(coord_addr.sin_addr.s_addr), coord->h_addr, coord->h_length);
-    coord_addr.sin_port = htons(5001);
-    char coord_buf[201] = {};
+	if constexpr (DYNAMIC_IPS) {
+		int coord_sockfd = socket(AF_INET, SOCK_STREAM, 0);
+		struct hostent* coord = gethostbyname("candyland.cs.utexas.edu");
+		struct sockaddr_in coord_addr; 
+		memset(&coord_addr, 0, sizeof(coord_addr));
+		coord_addr.sin_family = AF_INET;
+		memcpy(&(coord_addr.sin_addr.s_addr), coord->h_addr, coord->h_length);
+		coord_addr.sin_port = htons(5001);
+		char coord_buf[201] = {};
 
-    // does zero-length packet screw up tcp/congestion control?
-    connect(coord_sockfd, (struct sockaddr*) &coord_addr, (socklen_t) sizeof(struct sockaddr_in));
-    send(coord_sockfd, coord_buf, 1, 0);
-    recvfrom(coord_sockfd, coord_buf, 200, 0, NULL, 0);
+		// does zero-length packet screw up tcp/congestion control?
+		connect(coord_sockfd, (struct sockaddr*) &coord_addr, (socklen_t) sizeof(struct sockaddr_in));
+		send(coord_sockfd, coord_buf, 1, 0);
+		recvfrom(coord_sockfd, coord_buf, 200, 0, NULL, 0);
 
-    char* ip_token = strtok(coord_buf, " ");
-    while (ip_token != NULL) {
-		// note, we need the mac address of the SWITCH, to send stuff.
-		// we dont need it for the servers.
-        servers.emplace_back(ip_token, 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
-        ip_token = strtok(NULL, " ");
-    }
+		char* ip_token = strtok(coord_buf, " ");
+		while (ip_token != NULL) {
+			// note, we need the mac address of the SWITCH, to send stuff.
+			// we dont need it for the servers.
+			servers.emplace_back(ip_token, 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+			ip_token = strtok(NULL, " ");
+		}
+	} else {
+		servers.emplace_back("127.0.0.1", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+	}
 
     if (servers.size() < num_nodes) {
         throw std::runtime_error("Insufficient servers specified");
@@ -101,6 +106,8 @@ void Config::parse_cli(int argc, char** argv) {
         }
         csv_file_cycles = result.as<std::string>("csv_file_cycles");
     }
+
+	trace_fname = result.as<std::string>("trace_fname");
 
     use_switch = result.as<bool>("use_switch");
     if (result.count("verify")) {
@@ -123,38 +130,5 @@ void Config::parse_cli(int argc, char** argv) {
 
     if (!use_switch) {
         switch_entries = 0;
-    }
-
-	// read txns in from trace.	
-    std::ifstream fin(trace_fname);
-    std::string buf;
-
-    while (!fin.eof()) {
-        std::getline(fin, buf);
-        if (buf.size() == 0) {
-            continue;
-        }
-        std::string access;
-        std::istringstream ss(buf);
-        trace_txns.emplace_back();
-		Txn& txn = trace_txns.back();
-		size_t i = 0;
-        while (std::getline(ss, access, ',')) {
-			if (txn.ops[NUM_OPS-1].mode != AccessMode::INVALID) {
-				assert(false && "Txn is already full- error.");
-			}
-			Txn::OP op;	
-			/*	We decide the mode based on rw percentage, from the config.
-				The value is just a txn number, so we can do easy serializability
-				checking */
-			op.id = std::stoull(access);
-			if ((rand() % 100) < write_prob) {
-				op.mode = AccessMode::WRITE;
-			} else {
-				op.mode = AccessMode::READ;
-			}
-			op.value = static_cast<uint32_t>(1 + trace_txns.size());
-			txn.ops[i++] = op;
-        }
     }
 }

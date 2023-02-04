@@ -39,6 +39,7 @@ constexpr auto STATS_CYCLE_SAMPLE_TIME = 10ms; //100us;
 constexpr auto STATS_PERIODIC_SAMPLE_TIME = 500ms;
 constexpr auto PERIODIC_CSV_FILENAME = "periodic.csv";
 constexpr auto SINGLE_NUMA = false;
+constexpr bool DYNAMIC_IPS = false;
 
 namespace error {
 
@@ -49,5 +50,5 @@ constexpr bool DUMP_SWITCH_PKTS = false;
 } // namespace error
 
 // constexpr uint64_t NUM_KVS = 10'000'000;
-constexpr int NUM_OPS = 8;
+constexpr int NUM_OPS = 16;
 

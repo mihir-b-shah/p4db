@@ -13,6 +13,7 @@ void pin_worker(uint32_t core, pthread_t pid /*= pthread_self()*/) {
     core += 2
     #endif
 
+	// TODO: fix this.
     constexpr auto NUM_SOCKETS = 2;
     constexpr auto NUM_HYPERTHREADS = 1;
     static const auto cpu_map = []() {

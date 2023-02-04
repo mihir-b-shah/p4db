@@ -6,5 +6,6 @@ project_headers += files(
 
 project_sources += files (
     'config.cpp',
+    'loader.cpp',
     'main.cpp',
 )
