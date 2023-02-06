@@ -1,0 +1,16 @@
+
+- Txn generator
+	Anshul's idea of taking the root
+	I just need some nice reasonable distribution.
+
+- Switch-based scheduling of tenants in the control plane.
+	*	I am ignoring the core tradeoff space of, how much should we wait to get a bigger alloc, mainly
+		for simplicity. Right now, we just alloc whatever we can with 0 wait. 
+	*	See, how much of a problem this is. If not, don't complicate the impl.
+	*	If implementing, we basically need to walk the map, figure out until what point we want stuff,
+		and then update those timestamps.
+		
+
+
+
+
