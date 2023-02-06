@@ -1,0 +1,56 @@
+
+-----------
+Design doc
+-----------
+
+Use s3/test/test_packet.c as a model for how to use the packet rx/tx functionality.
+We also need to integrate into the existing p4db control plane.
+Also note the functions in include/s3/switch_utils.h for switch packet alloc/free,
+	switch_pktdriver_pkt_tx.
+
+How do nodes interact with the control plane?
+-	At the end of every batch (and the start of execution), they send a DONE/NEW ALLOC
+	message to the switch CPU. This tells by when they would like their next allocation
+	to be available.
+-	We also send a list of 2nd pass keys to the switch cpu, per node of a tenant, which
+	serially determines which locks correspond to which bit. This otherwise is quite
+	expensive, and requires lots of broadcasts, etc. in a decentralized fashion. Furthermore,
+	this is a very cheap computation. There are only ~300 2nd-pass keys, and we just need
+	to assign them to locks.
+-	Critically, the switch does NOT need to know timing estimates per tenant (the tenant
+	provides this information via the message), nor the layouts (we just allocate via a bitmap).
+	It DOES need to have a histogram/pdf of the virtual layout's frequency distribution, 
+	to assess the marginal utility of more switch resources.
+-	How can allocation work? Virtual layouts are maintained per tenant (replicated on all nodes
+	controlled by the tenant). A virtual layout is simply a list of keys we want to place per
+	register, in descending order of frequency. We observe there is no reason for imbalances in
+	available switch memory per stage, nor reasons why tenants would like an imbalance in their
+	allocation.
+		*	We might ask, what about dependencies? This is accomplished via a single dependency
+			allowance- i.e. reserve the first M stages for regular stuff, and then 1 stage later
+			for dependent stuff. This works for every workload we survey.
+		*	Ok, so then we can just do time-wise bitmap allocation, unified (not per-register).
+		*	So then, for the bitmaps I provide, those numbers become the mappings. The bitmap
+			granularity needs to be fat enough where our messages back to clients are small enough.
+
+-----------------------------
+Interfaces & Data structures
+-----------------------------
+
+Our code should have two interfaces:
+-	handle_alloc_req(tenant_id, duration_from_now_I_need_alloc) -> <virt_to_phy_map>
+		*	How are these timestamps synchronized? (They don't need to be- this is a duration, not
+			a timestamp)
+-	lock_info()- for the lock info. TBD.
+
+handle_alloc_req():
+-	Suppose each tenant wants to accelerate ~1000 keys, then this takes roughly (including all tables,
+	maybe 16 bytes per key? So this is 16 kB. So in say 5 stages (20 registers)- let's forget about
+	dependencies for now- we have 5 MB (technically 6, but ignore that for now). This means we can
+	support ~300 tenants (which is quite large)- means across 40 nodes, we can support 7 tenants
+	per node, if each node gets 8 cores total- at any given time. Suppose cold/hot time multiplexing
+	gives 2x utilization improvement. That's still a LOT of tenants. But maybe not using all the
+	compute/memory resources per stage is ok- p4 compiler can put other things there, in a multi-tenant
+	environment. Ok, so maybe let's just use 256 kB per stage (instead of 1 MB).
+-	One extreme- every unified slot is a bit. Then we will have 256 kB per stage, and thus ~16000 slots.
+	Maybe have one bit per 64 unified slots. So now there are only 250 slots, which seems reasonable.
