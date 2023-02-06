@@ -4,13 +4,33 @@
 	I just need some nice reasonable distribution.
 
 - Switch-based scheduling of tenants in the control plane.
-	*	I am ignoring the core tradeoff space of, how much should we wait to get a bigger alloc, mainly
-		for simplicity. Right now, we just alloc whatever we can with 0 wait. 
-	*	See, how much of a problem this is. If not, don't complicate the impl.
-	*	If implementing, we basically need to walk the map, figure out until what point we want stuff,
-		and then update those timestamps.
-		
+	* Let's assume everyone does similar amounts of work in the cold side. (That's not true, but
+	  it simplifies things). Then we can just use a priority queue.
+	* A set is better. But this has complex scheduling policies- e.g. how much of stuff before vs
+	  after to permit, what to allow, etc?
+	* Better statistical determination of what to allow.
 
+	size_t n_acquired = 0;
+	struct blk_meta_t dummy_key(N_BLOCKS, my_start_ts);	
+	auto blk_set_it = blocks_sorted.upper_bound(dummy_key);
+	if (blk_set_it != blocks_sorted.begin()) {
+		// there is room to the left.
+		--blk_set_it;
+		while (tenant_info[tenant_id].want_more(n_acquired, 0)) {
+			// our timestamp will go forward, so this is safe.
+			block_id_t block_id = blk_set_it->blk_id;
+			block_queue[block_id].push(tenant_id);
+			my_blocks[n_acquired++] = block_id;
 
+			auto curr_it = blk_set_it;
+			if (blk_set_it == blocks_sorted.begin()) {
+				break;
+			} else {
+				--blk_set_it;
+			}
 
-
+			auto node_handle = blocks_sorted.extract(curr_it);
+			node_handle.value().est_finish_ts = my_finish_ts;
+			blocks_sorted.insert(std::move(node_handle));
+		}
+	}
