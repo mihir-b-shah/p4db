@@ -24,6 +24,7 @@ struct state_t {
 	unsigned duration;
 	unsigned wait;
 	unsigned i_resume;
+	unsigned i_alloc;
 };
 
 static size_t notify_list_len = 0;
@@ -60,9 +61,11 @@ int main() {
 					state[t].blk_len = handle_alloc(
 						t, state[t].wait, state[t].duration, &state[t].blks[0]);
 					state[t].state = state_e::WAIT;
+					state[t].i_alloc = i;
 					break;
 				case state_e::WAIT:
 					if (ready_bitmap[t]) {
+						printf("Tenant %lu waited for %lu ticks, expected %u ticks.\n", t, i-state[t].i_alloc, state[t].wait);
 						state[t].state = state_e::RUN;
 						state[t].i_resume = i + state[t].duration + gen_noise();
 					}

@@ -117,13 +117,14 @@ size_t handle_alloc(size_t tenant_id, size_t start_delay, size_t duration, block
 	size_t n_wait = 0;
 
 	while (!blocks_sorted.empty()) {
-		size_t est_wait_time = blocks_sorted.top().est_finish_ts >= my_start_ts ? blocks_sorted.top().est_finish_ts - my_start_ts : 0;
+		blk_meta_t& meta = blocks_sorted.top();
+		size_t est_wait_time = meta.est_finish_ts >= my_start_ts ? meta.top().est_finish_ts - my_start_ts : 0;
 		if (!tenant_info[tenant_id].want_more(n_acquired, est_wait_time)) {
 			break;
 		}
-		max_finish_time = std::max(max_finish_time, blocks_sorted.top().est_finish_ts + duration);
-		deq_buf.push_back(blocks_sorted.top());
-		block_id_t blk_id = blocks_sorted.top().blk_id;
+		max_finish_time = std::max(max_finish_time, meta.est_finish_ts + duration);
+		deq_buf.push_back(meta);
+		block_id_t blk_id = meta.blk_id;
 		if (!block_queue[blk_id].empty()) {
 			n_wait += 1;
 		}
