@@ -7,7 +7,7 @@
 #include <cassert>
 
 static constexpr size_t N_MICROS = 100000;
-static constexpr size_t N_TENANTS = 5;
+static constexpr size_t N_TENANTS = 128;
 
 enum class state_e {
 	ALLOC, /* init value */
@@ -30,6 +30,7 @@ struct state_t {
 static size_t notify_list_len = 0;
 static tenant_id_t notify_list[1+N_TENANTS];
 static state_t state[1+N_TENANTS];
+static size_t blk_util = 0;
 
 void print_states(size_t i) {
 	printf("Time %lu:\n", i);
@@ -56,8 +57,8 @@ int main() {
 		for (size_t t = 1; t<=N_TENANTS; ++t) {
 			switch (state[t].state) {
 				case state_e::ALLOC:
-					state[t].duration = 10 * (1+ (rand() % 5));
-					state[t].wait = 14 * (1 + (rand() % 5));
+					state[t].duration = 30; // 10 * (1+ (rand() % 5));
+					state[t].wait = 30; //14 * (1 + (rand() % 5));
 					state[t].blk_len = handle_alloc(
 						t, state[t].wait, state[t].duration, &state[t].blks[0]);
 					state[t].state = state_e::WAIT;
@@ -71,6 +72,7 @@ int main() {
 					}
 					break;
 				case state_e::RUN:
+					blk_util += state[t].blk_len;
 					if (i >= state[t].i_resume) {
 						state[t].state = state_e::FREE;
 					}
@@ -84,4 +86,6 @@ int main() {
 			}
 		}
 	}
+
+	printf("Blk util: %lu\n", blk_util);
 }

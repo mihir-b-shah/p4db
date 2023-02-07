@@ -6,9 +6,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <set>
 #include <queue>
 #include <algorithm>
-#include <functional>
 
 #define ASSERT_ON
 #ifdef ASSERT_ON
@@ -21,7 +21,7 @@ static constexpr size_t N_UNIFIED_SLOTS = 32768;
 static constexpr size_t SLOTS_PER_BLOCK = 128;
 static constexpr size_t N_BLOCKS = N_UNIFIED_SLOTS / SLOTS_PER_BLOCK;
 static constexpr size_t N_STAGES = 5;
-static constexpr size_t N_MAX_TENANTS = 100;
+static constexpr size_t N_MAX_TENANTS = 150;
 static constexpr tenant_id_t NO_TENANT = 0;
 static constexpr ts_t INIT_TS = 0;
 
@@ -47,7 +47,7 @@ class tenant_dist_info_t {
 public:
 	tenant_dist_info_t(tenant_id_t id) : id(id) {
 		// TODO: fix this number.
-		want_blocks = 100;
+		want_blocks = 4;
 	}
 
 	bool want_more(size_t curr_blocks, ts_t est_wait) {
@@ -77,8 +77,8 @@ struct tenant_reqs_t {
 	Then, create an optimal mix of stuff to the left (i.e. finishing before, resulting in 0
 	wait time but wasting space on switch), and right (finishing after, but denying me
 	switch space). */
+// static std::set<blk_meta_t, blk_meta_cmp_t> blocks_sorted;
 static std::priority_queue<blk_meta_t, std::vector<blk_meta_t>, blk_meta_g_cmp_t> blocks_sorted;
-
 static std::queue<tenant_id_t> block_queue[N_BLOCKS];
 static std::vector<tenant_dist_info_t> tenant_info;
 static tenant_reqs_t tenant_req[N_MAX_TENANTS];
@@ -116,9 +116,12 @@ size_t handle_alloc(size_t tenant_id, size_t start_delay, size_t duration, block
 	size_t max_finish_time = my_finish_ts;
 	size_t n_wait = 0;
 
-	while (!blocks_sorted.empty()) {
-		blk_meta_t& meta = blocks_sorted.top();
-		size_t est_wait_time = meta.est_finish_ts >= my_start_ts ? meta.top().est_finish_ts - my_start_ts : 0;
+	while (blocks_sorted.size() > 0) {
+		// get the next key to consider. Strategy is, first try left, then try right.
+
+		const blk_meta_t& meta = blocks_sorted.top();
+
+		size_t est_wait_time = meta.est_finish_ts >= my_start_ts ? meta.est_finish_ts - my_start_ts : 0;
 		if (!tenant_info[tenant_id].want_more(n_acquired, est_wait_time)) {
 			break;
 		}
@@ -131,6 +134,7 @@ size_t handle_alloc(size_t tenant_id, size_t start_delay, size_t duration, block
 		block_queue[blk_id].push(tenant_id);
 		my_blocks[n_acquired] = blk_id;
 		n_acquired += 1;
+
 		blocks_sorted.pop();
 	}
 
