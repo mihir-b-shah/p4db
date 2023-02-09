@@ -82,9 +82,7 @@ std::vector<txn_t> batch_iter_t::next_batch() {
                 for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
                     locks.insert(cold_txn.ops[i]);
                 }
-				printf("Considering cold=%lu, hot=%lu.\n", cold_txn.ops.size(), hot_txn.ops.size());
                 if (hot_txn.ops.size() > 0 && hot_txn.ops.size() < N_MAX_HOT_OPS) {
-					printf("Taken.\n");
 					ret.push_back(hot_txn);
                 }
 				considered_size += 1;

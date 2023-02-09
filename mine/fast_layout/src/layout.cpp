@@ -173,8 +173,8 @@ layout_t::layout_t(const std::vector<txn_t>& txns)
 		key_cts_(keys_sorted_.begin(), keys_sorted_.end()) {
 
     // naive_spray_impl(txns);
-    freq_heuristic_impl(txns);
-	// better_random_impl(txns);
+    // freq_heuristic_impl(txns);
+	better_random_impl(txns);
 	// random_spray_impl(txns);
 }
 
@@ -198,7 +198,7 @@ db_key_t layout_t::rev_lookup(size_t stage, size_t reg, size_t idx) const {
 }
 
 sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn) 
-    : port(port), id(0), pass_ct(0), orig_txn(txn), valid(true) {
+    : port(port), id(0), pass_ct(0), fail_ct(0), orig_txn(txn), valid(true) {
 
     std::array<tuple_loc_t, 100> tmp;
     size_t num_ops = txn.ops.size();
@@ -255,6 +255,8 @@ sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn)
 }
 
 std::vector<sw_txn_t> prepare_txns_sw(size_t port, const std::vector<txn_t>& txns, const layout_t& lay) {
+	static size_t num_not_accel = 0;
+
 	std::vector<sw_txn_t> sw_txns;
 	std::vector<std::vector<tuple_loc_t>> to_lock;
 	std::unordered_map<db_key_t, size_t> lock2_by_freq;
@@ -262,11 +264,34 @@ std::vector<sw_txn_t> prepare_txns_sw(size_t port, const std::vector<txn_t>& txn
 	size_t total_freq = 0;
 
 	for (const txn_t& txn : txns) {
-		to_lock.emplace_back();
 		sw_txns.emplace_back(port, lay, txn);
 		const sw_txn_t& sw_txn = sw_txns.back();
 
+		if (sw_txn.passes.size() > 2) {
+			num_not_accel += 1;
+			sw_txns.pop_back();
+			continue;
+		} else if (sw_txn.passes.size() == 2) {
+			size_t op_ct = 0;
+			const sw_pass_txn_t& pass2 = sw_txn.passes[1];
+			for (size_t s = 0; s<N_STAGES; ++s) {
+				for (size_t r = 0; r<REGS_PER_STAGE; ++r) {
+					if (pass2.grid[s][r].has_value()) {
+						op_ct += 1;
+					}
+				}
+			}
+			if (op_ct > PASS2_ACCEL_THR) {
+				num_not_accel += 1;
+				sw_txns.pop_back();
+				continue;
+			}
+		}
+
+		to_lock.emplace_back();
+
 		size_t pass2m_freqs[N_STAGES*REGS_PER_STAGE] = {};
+		assert(sw_txn.locs.size() == sw_txn.orig_txn.ops.size());
 		for (const tuple_loc_t& tl : sw_txn.locs) {
 			size_t freq_idx = tl.stage * REGS_PER_STAGE + tl.reg;
 			size_t k = lay.rev_lookup(tl.stage, tl.reg, tl.idx);
@@ -309,9 +334,9 @@ std::vector<sw_txn_t> prepare_txns_sw(size_t port, const std::vector<txn_t>& txn
 	assert(lock_idxs.size() == lock2_by_freq.size());
 
 	// now fill the locks.
-	size_t sw_txn_num = 0;
-	for (sw_txn_t& sw_txn : sw_txns) {
-		std::vector<tuple_loc_t> to_lock_tls = to_lock[sw_txn_num];
+	for (size_t i = 0; i<sw_txns.size(); ++i) {
+		sw_txn_t& sw_txn = sw_txns[i];
+		std::vector<tuple_loc_t> to_lock_tls = to_lock[i];
 
 		for (const tuple_loc_t& tl : sw_txn.locs) {
 			size_t lock_idx = lock_idxs[lay.rev_lookup(tl.stage, tl.reg, tl.idx)];
@@ -321,8 +346,9 @@ std::vector<sw_txn_t> prepare_txns_sw(size_t port, const std::vector<txn_t>& txn
 			size_t lock_idx = lock_idxs[lay.rev_lookup(tl.stage, tl.reg, tl.idx)];
 			sw_txn.locks_wanted.set(lock_idx);
 		}
-		sw_txn_num += 1;
+		assert((sw_txn.locks_wanted & sw_txn.locks_check) == sw_txn.locks_wanted);
 	}
 
+	printf("Num not accel: %lu\n", num_not_accel);
 	return sw_txns;
 }

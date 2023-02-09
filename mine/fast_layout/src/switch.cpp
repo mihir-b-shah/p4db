@@ -231,7 +231,7 @@ static bool granular_lock_OPT(sw_txn_t& txn) {
 static bool granular_lock_real(sw_txn_t& txn) {
 	static std::bitset<N_LOCKS> locks;
 
-	printf("Txn %lu, p %lu | ", txn.id, txn.pass_ct);
+	printf("Txn %lu, p %lu, f %lu | ", txn.id, txn.pass_ct, txn.fail_ct);
 	print_bitset("lglob", locks);
 	print_bitset(" chk", txn.locks_check);
 	print_bitset(" want", txn.locks_wanted);
@@ -251,6 +251,7 @@ static bool granular_lock_real(sw_txn_t& txn) {
 				return true;
 			} else {
 				txn.locks_undo = (~before) & txn.locks_wanted;
+				txn.fail_ct += 1;
 				// do a fast recirc.
 				printf("Txn %lu, p %lu | decided FALSE (2)\n", txn.id, txn.pass_ct);
 				return false;
@@ -274,8 +275,8 @@ static bool granular_lock_real(sw_txn_t& txn) {
 }
 
 bool switch_t::manage_locks(sw_txn_t& txn) {
-    // return whole_pipe_lock(txn);
-	return granular_lock_OPT(txn);
+    return whole_pipe_lock(txn);
+	// return granular_lock_OPT(txn);
 	// return granular_lock_real(txn);
 	// return true;
 }
@@ -315,8 +316,11 @@ void switch_t::run_cycle() {
 
         if (txn.passes.size() == txn.pass_ct) {
             stats::num_txns += 1;
-            mock_egress_[txn.port].push(txn_slot);
-        } else {
+            mock_egress_[txn.port].push({true, txn_slot});
+        } else if (txn.pass_ct == 0 && txn.fail_ct >= MAX_FAIL_CT && txn.locks_undo.none()) {
+			// i.e. I'm just recirculating too long, I don't have anything to undo.
+			mock_egress_[txn.port].push({false, txn_slot});
+		} else {
             txn.valid = true;
             ipb_[RECIRC_PORT].push(txn_slot);
         }
@@ -359,14 +363,18 @@ void switch_t::run_cycle() {
     }
 }
 
-std::optional<sw_txn_id_t> switch_t::recv(size_t port) {
+std::optional<std::pair<bool, sw_txn_id_t>> switch_t::recv(size_t port) {
     if (mock_egress_[port].empty()) {
         return std::nullopt;
     } else {
-        txn_pool_t::slot_id_t slot = mock_egress_[port].front();
-        sw_txn_id_t id = txn_pool_.at(slot).id;
+        std::pair<bool, txn_pool_t::slot_id_t> slot = mock_egress_[port].front();
+        sw_txn_id_t id = txn_pool_.at(slot.second).id;
         mock_egress_[port].pop();
-        txn_pool_.free(slot);
-        return id;
+        txn_pool_.free(slot.second);
+
+		std::pair<bool, sw_txn_id_t> res;
+		res.first = slot.first;
+		res.second = id;
+		return res;
     }
 }

@@ -117,8 +117,6 @@ size_t handle_alloc(size_t tenant_id, size_t start_delay, size_t duration, block
 	size_t n_wait = 0;
 
 	while (blocks_sorted.size() > 0) {
-		// get the next key to consider. Strategy is, first try left, then try right.
-
 		const blk_meta_t& meta = blocks_sorted.top();
 
 		size_t est_wait_time = meta.est_finish_ts >= my_start_ts ? meta.est_finish_ts - my_start_ts : 0;

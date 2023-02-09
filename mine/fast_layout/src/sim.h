@@ -95,7 +95,9 @@ batch_iter_t get_batch_iter(workload_e wtype);
 #define N_PORT_GROUPS 8
 #define RECIRC_PORT 8
 #define IPB_SIZE 500
-#define N_LOCKS 31
+#define N_LOCKS 32
+#define PASS2_ACCEL_THR 1
+#define MAX_FAIL_CT 8
 
 typedef size_t sw_txn_id_t;
 
@@ -114,6 +116,7 @@ struct sw_txn_t {
     size_t port;
     sw_txn_id_t id;
     size_t pass_ct;
+	size_t fail_ct;
     txn_t orig_txn;
 
     bool valid;
@@ -126,7 +129,7 @@ struct sw_txn_t {
     std::optional<tuple_loc_t> one_lock;
 
     // zero-arg constructor needed for mempool
-    sw_txn_t() : id(0), pass_ct(0), valid(true) {}
+    sw_txn_t() : id(0), pass_ct(0), fail_ct(0), valid(true) {}
     sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn);
 };
 
@@ -138,7 +141,7 @@ public:
     bool ipb_almost_full(size_t port, double thr);
     bool send(sw_txn_t txn);
     void run_cycle();
-    std::optional<sw_txn_id_t> recv(size_t port);
+    std::optional<std::pair<bool, sw_txn_id_t>> recv(size_t port);
 
 private:
     typedef sw_mempool_t<sw_txn_t, 4096> txn_pool_t;
@@ -147,7 +150,7 @@ private:
     std::queue<txn_pool_t::slot_id_t> ipb_[N_PORT_GROUPS + 1];
     std::optional<txn_pool_t::slot_id_t> parser_[N_PORT_GROUPS + 1];
     std::optional<txn_pool_t::slot_id_t> ingr_pipe_[N_STAGES];
-    std::queue<txn_pool_t::slot_id_t> mock_egress_[N_PORTS];
+    std::queue<std::pair<bool, txn_pool_t::slot_id_t>> mock_egress_[N_PORTS];
     sw_val_t regs_[N_STAGES][REGS_PER_STAGE][SLOTS_PER_REG];
     
     void run_reg_ops(size_t i);

@@ -27,6 +27,7 @@ int main() {
     size_t received = 0;
     size_t cycle = 0;
     size_t p_batch = 0;
+	size_t rejected = 0;
 
     while (1) {
         if (p_batch < sw_txns.size() && !p4_switch.ipb_almost_full(PORT, BACKOFF_THR)) {
@@ -36,15 +37,16 @@ int main() {
             p_batch += 1;
         }
         p4_switch.run_cycle();
-        received += p4_switch.recv(0).has_value();
+        auto res = p4_switch.recv(0);
+        received += res.has_value();
+		if (res.has_value() && !res.value().first) {
+			rejected += 1;
+		}
         if (received == sw_txns.size()) {
             break;
         }
         cycle += 1;
-		if (cycle > 400000) {
-			printf("Too many cycles.\n");
-			break;
-		}
     }
+	printf("Rejected: %lu\n", rejected);
     return 0;
 }
