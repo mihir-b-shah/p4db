@@ -1,5 +1,8 @@
 
 project_headers += files(
 	'declustered_layout.hpp',
-    'tuple_location.hpp',
+)
+
+project_sources += files (
+	'declustered_layout.cpp',
 )

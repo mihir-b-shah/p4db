@@ -2,9 +2,7 @@
 
 #include "comm/comm.hpp"
 #include "comm/msg.hpp"
-#include "cc_schemes/no_wait.hpp"
-#include "cc_schemes/none.hpp"
-#include "cc_schemes/wait_die.hpp"
+#include "row.hpp"
 #include "ee/errors.hpp"
 #include "utils/mempools.hpp"
 #include "ee/undolog.hpp"
@@ -99,10 +97,8 @@ struct KV {
 
 
 struct StructTable final : public Table {
-    using Row_t = Row<KV, CC_SCHEME>;
-
+    using Row_t = Row<KV>;
     using Future_t = TupleFuture<KV>;
-
 
     std::atomic<uint64_t> size{0};
     const size_t max_size;

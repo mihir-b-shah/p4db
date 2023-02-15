@@ -75,6 +75,7 @@ private:
     void naive_spray_impl(const std::vector<txn_t>& txns);
     void freq_heuristic_impl(const std::vector<txn_t>& txns);
     void better_random_impl(const std::vector<txn_t>& txns);
+    void even_better_random_impl(const std::vector<txn_t>& txns);
     void random_spray_impl(const std::vector<txn_t>& txns);
 };
 
@@ -96,7 +97,7 @@ batch_iter_t get_batch_iter(workload_e wtype);
 #define RECIRC_PORT 8
 #define IPB_SIZE 500
 #define N_LOCKS 32
-#define PASS2_ACCEL_THR 1
+#define PASS2_ACCEL_THR 2
 #define MAX_FAIL_CT 8
 
 typedef size_t sw_txn_id_t;

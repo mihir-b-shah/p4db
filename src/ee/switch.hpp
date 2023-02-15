@@ -4,6 +4,7 @@
 #include "comm/eth_hdr.hpp"
 #include "utils/buffers.hpp"
 #include "layout/declustered_layout.hpp"
+#include "main/config.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -112,7 +113,7 @@ struct instr_t {
 } __attribute__((packed));
 
 struct SwitchInfo {
-    DeclusteredLayout declustered_layout;
+    DeclusteredLayout* declustered_layout;
 
     struct MultiOp {
         Txn& ops;
@@ -120,6 +121,10 @@ struct SwitchInfo {
     struct MultiOpOut {
         std::array<uint32_t, NUM_OPS> values;
     };
+
+	SwitchInfo() {
+		declustered_layout = Config::instance().decl_layout;
+	}
 
     void make_txn(const MultiOp& arg, BufferWriter& bw);
     MultiOpOut parse_txn(const MultiOp& arg, BufferReader& br);

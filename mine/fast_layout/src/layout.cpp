@@ -152,6 +152,31 @@ void layout_t::better_random_impl(const std::vector<txn_t>& txns) {
     }
 }
 
+void layout_t::even_better_random_impl(const std::vector<txn_t>& txns) { 
+    size_t idx_to_alloc[N_STAGES][REGS_PER_STAGE] = {{0}};
+	size_t weight[N_STAGES][REGS_PER_STAGE] = {{0}};
+
+    for (const auto& pr : keys_sorted_) {
+        db_key_t k = pr.first;
+
+        size_t s_low = 0;
+        size_t r_low = 0;
+        for (size_t s = 0; s<N_STAGES; ++s) {
+            for (size_t r = 0; r<REGS_PER_STAGE; ++r) {
+                if (weight[s_low][r_low] > weight[s][r]) {
+					s_low = s;
+					r_low = r;
+				}
+            }
+        }
+
+        tuple_loc_t loc = {s_low, r_low, idx_to_alloc[s_low][r_low]++};
+		weight[s_low][r_low] += pr.second;
+        forward_[k] = loc;
+        backward_per_reg_[loc.stage][loc.reg].insert({loc.idx, k});
+    }
+}
+
 void layout_t::random_spray_impl(const std::vector<txn_t>& txns) {
     size_t idx_to_alloc[N_STAGES][REGS_PER_STAGE] = {{0}};
 	for (const auto& pr : keys_sorted_) {
@@ -174,7 +199,8 @@ layout_t::layout_t(const std::vector<txn_t>& txns)
 
     // naive_spray_impl(txns);
     // freq_heuristic_impl(txns);
-	better_random_impl(txns);
+	// better_random_impl(txns);
+	even_better_random_impl(txns);
 	// random_spray_impl(txns);
 }
 
@@ -296,17 +322,23 @@ std::vector<sw_txn_t> prepare_txns_sw(size_t port, const std::vector<txn_t>& txn
 			size_t freq_idx = tl.stage * REGS_PER_STAGE + tl.reg;
 			size_t k = lay.rev_lookup(tl.stage, tl.reg, tl.idx);
 			size_t freq = lay.get_key_ct(k);
-			if (pass2m_freqs[freq_idx] > 0) {
+
+			if (tl.idx != 0) {
 				if (lock2_by_freq.find(k) == lock2_by_freq.end()) {
 					lock2_by_freq.insert({k, 0});
 				}
-				to_lock.back().push_back(tl);
 				lock2_by_freq[k] += 1;
 				total_freq += 1;
+			}
+
+			if (pass2m_freqs[freq_idx] > 0) {
+				assert(tl.idx != 0);
+				to_lock.back().push_back(tl);
 			}
 			pass2m_freqs[freq_idx] = freq;
         }
 	}
+	printf("lock2_by_freq.size(): %lu\n", lock2_by_freq.size());
 
 	std::vector<std::pair<db_key_t, size_t>> lock2_v(lock2_by_freq.begin(), lock2_by_freq.end());
 	std::sort(lock2_v.begin(), lock2_v.end(), [](const auto& pr1, const auto& pr2){

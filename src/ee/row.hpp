@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "ee/future.hpp"
 #include "utils/spinlock.hpp"
 #include "ee/types.hpp"
@@ -13,7 +12,7 @@
 
 
 template <typename Tuple_t>
-struct Row<Tuple_t, CC_Scheme::NO_WAIT> {
+struct Row {
     using lock_t = std::mutex;
     // using lock_t = SpinLock;
     // using lock_t = tbb::queuing_mutex;
@@ -141,106 +140,3 @@ struct Row<Tuple_t, CC_Scheme::NO_WAIT> {
         return (lock_type == AccessMode::INVALID);
     }
 };
-
-
-// template<typename Tuple_t>
-// struct Row<Tuple_t, CC_Scheme::NO_WAIT> {
-//     std::shared_mutex lock;
-//     Tuple_t tuple;
-
-//     using Future_t = TupleFuture<Tuple_t>;
-
-
-//     ErrorCode local_lock(const AccessMode mode, timestamp_t, Future_t* future) {
-//         switch(mode) {
-//             case AccessMode::READ:
-//                 if (!lock.try_lock_shared()) {
-//                     return ErrorCode::READ_LOCK_FAILED;
-//                 }
-//                 break;
-//             case AccessMode::WRITE:
-//                 if (!lock.try_lock()) {
-//                     return ErrorCode::WRITE_LOCK_FAILED;
-//                 }
-//                 break;
-//             default:
-//                 return ErrorCode::INVALID_ACCESS_MODE;
-//         }
-
-//         future->tuple.store(&tuple);
-//         return ErrorCode::SUCCESS;
-//     }
-
-//     void remote_lock(Communicator& comm, Communicator::Pkt_t* pkt, msg::TupleGetReq* req) {
-//         bool failed = false;
-//         switch(req->mode) {
-//             case AccessMode::READ:
-//                 failed = !lock.try_lock_shared();
-//                 break;
-//             case AccessMode::WRITE:
-//                 failed = !lock.try_lock();
-//                 break;
-//             default:
-//                 failed = true;
-//         }
-
-//         if (failed) {
-//             auto res = req->convert<msg::TupleGetRes>();
-//             res->mode = AccessMode::INVALID;
-//             comm.send(res->sender, pkt, comm.mh_tid);   // always called from msg-handler
-//             return;
-//         }
-
-
-//         auto res = req->convert<msg::TupleGetRes>();
-//         auto size = msg::TupleGetRes::size(sizeof(tuple));
-//         pkt->resize(size);
-//         std::memcpy(res->tuple, &tuple, sizeof(tuple));
-
-//         comm.send(res->sender, pkt, comm.mh_tid);   // always called from msg-handler
-//     }
-
-//     void remote_unlock(msg::TuplePutReq* req, Communicator& comm) {
-//         if (req->mode == AccessMode::WRITE) {
-//             std::memcpy(&tuple, req->tuple, sizeof(tuple));
-//         }
-//         auto rc = local_unlock(req->mode, comm);
-//         (void) rc;
-//     }
-
-//     ErrorCode local_unlock(const AccessMode mode, Communicator&) {
-//         switch(mode) {
-//             case AccessMode::READ:
-//                 lock.unlock_shared();
-//                 break;
-//             case AccessMode::WRITE:
-//                 lock.unlock();
-//                 break;
-//             default:
-//                 return ErrorCode::INVALID_ACCESS_MODE;
-//         }
-//         return ErrorCode::SUCCESS;
-//     }
-
-//     bool check() {
-//         std::stringstream ss;
-//         bool shared = lock.try_lock_shared();
-//         if (shared) {
-//             lock.unlock_shared();
-//         } else {
-//             ss << "try_lock_shared() failed\n";
-//         }
-//         bool exclusive = lock.try_lock();
-//         if (exclusive) {
-//             lock.unlock();
-//         } else {
-//             ss << "try_lock() failed\n";
-//         }
-
-//         if (!shared || !exclusive) {
-//             std::cerr << ss.str();
-//             return false;
-//         }
-//         return true;
-//     }
-// };

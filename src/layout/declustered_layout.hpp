@@ -1,31 +1,41 @@
 #pragma once
 
-#include "tuple_location.hpp"
-
 #include <cstdint>
 #include <unordered_map>
+#include <vector>
+#include <ostream>
 
-struct DeclusteredLayout {
-    // Intel confidential
-    static constexpr auto STAGES = 64;
-    static constexpr auto REGS_PER_STAGE = 1;
-	static constexpr auto NUM_REGS = STAGES * REGS_PER_STAGE;
-    static constexpr auto REG_SIZE = 10000;
-    static constexpr auto LOCK_BITS = 2;
-    static constexpr auto PARTITIONS = STAGES * REGS_PER_STAGE;
-    static constexpr auto MAX_ACCESSES = 64;
-	static constexpr size_t NUM_INSTRS = 8;
+// Note, we don't need to know which stage, which register- just target the p4 reg spec.
+// If we were max-cut partitioning for dependencies, etc. then this might matter.
+struct TupleLocation {
+    uint8_t reg_array_id;
+    uint16_t reg_array_idx;
 
-    std::unordered_map<uint64_t, TupleLocation> switch_tuples;
+    friend std::ostream& operator<<(std::ostream& os, const TupleLocation& self) {
+        os << " reg=" << self.reg_array_id << " idx=" << self.reg_array_idx;
+        return os;
+    }
+};
 
-    bool is_hot(uint64_t idx) const { return true; }
+class DeclusteredLayout {
+public:
+	static constexpr size_t NUM_REGS = 20;
+	static constexpr size_t NUM_MAX_OPS = 8;
 
-    TupleLocation get_location(uint64_t idx) {
-		TupleLocation tl;
-		tl.stage_id = 0;
-		tl.reg_array_id = 0;
-		tl.reg_array_idx = (uint16_t) (idx & 0xffff);
-		tl.lock_bit = 0;
-		return tl;
-	}
+	// same constants from 01_control_plane, watch out
+	static constexpr size_t NUM_BLOCKS = 256;
+	static constexpr size_t NUM_KEYS_PER_BLOCK = 128;
+
+	DeclusteredLayout(const std::vector<std::pair<uint64_t, size_t>>& id_freq);
+    TupleLocation get_location(uint64_t k);
+	bool is_hot(uint64_t k);
+
+	// TODO: for now, guarantee this never happens in parallel with lookups. Is this true?
+	void update_virt_offsets(const std::vector<size_t>& blocks);
+
+private:
+	// TODO: std::unordered_map is p slow, profile and see.
+	std::unordered_map<uint64_t, TupleLocation> virt_map;
+	size_t virt_block_map[NUM_BLOCKS];
+	size_t avail_blocks;
 };

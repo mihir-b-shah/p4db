@@ -1,5 +1,3 @@
-subdir('cc_schemes')
-
 project_headers += files(
 	'args.hpp',
     'database.hpp',
@@ -8,6 +6,7 @@ project_headers += files(
     'future.hpp',
 	'table.hpp',
     'executor.hpp',
+	'row.hpp',
     'types.hpp',
 	'partition.hpp',
     'undolog.hpp',

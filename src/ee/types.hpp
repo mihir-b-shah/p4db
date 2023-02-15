@@ -63,24 +63,3 @@ struct key_t {
 static_assert(std::is_trivial<key_t>::value, "key_t is not a POD");
 
 } // namespace p4db
-
-enum class CC_Scheme {
-    NO_WAIT,
-    WAIT_DIE,
-    NONE,
-};
-
-inline std::ostream& operator<<(std::ostream& os, const CC_Scheme& scheme) {
-    switch (scheme) {
-        case CC_Scheme::NO_WAIT:
-            os << "no_wait";
-            break;
-        case CC_Scheme::WAIT_DIE:
-            os << "wait_die";
-            break;
-        case CC_Scheme::NONE:
-            os << "none";
-            break;
-    }
-    return os;
-}

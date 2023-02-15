@@ -55,6 +55,7 @@ void Config::parse_cli(int argc, char** argv) {
         ("table_size", "", cxxopts::value<uint64_t>())
         ("hot_size", "", cxxopts::value<uint64_t>())
 		("trace_fname", "", cxxopts::value<std::string>())
+		("dist_fname", "", cxxopts::value<std::string>())
         ("h,help", "Print usage")
     ;
 
@@ -92,7 +93,10 @@ void Config::parse_cli(int argc, char** argv) {
 			ip_token = strtok(NULL, " ");
 		}
 	} else {
-		servers.emplace_back("127.0.0.1", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+		for (size_t port_it = 0; port_it < num_nodes; ++port_it) {
+			servers.emplace_back("127.0.0.1", 4001+port_it, 
+				(eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+		}
 	}
 
     if (servers.size() < num_nodes) {
@@ -108,6 +112,7 @@ void Config::parse_cli(int argc, char** argv) {
     }
 
 	trace_fname = result.as<std::string>("trace_fname");
+	dist_fname = result.as<std::string>("dist_fname");
 
     use_switch = result.as<bool>("use_switch");
     if (result.count("verify")) {

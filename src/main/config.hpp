@@ -6,6 +6,7 @@
 #include "comm/server.hpp"
 #include "ee/defs.hpp"
 #include "ee/args.hpp"
+#include "layout/declustered_layout.hpp"
 #include "utils/util.hpp"
 
 #include <vector>
@@ -40,6 +41,9 @@ public:
 
 	std::string trace_fname;
 	std::vector<Txn> trace_txns;
+	
+	std::string dist_fname;
+	DeclusteredLayout* decl_layout;
 };
 
 void load_txns(Config& config);

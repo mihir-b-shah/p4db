@@ -1,6 +1,8 @@
 
 #include "ee/executor.hpp"
 
+#include <utility>
+
 RC TxnExecutor::execute(Txn& arg) {
 	ts = ts_factory.get();
 	// std::stringstream ss;
@@ -63,9 +65,7 @@ RC TxnExecutor::execute(Txn& arg) {
 }
 
 RC TxnExecutor::commit() {
-	if constexpr (CC_SCHEME != CC_Scheme::NONE) {
-		log.commit(ts);
-	}
+	log.commit(ts);
 	mempool.clear();
 	WorkerContext::get().cycl.stop(stats::Cycles::commit_latency);
 
@@ -80,9 +80,7 @@ RC TxnExecutor::commit() {
 }
 
 RC TxnExecutor::rollback() {
-	if constexpr (CC_SCHEME != CC_Scheme::NONE) {
-		log.rollback(ts);
-	}
+	log.rollback(ts);
 	mempool.clear();
 
 	// for (int i = 0; i < 128; ++i) { // abort backoff
@@ -110,9 +108,8 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, p4db::key_t key) {
 		if (!table->get(key, AccessMode::READ, future, ts)) [[unlikely]] {
 			return nullptr;
 		}
-		if constexpr (CC_SCHEME != CC_Scheme::NONE) {
-			log.add_read(table, key, future); // TODO passing future necessary?
-		}
+		log.add_read(table, key, future); // TODO passing future necessary?
+		// this should never happen, the table->get() just set the future.
 		if (!future->get()) [[unlikely]] {
 			return nullptr;
 		} // make optional for NO_WAIT
@@ -132,9 +129,7 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, p4db::key_t key) {
 	db.msg_handler->add_future(msg_id, future);
 
 	db.comm->send(loc_info.target, pkt, tid);
-	if constexpr (CC_SCHEME != CC_Scheme::NONE) {
-		log.add_remote_read(future, loc_info.target);
-	}
+	log.add_remote_read(future, loc_info.target);
 	if (!future->get()) [[unlikely]] {
 		return nullptr;
 	}
@@ -161,9 +156,7 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, p4db::key_t key) {
 		if (!table->get(key, AccessMode::WRITE, future, ts)) [[unlikely]] {
 			return nullptr;
 		}
-		if constexpr (CC_SCHEME != CC_Scheme::NONE) {
-			log.add_write(table, key, future);
-		}
+		log.add_write(table, key, future);
 		if (!future->get()) [[unlikely]] {
 			return nullptr;
 		}
@@ -183,9 +176,7 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, p4db::key_t key) {
 	db.msg_handler->add_future(msg_id, future);
 
 	db.comm->send(loc_info.target, pkt, tid);
-	if constexpr (CC_SCHEME != CC_Scheme::NONE) {
-		log.add_remote_write(future, loc_info.target);
-	}
+	log.add_remote_write(future, loc_info.target);
 	if (!future->get()) [[unlikely]] {
 		return nullptr;
 	}
@@ -203,9 +194,7 @@ TupleFuture<KV>* TxnExecutor::insert(StructTable* table) {
 	if (!table->get(key, AccessMode::WRITE, future, ts)) [[unlikely]] {
 		return nullptr;
 	}
-	if constexpr (CC_SCHEME != CC_Scheme::NONE) {
-		log.add_write(table, key, future);
-	}
+	log.add_write(table, key, future);
 	if (!future->get()) [[unlikely]] {
 		return nullptr;
 	}
@@ -236,11 +225,67 @@ SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Switc
 	return future;
 }
 
+class TxnIterator {
+public:
+	TxnIterator(std::vector<Txn>& txns) : txns(txns), p(0) {}
+	Txn& next() {
+		assert(p <= txns.size());
+		if (p == txns.size()) {
+			p = 0;
+		}
+		return txns[p];
+	}
+
+private:
+	std::vector<Txn>& txns;
+	size_t p;
+};
+
+/*
+We assume a static key distribution. As such, when generating the txn vector, let us remap
+keys such that keys are assigned id's in decreasing order of popularity. That way, we don't
+need to re-create a map each batch to say whether a key is hot or not.
+*/
+static std::pair<Txn, Txn> get_hot_cold(const Txn& txn, DeclusteredLayout* layout) {
+	Txn hot_txn, cold_txn;
+	size_t hot_p = 0, cold_p = 0;
+
+	size_t i = 0;
+	while (txn.ops[i].mode != AccessMode::INVALID) {
+		if (layout->is_hot(txn.ops[i].id)) {
+			hot_txn.ops[hot_p++] = txn.ops[i];
+		} else {
+			cold_txn.ops[cold_p++] = txn.ops[i];
+		}
+		i += 1;
+	}
+	return {hot_txn, cold_txn};
+}
+
 void txn_executor(Database& db, std::vector<Txn>& txns) {
     TxnExecutor tb{db};
+	TxnIterator txn_iter(txns);
+	DeclusteredLayout* layout = Config::instance().decl_layout;
+
+	// approximation for how many txns we have leftover.
+	std::vector<Txn> leftover;
+	leftover.reserve(BATCH_SIZE_TGT * 0.01);
+	/*
+
+	while (1) {
+		// batch
+		size_t batch_ct = 0;
+		while (batch_ct < BATCH_SIZE_TGT) {
+			std::pair<Txn, Txn> hot_cold = get_hot_cold(txn_iter.next(), layout);
+			Txn& cold = hot_cold.second;
+			
+			// TODO If there is a high proportion of remote stuff, maybe worth pipelining cold execution.
+		}
+	}
+
+
 	printf("txns.size(): %lu\n", txns.size());
 	
-	/*
     for (auto& arg : txns) {
         auto rc = tb.execute(arg);
         switch (rc) {

@@ -9,11 +9,6 @@
 
 using namespace std::chrono_literals;
 
-
-// constexpr auto CC_SCHEME = CC_Scheme::NONE;
-constexpr auto CC_SCHEME = CC_Scheme::NO_WAIT;
-// constexpr auto CC_SCHEME = CC_Scheme::WAIT_DIE;
-
 enum class StatsBitmask : uint64_t {
     NONE = 0x00,
     COUNTER = 0x01,
@@ -51,4 +46,5 @@ constexpr bool DUMP_SWITCH_PKTS = false;
 
 // constexpr uint64_t NUM_KVS = 10'000'000;
 constexpr int NUM_OPS = 16;
+constexpr size_t BATCH_SIZE_TGT = 10000;
 

@@ -49,7 +49,7 @@ StatsCollector::StatsCollector() {
         auto use_switch = Config::instance().use_switch;
         std::ofstream csv_periodic;
         csv_periodic.open(PERIODIC_CSV_FILENAME);
-        csv_periodic << "node_id,name,value,cc_scheme,use_switch\n";
+        csv_periodic << "node_id,name,value,use_switch\n";
         csv_periodic << std::boolalpha;
 
         auto collect_periodic = [&]() {
@@ -68,8 +68,7 @@ StatsCollector::StatsCollector() {
                     auto diff = sum - last;
                     diff *= 1s / STATS_PERIODIC_SAMPLE_TIME;
                     last = sum;
-                    csv_periodic << node_id << ',' << name << ',' << diff << ',' << CC_SCHEME << ',' << use_switch << '\n';
-                    // std::cout << node_id << ',' << name << ',' << diff << ',' << CC_SCHEME << ',' << use_switch << '\n';
+                    csv_periodic << node_id << ',' << name << ',' << diff << ',' << use_switch << '\n';
                 }
                 ++i;
             }

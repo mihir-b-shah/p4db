@@ -16,7 +16,6 @@ msg::id_t MessageHandler::set_new_id(msg::Header* msg) {
 }
 
 void MessageHandler::add_future(msg::id_t msg_id, AbstractFuture* future) {
-    //printf("Inserting for msg_id=%lu, future=%p\n", msg_id.value, future);
 	// TODO: does open_futures need to be atomic?
     open_futures.insert({msg_id, future});
 }
@@ -37,7 +36,6 @@ void MessageHandler::handle(Pkt_t* pkt) {
             return handle(pkt, msg->as<msg::Init>());
         case Type::BARRIER:
             return handle(pkt, msg->as<msg::Barrier>());
-
         case Type::TUPLE_GET_REQ:
             return handle(pkt, msg->as<msg::TupleGetReq>());
         case Type::TUPLE_GET_RES:
@@ -46,7 +44,6 @@ void MessageHandler::handle(Pkt_t* pkt) {
             return handle(pkt, msg->as<msg::TuplePutReq>());
         case Type::TUPLE_PUT_RES:
             return handle(pkt, msg->as<msg::TuplePutRes>());
-
         case Type::SWITCH_TXN:
             return handle(pkt, msg->as<msg::SwitchTxn>());
     }

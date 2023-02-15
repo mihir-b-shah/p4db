@@ -112,5 +112,32 @@ public class Main {
 			outFile.close();
 			System.out.printf("Done! %d\n", nodeTxns.length);
 		}
+
+		// build the layout, mimicking even_better_layout.
+		HashMap<Long, Integer> keyFreqs = new HashMap<>();
+		for (int i = 0; i<N_NODES; ++i) {
+			for (int j = 0; j<N_TXNS; ++j) {
+				for (int k = 0; k<N_OPS; ++k) {
+					if (!keyFreqs.containsKey(txns[i][j][k])) {
+						keyFreqs.put(txns[i][j][k], 0);
+					}
+					keyFreqs.put(txns[i][j][k], keyFreqs.get(txns[i][j][k])+1);
+				}
+			}
+		}
+		ArrayList<Map.Entry<Long, Integer>> sortedFreqs = new ArrayList<>(keyFreqs.entrySet());
+		Collections.sort(sortedFreqs, (Map.Entry<Long, Integer> e1, Map.Entry<Long, Integer> e2) -> {
+			return Integer.compare(e2.getValue(), e1.getValue());
+		});
+
+		String dist_fname = String.format("dist_z%d_N%d_n%d_k%d_h%d_c%d.txt",
+			K_ZIPF, N_TXNS, N_OPS, N_KEYS, HOT_LIM_P_DIST, COLD_LIM_P_DIST);
+		PrintWriter dist_pw = new PrintWriter(new File(dist_fname));
+		for (Map.Entry<Long, Integer> entry : sortedFreqs) {
+			dist_pw.printf("%d:%d\n", entry.getKey(), entry.getValue());
+		}
+		dist_pw.flush();
+		dist_pw.close();
+		System.out.printf("Done w/ dist!\n");
 	}
 }
