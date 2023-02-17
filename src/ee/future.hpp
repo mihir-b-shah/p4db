@@ -35,8 +35,10 @@ struct TupleFuture final : public AbstractFuture {
     static inline Tuple_t* EXCEPTION = reinterpret_cast<Tuple_t*>(0xffffffff'ffffffff);
 
     // Tuple_t* tuple;
+	// TODO: don't understand why this needs to be atomic.
     std::atomic<Tuple_t*> tuple{nullptr};
     // char __cache_align[64-16];
+	TxnId last_writer;
 
     TupleFuture() : AbstractFuture{}, tuple(nullptr) {}
     TupleFuture(Tuple_t* tuple) : AbstractFuture{}, tuple(tuple) {}
@@ -63,6 +65,8 @@ private:
                     return nullptr;
                 }
                 tuple = reinterpret_cast<Tuple_t*>(res->tuple);
+				last_writer = TxnId(res->last_writer_pack);
+
                 return tuple;
             }
 

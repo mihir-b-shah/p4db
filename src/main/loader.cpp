@@ -4,6 +4,7 @@
 #include <cassert>
 #include <fstream>
 #include <string>
+#include <cstdlib>
 #include <sstream>
 #include <cstring>
 #include <algorithm>
@@ -44,7 +45,9 @@ void load_txns(Config& config) {
 			} else {
 				op.mode = AccessMode::READ;
 			}
-			op.value = static_cast<uint32_t>(1 + config.trace_txns.size());
+			op.value = rand() % 100000;
+
+			static_cast<uint32_t>(1 + config.trace_txns.size());
 			txn.ops[i++] = op;
         }
     }
@@ -61,7 +64,7 @@ void load_txns(Config& config) {
 		}
 
 		size_t spl = buf.find(':');
-		uint64_t k = std::stoull(buf.substr(0, spl-1));
+		uint64_t k = std::stoull(buf.substr(0, spl));
 		size_t freq = std::stoull(buf.substr(spl+1));
 		id_freq.emplace_back(k, freq);
     }

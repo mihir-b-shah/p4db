@@ -94,14 +94,15 @@ struct TupleGetReq : public Base<TupleGetReq, Type::TUPLE_GET_REQ>, public Tuple
 
 
 struct TupleGetRes : public Base<TupleGetRes, Type::TUPLE_GET_RES>, public TupleMsgHeader {
+	uint32_t last_writer_pack;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
     uint8_t tuple[0];
 #pragma GCC diagnostic pop
 
-    TupleGetRes(timestamp_t ts, p4db::table_t tid, p4db::key_t rid, AccessMode mode)
-        : TupleMsgHeader{ts, tid, rid, mode} // mode==INVALID if e.g. locking failed
-    {}
+    TupleGetRes(timestamp_t ts, p4db::table_t tid, p4db::key_t rid, AccessMode mode, TxnId last_writer)
+        : TupleMsgHeader{ts, tid, rid, mode}, // mode==INVALID if e.g. locking failed
+		  last_writer_pack(last_writer.get_packed()) {}
 
     static constexpr auto size(size_t tuple_size) {
         return sizeof(TupleGetRes) + tuple_size;
@@ -109,14 +110,15 @@ struct TupleGetRes : public Base<TupleGetRes, Type::TUPLE_GET_RES>, public Tuple
 };
 
 struct TuplePutReq : public Base<TuplePutReq, Type::TUPLE_PUT_REQ>, public TupleMsgHeader {
+	uint32_t last_writer_pack;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
     uint8_t tuple[0];
 #pragma GCC diagnostic pop
 
-    TuplePutReq(timestamp_t ts, p4db::table_t tid, p4db::key_t rid, AccessMode mode)
-        : TupleMsgHeader{ts, tid, rid, mode} // if INVALID then tuple invalid, but free up locks
-    {}
+    TuplePutReq(timestamp_t ts, p4db::table_t tid, p4db::key_t rid, AccessMode mode, TxnId last_writer)
+        : TupleMsgHeader{ts, tid, rid, mode}, // if INVALID then tuple invalid, but free up locks
+		  last_writer_pack(last_writer.get_packed()) {}
 
     static constexpr auto size(size_t tuple_size) {
         return sizeof(TuplePutReq) + tuple_size;

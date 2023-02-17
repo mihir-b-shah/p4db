@@ -3,6 +3,76 @@
 
 #include <utility>
 
+RC TxnExecutor::execute_for_batch(Txn& arg) {
+	// acquire all locks first, ex and shared. Can rollback within loop
+
+	TupleFuture<KV>* ops[NUM_OPS];
+	for (size_t i = 0; auto& op : arg.ops) {
+		if (op.mode == AccessMode::WRITE) {
+			ops[i] = write(kvs, KV::pk(op.id));
+		} else if (op.mode == AccessMode::READ) {
+			ops[i] = read(kvs, KV::pk(op.id));
+		} else {
+			assert(op.mode == AccessMode::INVALID);
+			ops[i] = nullptr;
+		}
+		if (!ops[i]) {
+			leftover.push_back(arg);
+			return rollback();
+		}
+		++i;
+	}
+
+	TxnId dep;
+	size_t depend_size = 0;
+	// Use obtained write-locks to write values
+	for (size_t i = 0; auto& op : arg.ops) {
+		if (op.mode == AccessMode::WRITE) {
+			auto x = ops[i]->get();
+			if (!x) {
+				leftover.push_back(arg);
+				return rollback();
+			}
+			if (ops[i]->last_writer.epoch_id == arg.id.epoch_id) {
+				dep = ops[i]->last_writer;
+				depend_size += 1;
+			}
+			x->value = op.value;
+			ops[i]->last_writer = arg.id;
+		} else if (op.mode == AccessMode::READ) {
+			const auto x = ops[i]->get();
+			if (!x) {
+				leftover.push_back(arg);
+				return rollback();
+			}
+			// checking less than can be vulnerable to epoch wrap-around.
+			if (ops[i]->last_writer.epoch_id == arg.id.epoch_id) {
+				dep = ops[i]->last_writer;
+				depend_size += 1;
+			}
+			const auto value = x->value;
+			do_not_optimize(value);
+		} else {
+			break;
+		}
+		++i;
+	}
+
+	if (depend_size == 0) {
+		// common case- no dependencies.
+	} else if (depend_size == 1) {
+		// I am dependent on txn {dep}.
+		printf("txn %u depends on %u\n", arg.id.get_packed(), dep.get_packed()); 
+	} else {
+		// Too many dependencies, run via 2-phase commit.
+		leftover.push_back(arg);
+		return rollback();
+	}
+
+	// locks automatically released
+	return commit();
+}
+
 RC TxnExecutor::execute(Txn& arg) {
 	ts = ts_factory.get();
 	// std::stringstream ss;
@@ -39,7 +109,10 @@ RC TxnExecutor::execute(Txn& arg) {
 			assert(op.mode == AccessMode::INVALID);
 			ops[i] = nullptr;
 		}
-		check(ops[i]);
+
+		if (!ops[i]) {
+			return rollback();
+		}
 		++i;
 	}
 
@@ -47,11 +120,15 @@ RC TxnExecutor::execute(Txn& arg) {
 	for (size_t i = 0; auto& op : arg.ops) {
 		if (op.mode == AccessMode::WRITE) {
 			auto x = ops[i]->get();
-			check(x);
+			if (!x) {
+				return rollback();
+			}
 			x->value = op.value;
 		} else if (op.mode == AccessMode::READ) {
 			const auto x = ops[i]->get();
-			check(x);
+			if (!x) {
+				return rollback();
+			}
 			const auto value = x->value;
 			do_not_optimize(value);
 		} else {
@@ -65,6 +142,8 @@ RC TxnExecutor::execute(Txn& arg) {
 }
 
 RC TxnExecutor::commit() {
+	// TODO: log should not clear until the end of a batch.
+	// TODO: now, the undolog has in the future both the value,last_writer fields to be written.
 	log.commit(ts);
 	mempool.clear();
 	WorkerContext::get().cycl.stop(stats::Cycles::commit_latency);
@@ -98,7 +177,7 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, p4db::key_t key) {
 	if constexpr (error::LOG_TABLE) {
 		std::stringstream ss;
 		ss << "read to " << table->name << " key=" << key << " is_local=" << loc_info.is_local
-		   << " target=" << loc_info.target << " is_hot=" << loc_info.is_hot << " switch_idx=" << loc_info.abs_hot_index << '\n';
+		   << " target=" << loc_info.target << " switch_idx=" << loc_info.abs_hot_index << '\n';
 		std::cout << ss.str();
 	}
 
@@ -145,7 +224,7 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, p4db::key_t key) {
 	if constexpr (error::LOG_TABLE) {
 		std::stringstream ss;
 		ss << "write to " << table->name << " key=" << key << " is_local=" << loc_info.is_local
-		   << " target=" << loc_info.target << " is_hot=" << loc_info.is_hot << " switch_idx=" << loc_info.abs_hot_index << '\n';
+		   << " target=" << loc_info.target << " switch_idx=" << loc_info.abs_hot_index << '\n';
 		std::cout << ss.str();
 	}
 
@@ -251,7 +330,7 @@ static std::pair<Txn, Txn> get_hot_cold(const Txn& txn, DeclusteredLayout* layou
 	size_t hot_p = 0, cold_p = 0;
 
 	size_t i = 0;
-	while (txn.ops[i].mode != AccessMode::INVALID) {
+	while (i < NUM_OPS && txn.ops[i].mode != AccessMode::INVALID) {
 		if (layout->is_hot(txn.ops[i].id)) {
 			hot_txn.ops[hot_p++] = txn.ops[i];
 		} else {
@@ -267,34 +346,39 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 	TxnIterator txn_iter(txns);
 	DeclusteredLayout* layout = Config::instance().decl_layout;
 
-	// approximation for how many txns we have leftover.
-	std::vector<Txn> leftover;
-	leftover.reserve(BATCH_SIZE_TGT * 0.01);
-	/*
+	size_t node_id = Config::instance().node_id;
+	size_t thread_id = WorkerContext::get().tid;
 
+	// Start at epoch 1, b/c the initial states use epoch 0. We're fine to wrap-around to 0, though.
+	size_t epoch_id = 1;
 	while (1) {
+		if (epoch_id == 0) {
+			// TODO: need to reset my part of switch table? Or is that the main thread's job?
+			// Probably the main thread, since only it can do init/finish.
+		}
+		// TODO: remove, just for experiments.
+		if (epoch_id >= 30) {
+			break;
+		}
+
+		printf("epoch_id: %lu\n", epoch_id);
 		// batch
 		size_t batch_ct = 0;
 		while (batch_ct < BATCH_SIZE_TGT) {
 			std::pair<Txn, Txn> hot_cold = get_hot_cold(txn_iter.next(), layout);
 			Txn& cold = hot_cold.second;
-			
-			// TODO If there is a high proportion of remote stuff, maybe worth pipelining cold execution.
+
+			/*	TODO: batch_ct right now increments whether the cold txn aborts or not.
+				This is ok, but if the id's are used in packet loss detection, keep in mind
+				what was dropped */
+			cold.id = TxnId(node_id, thread_id, batch_ct, epoch_id);
+			RC rc = tb.execute_for_batch(cold);
+			(void) rc;
+			batch_ct += 1;
 		}
+
+		epoch_id = (epoch_id + 1) & ((1 << TxnId::EPOCH_BITS) - 1);
+		db.msg_handler->barrier.wait_workers();
 	}
-
-
-	printf("txns.size(): %lu\n", txns.size());
-	
-    for (auto& arg : txns) {
-        auto rc = tb.execute(arg);
-        switch (rc) {
-            case COMMIT:
-				// TODO: this is stupid. Just saying we committed XXX portion of txns is not sufficient- we need to queue the aborted ones, and finish.
-                break;
-            case ROLLBACK:
-                break;
-        }
-    }
-	*/
+	printf("Done.\n");
 }

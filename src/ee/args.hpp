@@ -14,5 +14,5 @@ struct Txn {
 	};
 	std::array<OP, NUM_OPS> ops;
 	bool on_switch;
-	bool is_hot;
+	TxnId id;
 };

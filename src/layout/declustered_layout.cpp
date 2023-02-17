@@ -24,6 +24,11 @@ DeclusteredLayout::DeclusteredLayout(const std::vector<std::pair<uint64_t, size_
 		weight[r_low] += pr.second;
         virt_map.emplace(k, loc);
     }
+
+	/*	TODO, remove this. We need to get an allocation once the scheduler works. */
+	for (size_t i = 0; i<NUM_BLOCKS; ++i) {
+		virt_block_map[i] = i;
+	}
 }
 
 TupleLocation DeclusteredLayout::get_location(uint64_t k) {

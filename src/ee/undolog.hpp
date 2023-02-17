@@ -3,6 +3,8 @@
 #include "comm/comm.hpp"
 #include "comm/msg_handler.hpp"
 #include "ee/future.hpp"
+#include "ee/table.hpp"
+#include "ee/row.hpp"
 #include "utils/mempools.hpp"
 #include "stats/context.hpp"
 
@@ -25,6 +27,9 @@ struct Write final : public Action {
         if (!future->tuple) {
             throw std::runtime_error("tuple not set in undolog clear");
         }
+		Row<KV>& row = table->get_direct_row(index);
+		row.last_writer = future->last_writer;
+
         if (!table->put(index, AccessMode::WRITE, ts)) {
             throw error::UndoException();
         }
@@ -82,6 +87,7 @@ struct Remote final : public Action {
             }
             case AccessMode::WRITE: {
                 // size is already enough because we received the tuple of same size
+				req->last_writer_pack = future->last_writer.get_packed();
                 std::memcpy(req->tuple, tuple, sizeof(Tuple_t));
                 break;
             }

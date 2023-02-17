@@ -26,13 +26,6 @@ enum RC {
 	ROLLBACK,
 };
 
-#define check(x)               \
-    do {                       \
-        if (!x) [[unlikely]] { \
-            return rollback(); \
-        }                      \
-    } while (0)
-
 struct TxnExecutor {
     StructTable* kvs;
     SwitchInfo p4_switch;
@@ -40,6 +33,7 @@ struct TxnExecutor {
     Undolog log;
     StackPool<8192> mempool;
     uint32_t tid;
+	std::vector<Txn> leftover;
 
     TimestampFactory ts_factory;
     timestamp_t ts;
@@ -47,8 +41,10 @@ struct TxnExecutor {
     TxnExecutor(Database& db)
         : db(db), log(db.comm.get()), tid(WorkerContext::get().tid) {
         db.get_casted(KV::TABLE_NAME, kvs);
+		leftover.reserve(BATCH_SIZE_TGT * 0.01);
 	}
 
+    RC execute_for_batch(Txn& arg);
     RC execute(Txn& arg);
     RC commit();
     RC rollback();

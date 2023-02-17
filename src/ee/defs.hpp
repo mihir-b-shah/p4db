@@ -46,5 +46,5 @@ constexpr bool DUMP_SWITCH_PKTS = false;
 
 // constexpr uint64_t NUM_KVS = 10'000'000;
 constexpr int NUM_OPS = 16;
-constexpr size_t BATCH_SIZE_TGT = 10000;
+constexpr size_t BATCH_SIZE_TGT = 100;
 

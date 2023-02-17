@@ -11,7 +11,6 @@
 struct LocationInfo {
     bool is_local;
     msg::node_t target;
-    bool is_hot;
     uint16_t abs_hot_index;
 };
 

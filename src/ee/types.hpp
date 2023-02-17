@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <istream>
 #include <ostream>
+#include <cassert>
 
 struct AccessMode {
     using value_t = uint32_t;
@@ -42,6 +43,41 @@ struct AccessMode {
         value |= static_cast<uint32_t>(__builtin_bswap16(idx)) << 16;
         value |= 0x0000aa00;
     }
+};
+
+struct TxnId {
+	static constexpr size_t NODE_BITS = 5;
+	static constexpr size_t THREAD_BITS = 5;
+	static constexpr size_t TXN_BITS = 14;
+	static constexpr size_t EPOCH_BITS = 8;
+
+	uint8_t node_id;
+	uint8_t thread_id;
+	uint16_t txn_id;
+	uint8_t epoch_id;
+
+	TxnId() {}
+	TxnId(size_t node_id, size_t thread_id, size_t txn_id, size_t epoch_id) :
+		node_id(node_id), thread_id(thread_id), txn_id(txn_id), epoch_id(epoch_id) {
+		
+		assert(node_id < (1 << NODE_BITS));
+		assert(thread_id < (1 << THREAD_BITS));
+		assert(txn_id < (1 << TXN_BITS));
+		assert(epoch_id < (1 << EPOCH_BITS));
+	}
+
+	TxnId(uint32_t packed) {
+		node_id = packed & ((1 << NODE_BITS) - 1);
+		thread_id = (packed >> NODE_BITS) & ((1 << THREAD_BITS) - 1);
+		txn_id = (packed >> (NODE_BITS + THREAD_BITS)) & ((1 << TXN_BITS) - 1);
+		epoch_id = (packed >> (NODE_BITS + THREAD_BITS + TXN_BITS)) & ((1 << EPOCH_BITS) - 1);
+	}
+
+	uint32_t get_packed() {
+		return node_id | (thread_id << NODE_BITS) |
+			(txn_id << (NODE_BITS + THREAD_BITS)) | 
+			(epoch_id << (NODE_BITS + THREAD_BITS + TXN_BITS));
+	}
 };
 
 namespace p4db {

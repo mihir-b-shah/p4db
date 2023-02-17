@@ -3,13 +3,11 @@
 #include "ee/future.hpp"
 #include "utils/spinlock.hpp"
 #include "ee/types.hpp"
-#include "row.hpp"
 #include "stats/stats.hpp"
 
 #include <mutex>
 #include <tbb/queuing_mutex.h>
 #include <tbb/queuing_rw_mutex.h>
-
 
 template <typename Tuple_t>
 struct Row {
@@ -23,9 +21,11 @@ struct Row {
     uint32_t owner_cnt = 0;
 
     Tuple_t tuple;
+	TxnId last_writer;
+
+	Row() : last_writer(0, 0, 0, 0) {}
 
     using Future_t = TupleFuture<Tuple_t>;
-
 
     ErrorCode local_lock(const AccessMode mode, timestamp_t, Future_t* future) {
         if (!is_compatible(mode)) { // early abort test
@@ -63,6 +63,7 @@ struct Row {
         ++owner_cnt;
         lock_type = mode;
         future->tuple.store(&tuple);
+		future->last_writer = last_writer;
 
         WorkerContext::get().cntr.incr(stats::Counter::local_lock_success);
         return ErrorCode::SUCCESS;
@@ -90,6 +91,7 @@ struct Row {
         auto res = req->convert<msg::TupleGetRes>();
         auto size = msg::TupleGetRes::size(sizeof(tuple));
         pkt->resize(size);
+		res->last_writer_pack = last_writer.get_packed();
         std::memcpy(res->tuple, &tuple, sizeof(tuple));
 
         WorkerContext::get().cntr.incr(stats::Counter::remote_lock_success);
@@ -99,6 +101,7 @@ struct Row {
     void remote_unlock(msg::TuplePutReq* req, Communicator& comm) {
         if (req->mode == AccessMode::WRITE) {
             std::memcpy(&tuple, req->tuple, sizeof(tuple));
+			last_writer = TxnId(req->last_writer_pack);
         }
         auto rc = local_unlock(req->mode, req->ts, comm);
         (void)rc;

@@ -5,7 +5,6 @@
 #include "row.hpp"
 #include "ee/errors.hpp"
 #include "utils/mempools.hpp"
-#include "ee/undolog.hpp"
 #include "utils/util.hpp"
 #include "partition.hpp"
 
@@ -18,7 +17,6 @@
 #include <sstream>
 #include <string>
 #include <variant>
-
 
 struct Table {
     Table() = default;
@@ -153,6 +151,9 @@ struct StructTable final : public Table {
         return true;
     }
 
+	Row_t& get_direct_row(const p4db::key_t index) {
+        return data[index];
+	}
 
     ErrorCode get(const p4db::key_t index, const AccessMode mode, Future_t* future, const timestamp_t ts) {
         auto local_index = part_info.translate(index);
