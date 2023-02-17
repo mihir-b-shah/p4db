@@ -6,6 +6,7 @@
 
 
 void pin_worker(uint32_t core, pthread_t pid /*= pthread_self()*/) {
+	printf("pin_worker %u\n", core);
     WorkerContext::get().tid = core;
     
     #ifdef DPDK
@@ -14,8 +15,8 @@ void pin_worker(uint32_t core, pthread_t pid /*= pthread_self()*/) {
     #endif
 
 	// TODO: fix this.
-    constexpr auto NUM_SOCKETS = 2;
-    constexpr auto NUM_HYPERTHREADS = 1;
+    constexpr auto NUM_SOCKETS = 1;
+    constexpr auto NUM_HYPERTHREADS = 2;
     static const auto cpu_map = []() {
         std::vector<int> map;
 
@@ -54,6 +55,7 @@ void pin_worker(uint32_t core, pthread_t pid /*= pthread_self()*/) {
 
     cpu_set_t mask;
     CPU_ZERO(&mask);
+	printf("setting: %lu\n", cpu_map[core % cpu_map.size()]);
     CPU_SET(cpu_map.at(core % cpu_map.size()), &mask);
 
     if (core >= cpu_map.size()) {

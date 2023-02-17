@@ -47,7 +47,8 @@ void UDPCommunicator::set_handler(MessageHandler* handler) {
     auto& config = Config::instance();
     thread = std::jthread([&, handler](std::stop_token token) {
         const WorkerContext::guard worker_ctx;
-        pin_worker(config.num_txn_workers);
+		// TODO: change in production, right now running on single machine.
+        pin_worker(config.num_txn_workers + 2*config.node_id);
         while (!token.stop_requested()) {
             auto pkt = receive();
             if (!pkt) {

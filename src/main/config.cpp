@@ -93,6 +93,7 @@ void Config::parse_cli(int argc, char** argv) {
 			ip_token = strtok(NULL, " ");
 		}
 	} else {
+		// TODO: change when not running on single machine.
 		for (size_t port_it = 0; port_it < num_nodes; ++port_it) {
 			servers.emplace_back("127.0.0.1", 4001+port_it, 
 				(eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});

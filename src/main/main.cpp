@@ -45,7 +45,8 @@ int main(int argc, char** argv) {
     for (uint32_t i = 0; i < config.num_txn_workers; ++i) {
         workers.emplace_back(std::thread([&, i]() {
             const WorkerContext::guard worker_ctx;
-            pin_worker(i);
+			// TODO: change in production- right now, running on single machine.
+            pin_worker(i + 2*config.node_id);
 			db.msg_handler->barrier.wait_workers();
 			txn_executor(db, per_core_txns[i]);
         }));
