@@ -20,7 +20,7 @@ DeclusteredLayout::DeclusteredLayout(const std::vector<std::pair<uint64_t, size_
 			}
 		}
 
-        TupleLocation loc = {r_low, idx_to_alloc[r_low]++};
+        TupleLocation loc = {r_low, idx_to_alloc[r_low]++, pr.second};
 		weight[r_low] += pr.second;
         virt_map.emplace(k, loc);
     }
@@ -40,10 +40,11 @@ TupleLocation DeclusteredLayout::get_location(uint64_t k) {
 	return tl;
 }
 
-bool DeclusteredLayout::is_hot(uint64_t k) {
+// whether it is hot, with a bonus telling me the frequency of this key.
+std::pair<bool, size_t> DeclusteredLayout::is_hot(uint64_t k) {
 	TupleLocation virt_loc = virt_map[k];
 	size_t virt_blk = virt_loc.reg_array_idx / NUM_KEYS_PER_BLOCK;
-	return virt_blk < avail_blocks;
+	return std::make_pair<bool, size_t>(virt_blk < avail_blocks, virt_loc.dist_freq);
 }
 
 void DeclusteredLayout::update_virt_offsets(const std::vector<size_t>& blocks) {

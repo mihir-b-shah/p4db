@@ -9,13 +9,13 @@ e.g. 100% for hot set --> 0% for cold set.
 import java.io.*;
 import java.util.*;
 
-public class Main {
+public class Generic {
 
-	static final int K_ZIPF = 80;
+	static final int K_ZIPF = 99;
 	static final double K_ROOT_RELAX = 0.1;
-	static final int N_OPS = 16;
-	static final int N_TXNS = 100_000;
-	static final int N_NODES = 2;
+	static final int N_OPS = 8;
+	static final int N_TXNS = 1_000_000;
+	static final int N_NODES = 1;
 	static final int N_KEYS = 10_000_000;
 	static final int HOT_LIM_P_DIST = 100;
 	static final int COLD_LIM_P_DIST = 0;

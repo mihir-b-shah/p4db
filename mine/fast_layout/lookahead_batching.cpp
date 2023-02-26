@@ -35,7 +35,7 @@ static size_t hash_key(db_key_t k) {
 }
 
 int main() {
-    batch_iter_t iter = get_batch_iter(workload_e::YCSB_99_16);
+    batch_iter_t iter = get_batch_iter(workload_e::YCSB_99_8);
     std::list<std::pair<txn_t, txn_t>> txns = iter.get_comps();
 	std::unordered_map<db_key_t, size_t> key_cts;
 	for (const auto& pr : txns) {
@@ -82,6 +82,17 @@ int main() {
 	for (const auto& kv : buckets) {
 		pq.push(kv.first);
 	}
+	std::vector<db_key_t> extract_keys;
+	while (pq.size() > 0) {
+		db_key_t k = pq.top();
+		extract_keys.push_back(k);
+		pq.pop();
+	}
+	for (db_key_t k : extract_keys) {
+		printf("freq: %lu\n", buckets[k].size());
+		pq.push(k);
+	}
+	printf("pq.size(): %lu\n", pq.size());
 
 	std::queue<db_key_t> add_back;
 	std::queue<txn_t> bucket_output;

@@ -26,7 +26,6 @@ public:
     uint32_t num_nodes;
     uint32_t num_txn_workers;
     msg::node_t switch_id;
-    uint64_t switch_entries;
 
     uint64_t num_txns;
     bool use_switch;
@@ -35,7 +34,6 @@ public:
 
 	int write_prob;
 	uint64_t table_size;
-	uint64_t hot_size;
 
 	std::string trace_fname;
 	std::vector<Txn> trace_txns;

@@ -2,6 +2,7 @@
 #include "ee/executor.hpp"
 
 #include <utility>
+#include <algorithm>
 
 RC TxnExecutor::execute_for_batch(Txn& arg) {
 	// acquire all locks first, ex and shared. Can rollback within loop
@@ -328,17 +329,36 @@ need to re-create a map each batch to say whether a key is hot or not.
 */
 static std::pair<Txn, Txn> get_hot_cold(const Txn& txn, DeclusteredLayout* layout) {
 	Txn hot_txn, cold_txn;
+	// Keep track of the hottest, 2nd hottest cold values, and put them first/second in the cold_txn.
+	size_t cold1_p = 0, cold2_p = 0, cold1_v = 0, cold2_v = 0;
 	size_t hot_p = 0, cold_p = 0;
 
 	size_t i = 0;
 	while (i < NUM_OPS && txn.ops[i].mode != AccessMode::INVALID) {
-		if (layout->is_hot(txn.ops[i].id)) {
+		std::pair<bool, size_t> hot_info = layout->is_hot(txn.ops[i].id);
+		if (hot_info.first) {
 			hot_txn.ops[hot_p++] = txn.ops[i];
 		} else {
+			if (hot_info.second > cold1_v) {
+				cold2_p = cold1_p;
+				cold2_v = cold1_v;
+				cold1_p = cold_p;
+				cold1_v = hot_info.second;
+			} else if (hot_info.second > cold2_v) {
+				cold2_p = cold_p;
+				cold2_v = hot_info.second;
+			}
 			cold_txn.ops[cold_p++] = txn.ops[i];
 		}
 		i += 1;
 	}
+	if (cold_p >= 2) {
+		// otherwise, if only 0/1 keys, everything's already in order.
+		// make sure to swap in this order, the reverse has a bug.
+		std::swap(cold_txn.ops[cold1_p], cold_txn.ops[0]);
+		std::swap(cold_txn.ops[cold2_p], cold_txn.ops[1]);
+	}
+
 	return {hot_txn, cold_txn};
 }
 
@@ -349,6 +369,8 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
 	size_t node_id = Config::instance().node_id;
 	size_t thread_id = WorkerContext::get().tid;
+
+	/*
 
 	// Start at epoch 1, b/c the initial states use epoch 0. We're fine to wrap-around to 0, though.
 	size_t epoch_id = 1;
@@ -369,9 +391,9 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 			std::pair<Txn, Txn> hot_cold = get_hot_cold(txn_iter.next(), layout);
 			Txn& cold = hot_cold.second;
 
-			/*	TODO: batch_ct right now increments whether the cold txn aborts or not.
-				This is ok, but if the id's are used in packet loss detection, keep in mind
-				what was dropped */
+			//	TODO: batch_ct right now increments whether the cold txn aborts or not.
+			//	This is ok, but if the id's are used in packet loss detection, keep in mind
+			//	what was dropped
 			cold.id = TxnId(node_id, thread_id, batch_ct, epoch_id);
 			RC rc = tb.execute_for_batch(cold);
 			(void) rc;
@@ -382,4 +404,5 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 		db.msg_handler->barrier.wait_workers();
 	}
 	printf("Done.\n");
+	*/
 }

@@ -53,7 +53,6 @@ void Config::parse_cli(int argc, char** argv) {
         ("num_txns", "", cxxopts::value<uint64_t>())
         ("write_prob", "", cxxopts::value<int>())
         ("table_size", "", cxxopts::value<uint64_t>())
-        ("hot_size", "", cxxopts::value<uint64_t>())
 		("trace_fname", "", cxxopts::value<std::string>())
 		("dist_fname", "", cxxopts::value<std::string>())
         ("h,help", "Print usage")
@@ -93,7 +92,6 @@ void Config::parse_cli(int argc, char** argv) {
 			ip_token = strtok(NULL, " ");
 		}
 	} else {
-		// TODO: change when not running on single machine.
 		for (size_t port_it = 0; port_it < num_nodes; ++port_it) {
 			servers.emplace_back("127.0.0.1", 4001+port_it, 
 				(eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
@@ -125,16 +123,5 @@ void Config::parse_cli(int argc, char** argv) {
     // }
 
     num_txns = result.as<uint64_t>("num_txns");
-
-    if (result.count("switch_entries")) {
-        switch_entries = result.as<uint64_t>("switch_entries");
-    }
-
 	table_size = result.as<uint64_t>("table_size");
-	hot_size = result.as<uint64_t>("hot_size");
-	switch_entries = hot_size * num_nodes;
-
-    if (!use_switch) {
-        switch_entries = 0;
-    }
 }

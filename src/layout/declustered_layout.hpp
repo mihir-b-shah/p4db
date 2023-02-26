@@ -4,12 +4,14 @@
 #include <unordered_map>
 #include <vector>
 #include <ostream>
+#include <utility>
 
 // Note, we don't need to know which stage, which register- just target the p4 reg spec.
 // If we were max-cut partitioning for dependencies, etc. then this might matter.
 struct TupleLocation {
     uint8_t reg_array_id;
     uint16_t reg_array_idx;
+	size_t dist_freq;
 
     friend std::ostream& operator<<(std::ostream& os, const TupleLocation& self) {
         os << " reg=" << self.reg_array_id << " idx=" << self.reg_array_idx;
@@ -28,7 +30,7 @@ public:
 
 	DeclusteredLayout(const std::vector<std::pair<uint64_t, size_t>>& id_freq);
     TupleLocation get_location(uint64_t k);
-	bool is_hot(uint64_t k);
+	std::pair<bool, size_t> is_hot(uint64_t k);
 
 	// TODO: for now, guarantee this never happens in parallel with lookups. Is this true?
 	void update_virt_offsets(const std::vector<size_t>& blocks);
