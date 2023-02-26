@@ -55,11 +55,28 @@ batch_iter_t::batch_iter_t(std::vector<txn_t> all_txns) {
 }
 
 std::vector<txn_t> batch_iter_t::next_batch() {
-    static constexpr size_t LOOKAHEAD = 1;
+    static constexpr size_t LOOKAHEAD = 40;
 
     std::vector<txn_t> ret;
     std::unordered_set<db_key_t> locks;
 
+    for (auto it = txn_comps_.begin(); it != txn_comps_.end(); ++it) {
+        const txn_t& hot_txn = it->first;
+		const txn_t& cold_txn = it->second;
+		size_t n_conflicts = 0;
+		for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
+			n_conflicts += locks.find(cold_txn.ops[i]) != locks.end();
+		}
+		for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
+			locks.insert(cold_txn.ops[i]);
+		}
+		if (hot_txn.ops.size() > 0 && hot_txn.ops.size() < N_MAX_HOT_OPS) {
+			ret.push_back(hot_txn);
+		}
+	}
+	txn_comps_.clear();
+
+	/*
     while (ret.size() < MAX_BATCH && txn_comps_.size() > 0) {
         size_t p = 0;
         size_t bef_considered_size = ret.size();
@@ -102,6 +119,7 @@ std::vector<txn_t> batch_iter_t::next_batch() {
 		// any more txns to run?
 		return next_batch();
 	}
+	*/
 	return ret;
 }
 
@@ -206,15 +224,15 @@ static std::vector<txn_t> get_syn_hot_8_txns() {
     std::vector<txn_t> raw_txns;
 
     auto key_gen = [](size_t j) {
-        if (j < 8) {
-            return rand() % 100;
+        if (j < 6) {
+            return rand() % 1000;
         } else {
             return rand() % 1000000000;
         }
     };
     for (size_t i = 0; i<100000; ++i) {
         txn_t txn;
-        gen_unique_keys<decltype(key_gen), 9>(key_gen, txn);
+        gen_unique_keys<decltype(key_gen), 12>(key_gen, txn);
         raw_txns.push_back(txn);
     }
     return raw_txns;

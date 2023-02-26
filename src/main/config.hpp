@@ -7,10 +7,8 @@
 #include "ee/defs.hpp"
 #include "ee/args.hpp"
 #include "layout/declustered_layout.hpp"
-#include "utils/util.hpp"
 
 #include <vector>
-
 
 class Config : public HeapSingleton<Config> {
     friend class HeapSingleton<Config>;

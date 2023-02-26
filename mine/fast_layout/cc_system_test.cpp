@@ -12,7 +12,7 @@ Just use 1 port for now.
 switch_t p4_switch; 
 
 int main() {
-    batch_iter_t iter = get_batch_iter(workload_e::YCSB_99_16);
+    batch_iter_t iter = get_batch_iter(workload_e::SYN_HOT_8);
 	std::vector<txn_t> all_txns;
     std::vector<txn_t> batch;
 	while ((batch = iter.next_batch()).size() > 0) {

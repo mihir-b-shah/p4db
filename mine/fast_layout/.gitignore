@@ -4,3 +4,4 @@
 src/*.a
 src/*.d
 src/*.o
+artifacts/

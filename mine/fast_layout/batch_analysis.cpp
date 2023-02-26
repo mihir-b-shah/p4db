@@ -2,25 +2,54 @@
 #include "sim.h"
 
 #include <cstdio>
+#include <unordered_map>
+#include <cassert>
+#include <bitset>
+#include <cstdlib>
 
-/*
-In instacart, there are 100k txns.
-We consider batches of 10k.
-Frequencies range from 1.4k occurrences to 28 occurrences.
-But 28 is still a lot!
-*/
 int main() {
-    batch_iter_t iter = get_batch_iter(workload_e::YCSB_99_16);
-    std::vector<txn_t> batch;
-    while ((batch = iter.next_batch()).size() != 0) {
-        printf("Batch size: %lu\n", batch.size());
-        // analyze batch key dist to overall
-        /*
-        std::vector<std::pair<db_key_t, size_t>> very_hot_keys = get_key_cts(batch);
-        for (size_t i = 0; i<very_hot_keys.size(); ++i) {
-            printf("%lu,%lu\n", very_hot_keys[i].first, very_hot_keys[i].second);
-        }
-        */
-    }
+    batch_iter_t iter = get_batch_iter(workload_e::YCSB_99_8);
+    std::list<std::pair<txn_t, txn_t>> txns = iter.get_comps();
+	std::unordered_map<db_key_t, size_t> freqs;
+
+    for (auto it = txns.begin(); it != txns.end(); ++it) {
+		const txn_t& cold_txn = it->second;
+		for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
+			db_key_t k = cold_txn.ops[i];
+			if (freqs.find(k) == freqs.end()) {
+				freqs.emplace(k, 0);
+			}
+			freqs[k] += 1;
+		}
+	}
+
+	std::unordered_map<db_key_t, size_t> past_ref;
+	std::unordered_set<size_t> refd;
+
+	size_t txn_id = 0;
+    for (auto it = txns.begin(); it != txns.end(); ++it) {
+		const txn_t& cold_txn = it->second;
+
+		printf("{");
+		size_t n_conflicts = 0;
+		for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
+			if (past_ref.find(cold_txn.ops[i]) != past_ref.end()) {
+				refd.insert(past_ref.find(cold_txn.ops[i])->second);
+				printf("(k:%lu,f:%lu) ", cold_txn.ops[i], freqs[cold_txn.ops[i]]);
+				n_conflicts += 1;
+			}
+		}
+		printf("} | n_conflicts: %lu\n", n_conflicts);
+		for (size_t i = 0; i<cold_txn.ops.size(); ++i) {
+			if (past_ref.find(cold_txn.ops[i]) == past_ref.end()) {
+				past_ref.emplace(cold_txn.ops[i], txn_id);
+			} else {
+				past_ref[cold_txn.ops[i]] = txn_id;
+			}
+			assert(past_ref[cold_txn.ops[i]] == txn_id);
+		}
+		txn_id += 1;
+	}
+	printf("refd_size: %lu\n", refd.size());
     return 0;
 }

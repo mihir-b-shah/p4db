@@ -230,6 +230,8 @@ static bool granular_lock_OPT(sw_txn_t& txn) {
 
 static bool granular_lock_real(sw_txn_t& txn) {
 	static std::bitset<N_LOCKS> locks;
+	static size_t mini_batch_num = 0;
+	static size_t mini_so_far = 0;
 
 	printf("Txn %lu, p %lu, f %lu | ", txn.id, txn.pass_ct, txn.fail_ct);
 	print_bitset("lglob", locks);
@@ -247,11 +249,36 @@ static bool granular_lock_real(sw_txn_t& txn) {
 			if ((before & txn.locks_check).none()) {
 				// ok great, it worked.
 				assert((before & txn.locks_wanted) == 0);
-				printf("Txn %lu, p %lu | decided TRUE (1)\n", txn.id, txn.pass_ct);
-				return true;
+				if (true) { //txn.id < MOCK_BATCH_GRAN * (mini_batch_num + 1)) {
+					// actually proceed.
+					mini_so_far += 1;
+					if (mini_so_far == MOCK_BATCH_GRAN) {
+						// all necessary txns done.
+						mini_so_far = 0;
+						mini_batch_num += 1;
+					}
+					printf("Txn %lu, p %lu | decided TRUE (1)\n", txn.id, txn.pass_ct);
+					return true;
+				} else {
+					printf("[FAIL] txn_id: %lu, mini_batch_num: %lu, mini_so_far: %lu\n", txn.id, mini_batch_num, mini_so_far);
+					// undo the locks, we might starve someone waiting to finish.
+					// do not increment fail_ct.
+					txn.locks_undo = (~before) & txn.locks_wanted;
+					txn.fail_ct += 1;
+
+					if (txn.pass_ct == 0 && txn.fail_ct >= MAX_FAIL_CT && txn.locks_undo.none()) {
+						mini_so_far += 1;
+					}
+					return false;
+				}
 			} else {
 				txn.locks_undo = (~before) & txn.locks_wanted;
 				txn.fail_ct += 1;
+
+				if (txn.pass_ct == 0 && txn.fail_ct >= MAX_FAIL_CT && txn.locks_undo.none()) {
+					mini_so_far += 1;
+				}
+
 				// do a fast recirc.
 				printf("Txn %lu, p %lu | decided FALSE (2)\n", txn.id, txn.pass_ct);
 				return false;
@@ -260,6 +287,11 @@ static bool granular_lock_real(sw_txn_t& txn) {
 			// Ok just to undo.
 			locks ^= txn.locks_undo;
 			txn.locks_undo.reset();
+
+			if (txn.pass_ct == 0 && txn.fail_ct >= MAX_FAIL_CT && txn.locks_undo.none()) {
+				mini_so_far += 1;
+			}
+
 			printf("Txn %lu, p %lu | decided FALSE (3)\n", txn.id, txn.pass_ct);
 			return false;
 		}
@@ -269,15 +301,14 @@ static bool granular_lock_real(sw_txn_t& txn) {
 		printf("Txn %lu, p %lu | decided TRUE (4)\n", txn.id, txn.pass_ct);
 		return true;
 	} else {
-		printf("Txn %lu, p %lu | decided TRUE (5)\n", txn.id, txn.pass_ct);
-		return true;
+		assert(false && "Should only allow 2-pass txns");
 	}
 }
 
 bool switch_t::manage_locks(sw_txn_t& txn) {
-    // return whole_pipe_lock(txn);
+    return whole_pipe_lock(txn);
 	// return granular_lock_OPT(txn);
-	return granular_lock_real(txn);
+	// return granular_lock_real(txn);
 	// return true;
 }
 

@@ -16,7 +16,7 @@
 typedef size_t db_key_t;
 
 #define N_STAGES 18
-#define REGS_PER_STAGE 1
+#define REGS_PER_STAGE 2
 #define SLOTS_PER_REG (14000000/(REGS_PER_STAGE*N_STAGES))
 #define MAX_BATCH 10000
 #define FRAC_HOT 0.001
@@ -52,6 +52,7 @@ class batch_iter_t {
 public:
     batch_iter_t(std::vector<txn_t> all_txns);
     std::vector<txn_t> next_batch();
+    std::list<std::pair<txn_t, txn_t>> get_comps() { return txn_comps_; }
 
 private:
     // first is hot, second is cold
@@ -98,7 +99,8 @@ batch_iter_t get_batch_iter(workload_e wtype);
 #define IPB_SIZE 500
 #define N_LOCKS 32
 #define PASS2_ACCEL_THR 2
-#define MAX_FAIL_CT 8
+#define MAX_FAIL_CT 24
+#define MOCK_BATCH_GRAN 250
 
 typedef size_t sw_txn_id_t;
 

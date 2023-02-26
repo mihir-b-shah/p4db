@@ -58,6 +58,7 @@ RC TxnExecutor::execute_for_batch(Txn& arg) {
 		++i;
 	}
 
+	printf("depend_size: %lu\n", depend_size);
 	if (depend_size == 0) {
 		// common case- no dependencies.
 	} else if (depend_size == 1) {

@@ -3,11 +3,13 @@
 #include "stats/context.hpp"
 
 #include <numeric>
+#include <main/config.hpp>
 
 
 void pin_worker(uint32_t core, pthread_t pid /*= pthread_self()*/) {
 	printf("pin_worker %u\n", core);
-    WorkerContext::get().tid = core;
+	// TODO: remove when we run on multiple machines, for real.
+    WorkerContext::get().tid = core % Config::instance().num_txn_workers;
     
     #ifdef DPDK
     // make space for dpdk main, receiver thread

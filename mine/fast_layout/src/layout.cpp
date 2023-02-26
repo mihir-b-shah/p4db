@@ -8,6 +8,8 @@
 #include <utility>
 #include <optional>
 
+#include <netinet/in.h>
+
 namespace batch_help {
     class uniq_op_iter_t {
     public:
@@ -241,11 +243,16 @@ sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn)
         } else {
             db_key_t k1 = layout.rev_lookup(p1.stage, p1.reg, p1.idx);
             db_key_t k2 = layout.rev_lookup(p2.stage, p2.reg, p2.idx);
-            return layout.get_key_ct(k2) < layout.get_key_ct(k1);
+            if (layout.get_key_ct(k1) == layout.get_key_ct(k2)) {
+				return p1.idx < p2.idx;
+			} else {
+				return layout.get_key_ct(k2) < layout.get_key_ct(k1);
+			}
         }
     });
     for (size_t i = 0; i<num_ops; ++i) {
         locs.push_back(tmp[i]);
+		//printf("Loc %lu: {s=%lu, r=%lu, i=%lu}\n", i, tmp[i].stage, tmp[i].reg, tmp[i].idx);
     }
 
     // pass 1
@@ -278,6 +285,22 @@ sw_txn_t::sw_txn_t(size_t port, const layout_t& layout, const txn_t& txn)
             i += 1;
         }
     }
+
+	/*
+	printf("-------- Txn dump -------\n");
+	for (size_t p = 0; p<passes.size(); ++p) {
+		auto& grid = passes[p].grid;
+		for (size_t s = 0; s<N_STAGES; ++s) {
+			for (size_t r = 0; r<REGS_PER_STAGE; ++r) {
+				if (grid[s][r].has_value()) {
+					size_t idx = grid[s][r].value();
+					printf("p=%lu: {s=%lu,r=%lu,i=%lu}\n", p, s, r, idx);
+				}
+			}
+		}
+	}
+	printf("-------- End -----------\n");
+	*/
 }
 
 std::vector<sw_txn_t> prepare_txns_sw(size_t port, const std::vector<txn_t>& txns, const layout_t& lay) {
@@ -332,6 +355,9 @@ std::vector<sw_txn_t> prepare_txns_sw(size_t port, const std::vector<txn_t>& txn
 			}
 
 			if (pass2m_freqs[freq_idx] > 0) {
+				if (tl.idx == 0) {
+					printf("oops.\n");
+				}
 				assert(tl.idx != 0);
 				to_lock.back().push_back(tl);
 			}
