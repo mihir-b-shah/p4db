@@ -53,9 +53,31 @@ public:
 	bool bucket_cmp_func(const size_t p1, const size_t p2){
 		return buckets[p1].size() < buckets[p2].size();
 	};
-
 	tbb::concurrent_hash_map<db_key_t, size_t> bucket_map;
+
 	/*	TODO: false sharing problems on this per_core_pq structure? */
+	/*	TODO: future improvements, is pq too slow?
+		1)	Maybe we don't need the full functionality of a pq?
+		2)	Ask Dr. Price in OH about solutions to boxes-of-donuts.
+		3)	There are lots of keys- 30k- but only ~86 frequencies.
+		4)	Can we tolerate an approximate solution.
+		5)	Could tbb::concurrent_priority_queue help?
+
+		A possible solution:
+		- observe as an approximate solution, we don't need a full pq.
+		- the intuition for why picking the hottest item helps is b/c there is a
+		  bimodal distribution, of sorts. Then, the reason picking cold items to
+		  fill a batch is bad, quickly we'll run out of the tail, and then be limited
+		  by the # of hot keys.
+		- instead, pick hot keys first (and use cold stuff as necessary) to
+		  fill out batches.
+		- the unordered_map representing our buckets can be indirected to point onto
+		  a vector sorted in descending popularity of key.
+		- then just split that vector into two chunks- one high popularity, one low-
+		  of equal mass.
+		- then, based on thread- threads 1-T/2 operate from the high popularity chunk,
+		  threads 1+T/2-T operate from the low-popularity one. */
+
 	std::pair<std::mutex, std::vector<size_t>>* per_core_pqs;
 	std::mutex bucket_insert_lock;
 	size_t n_threads;
@@ -63,10 +85,10 @@ public:
 	void init_sched_ds(size_t n_threads) {
 		// avoid copying while holding bucket_insert_lock mutex.
 		buckets.resize(0);
-		buckets.reserve(BATCH_SIZE_TGT*n_threads);
+		buckets.reserve(BATCH_SIZE_TGT);
 		for (size_t i = 0; i<n_threads; ++i) {
 			per_core_pqs[i].second.resize(0);
-			per_core_pqs[i].second.reserve(static_cast<int>(BATCH_SIZE_TGT*1.5));
+			per_core_pqs[i].second.reserve(static_cast<int>(BATCH_SIZE_TGT*1.5/n_threads));
 		}
 	}
 

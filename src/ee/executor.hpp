@@ -16,6 +16,7 @@
 #include "ee/undolog.hpp"
 #include "utils/util.hpp"
 #include "stats/context.hpp"
+#include "main/config.hpp"
 
 #include <iostream>
 #include <vector>
@@ -41,7 +42,7 @@ struct TxnExecutor {
     TxnExecutor(Database& db)
         : db(db), log(db.comm.get()), tid(WorkerContext::get().tid) {
         db.get_casted(KV::TABLE_NAME, kvs);
-		leftover.reserve(BATCH_SIZE_TGT * 0.01);
+		leftover.reserve(BATCH_SIZE_TGT * 0.01/Config::instance().num_txn_workers);
 	}
 
     RC execute_for_batch(Txn& arg);

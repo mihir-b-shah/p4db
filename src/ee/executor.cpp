@@ -360,14 +360,15 @@ static int wait_barrier(pthread_barrier_t* bar) {
 }
 
 void txn_executor(Database& db, std::vector<Txn>& txns) {
+	auto& config = Config::instance();
     TxnExecutor tb{db};
-	DeclusteredLayout* layout = Config::instance().decl_layout;
-	size_t node_id = Config::instance().node_id;
+	DeclusteredLayout* layout = config.decl_layout;
+	size_t node_id = config.node_id;
 	size_t thread_id = WorkerContext::get().tid;
-	const size_t n_threads = Config::instance().num_txn_workers;
+	const size_t n_threads = config.num_txn_workers;
 
 	// TODO: remove, just for experiments.
-	txns.resize(BATCH_SIZE_TGT);
+	txns.resize(BATCH_SIZE_TGT/n_threads);
 	size_t txn_ct = 0;
 	for (Txn& txn : txns) {
 		std::pair<Txn, Txn> hot_cold = get_hot_cold(txn, layout);
@@ -399,7 +400,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 		printf("epoch_id: %lu\n", epoch_id);
 		// batch
 		size_t batch_ct = 0;
-		while (batch_ct < BATCH_SIZE_TGT) {
+		while (batch_ct < BATCH_SIZE_TGT/n_threads) {
 			std::pair<Txn, Txn> hot_cold = get_hot_cold(txn_iter.next(), layout);
 			Txn& cold = hot_cold.second;
 

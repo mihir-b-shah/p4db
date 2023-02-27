@@ -4,7 +4,8 @@
 #include <cassert>
 
 DeclusteredLayout::DeclusteredLayout(const std::vector<std::pair<uint64_t, size_t>>& id_freq)
-	: avail_blocks(0) {
+	// : avail_blocks(0) { TODO impl the scheduler, then change this hard-coded value.
+	   : avail_blocks(6) {
 
 	// this is a consistent function, so no coord necessary across nodes.
     size_t idx_to_alloc[NUM_REGS] = {};
