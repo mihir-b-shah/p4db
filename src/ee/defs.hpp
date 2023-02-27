@@ -45,6 +45,7 @@ constexpr bool DUMP_SWITCH_PKTS = false;
 } // namespace error
 
 // constexpr uint64_t NUM_KVS = 10'000'000;
-constexpr int NUM_OPS = 16;
+constexpr int NUM_OPS = 8;
 constexpr size_t BATCH_SIZE_TGT = 5000;
+constexpr size_t MINI_BATCH_TGT = 500; // TODO: workload-dependent
 

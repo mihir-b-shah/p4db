@@ -80,7 +80,7 @@ int main() {
 	};
 	
 	std::vector<std::priority_queue<db_key_t, std::vector<db_key_t>, decltype(bucket_cmp)>> pqs;
-	std::vector<std::queue<db_key_t>> add_back_vs(N_THREADS);
+	std::vector<std::stack<db_key_t>> add_back_vs(N_THREADS);
 	std::vector<std::queue<txn_t>> bucket_output_vs(N_THREADS);
 
 	for (size_t i = 0; i<N_THREADS; ++i) {
@@ -109,7 +109,7 @@ int main() {
 				added += 1;
 			}
 			while (add_back_vs[t].size() > 0) {
-				pqs[t].push(add_back_vs[t].front());
+				pqs[t].push(add_back_vs[t].top());
 				add_back_vs[t].pop();
 			}
 		}

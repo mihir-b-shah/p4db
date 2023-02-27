@@ -13,6 +13,13 @@
 #include <cstdio>
 #include <tbb/concurrent_hash_map.h>
 
+struct sched_state_t {
+	size_t added;
+	std::vector<size_t> buckets_skip;
+
+	sched_state_t() : added(0) {}
+};
+
 class Database {
     std::vector<Table*> table_ids;
     std::unordered_map<std::string, Table*> table_names;
@@ -40,24 +47,33 @@ public:
 		I'll do the second approach for now- there's some locking overheads, but I think its ok,
 		and simpler logic.
 		Two potential sources of overhead here- the std::mutex, and some indirection. */
+
+	// TODO: right now, we can only remove efficiently stack-wise. Maybe let's impl a queue-style vector?
+	std::vector<std::vector<std::pair<Txn,Txn>>> buckets;
+	bool bucket_cmp_func(const size_t p1, const size_t p2){
+		return buckets[p1].size() < buckets[p2].size();
+	};
+
 	tbb::concurrent_hash_map<db_key_t, size_t> bucket_map;
-	/*	TODO: this vector's resizing while holding mutex might be problematic. */
+	/*	TODO: false sharing problems on this per_core_pq structure? */
 	std::pair<std::mutex, std::vector<size_t>>* per_core_pqs;
 	std::mutex bucket_insert_lock;
-	std::vector<std::vector<std::pair<Txn,Txn>>> buckets;
+	size_t n_threads;
 
-	void init_sched_state(size_t n_threads) {
+	void init_sched_ds(size_t n_threads) {
 		// avoid copying while holding bucket_insert_lock mutex.
+		buckets.resize(0);
 		buckets.reserve(BATCH_SIZE_TGT*n_threads);
-		per_core_pqs = new std::pair<std::mutex, std::vector<size_t>>[n_threads];
 		for (size_t i = 0; i<n_threads; ++i) {
+			per_core_pqs[i].second.resize(0);
 			per_core_pqs[i].second.reserve(static_cast<int>(BATCH_SIZE_TGT*1.5));
 		}
 	}
 
 public:
-    Database(size_t n_threads) {
-		init_sched_state(n_threads);
+    Database(size_t n_threads) : n_threads(n_threads) {
+		per_core_pqs = new std::pair<std::mutex, std::vector<size_t>>[n_threads];
+		init_sched_ds(n_threads);
         comm = std::make_unique<Communicator>();
         msg_handler = std::make_unique<MessageHandler>(*this, comm.get());
         msg_handler->init.wait();
@@ -74,6 +90,8 @@ public:
 		delete[] per_core_pqs;
     }
 
+	void init_pq(size_t core_id);
+	bool next_txn(size_t core_id, sched_state_t& state, std::pair<Txn,Txn>& fill);
 	void schedule_txn(const size_t n_threads, const std::pair<Txn, Txn>& hot_cold);
 
     template <typename T, typename... Args>

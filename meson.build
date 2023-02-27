@@ -56,7 +56,7 @@ fmt_dep = fmt_proj.get_variable('fmt_dep')
 cxxopts_proj = subproject('cxxopts') #default_options: ['default_library=static'])
 cxxopts_dep = cxxopts_proj.get_variable('cxxopts_dep')
 
-dpdk_dep = dependency('libdpdk', required: true)
+#dpdk_dep = dependency('libdpdk', required: true)
 tbb_dep = dependency('tbb', required: true)
 
 cxx = meson.get_compiler('cpp')
@@ -88,7 +88,7 @@ project_deps += [
     threads_dep,
     fmt_dep,
     cxxopts_dep,
-    dpdk_dep,
+    #dpdk_dep,
 	tbb_dep,
     # vtune_dep,
     # dl_dep

@@ -357,7 +357,6 @@ static int wait_barrier(pthread_barrier_t* bar) {
 		assert(false && "Barrier wait failed.");
 		return -1;
 	}
-
 }
 
 void txn_executor(Database& db, std::vector<Txn>& txns) {
@@ -378,12 +377,15 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 	int rc = wait_barrier(&db.txn_exec_barrier);
 	(void) rc;
 
-	// now, we can execute using the pq, without locks.
-	std::vector<size_t>& pq_vec = db.per_core_pqs[thread_id].second;
-	auto bucket_cmp_func = [&db](const size_t p1, const size_t p2){
-		return db.buckets[p1].size() < db.buckets[p2].size();
-	};
-	std::make_heap(pq_vec.begin(), pq_vec.end(), bucket_cmp_func);
+	std::pair<Txn,Txn> txn_fill;
+	sched_state_t sched_state;
+	db.init_pq(thread_id);
+
+	size_t valid_ct = 0;
+	while (db.next_txn(thread_id, sched_state, txn_fill)) {
+		valid_ct += 1;
+	}
+	printf("thread %lu, output len: %lu\n", thread_id, valid_ct);
 
 	/*
 	// Start at epoch 1, b/c the initial states use epoch 0. We're fine to wrap-around to 0, though.
