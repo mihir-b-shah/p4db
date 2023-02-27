@@ -46,8 +46,6 @@ void load_txns(Config& config) {
 				op.mode = AccessMode::READ;
 			}
 			op.value = rand() % 100000;
-
-			static_cast<uint32_t>(1 + config.trace_txns.size());
 			txn.ops[i++] = op;
         }
     }
@@ -64,7 +62,7 @@ void load_txns(Config& config) {
 		}
 
 		size_t spl = buf.find(':');
-		uint64_t k = std::stoull(buf.substr(0, spl));
+		db_key_t k = std::stoull(buf.substr(0, spl));
 		size_t freq = std::stoull(buf.substr(spl+1));
 		id_freq.emplace_back(k, freq);
     }

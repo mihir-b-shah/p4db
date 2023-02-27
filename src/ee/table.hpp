@@ -82,8 +82,8 @@ struct KV {
 	uint64_t id;
 	uint32_t value;
 
-	static constexpr p4db::key_t pk(uint64_t id) {
-		return p4db::key_t{id};
+	static constexpr db_key_t pk(uint64_t id) {
+		return db_key_t{id};
 	}
 
 	void print() {
@@ -151,11 +151,11 @@ struct StructTable final : public Table {
         return true;
     }
 
-	Row_t& get_direct_row(const p4db::key_t index) {
+	Row_t& get_direct_row(const db_key_t index) {
         return data[index];
 	}
 
-    ErrorCode get(const p4db::key_t index, const AccessMode mode, Future_t* future, const timestamp_t ts) {
+    ErrorCode get(const db_key_t index, const AccessMode mode, Future_t* future, const timestamp_t ts) {
         auto local_index = part_info.translate(index);
         if (local_index >= size) {
             return ErrorCode::INVALID_ROW_ID;
@@ -165,7 +165,7 @@ struct StructTable final : public Table {
         return row.local_lock(mode, ts, future);
     }
 
-    ErrorCode put(p4db::key_t index, const AccessMode mode, const timestamp_t ts) {
+    ErrorCode put(db_key_t index, const AccessMode mode, const timestamp_t ts) {
         auto local_index = part_info.translate(index);
         if (local_index >= size) {
             return ErrorCode::INVALID_ROW_ID;
@@ -182,11 +182,11 @@ struct StructTable final : public Table {
     }
 
 
-    auto& insert(p4db::key_t& index) {
+    auto& insert(db_key_t& index) {
         if (size >= max_size) {
             throw error::TableFull();
         }
-        index = p4db::key_t{size++};
+        index = size++;
         return data[index].tuple;
     }
 

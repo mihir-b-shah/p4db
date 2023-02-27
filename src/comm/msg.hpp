@@ -83,12 +83,12 @@ struct Barrier : public Base<Barrier, Type::BARRIER> {};
 struct TupleMsgHeader {
     timestamp_t ts;
     p4db::table_t tid;
-    p4db::key_t rid;
+    db_key_t rid;
     AccessMode mode;
 };
 
 struct TupleGetReq : public Base<TupleGetReq, Type::TUPLE_GET_REQ>, public TupleMsgHeader {
-    TupleGetReq(timestamp_t ts, p4db::table_t tid, p4db::key_t rid, AccessMode mode)
+    TupleGetReq(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode)
         : TupleMsgHeader{ts, tid, rid, mode} {}
 };
 
@@ -100,7 +100,7 @@ struct TupleGetRes : public Base<TupleGetRes, Type::TUPLE_GET_RES>, public Tuple
     uint8_t tuple[0];
 #pragma GCC diagnostic pop
 
-    TupleGetRes(timestamp_t ts, p4db::table_t tid, p4db::key_t rid, AccessMode mode, TxnId last_writer)
+    TupleGetRes(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode, TxnId last_writer)
         : TupleMsgHeader{ts, tid, rid, mode}, // mode==INVALID if e.g. locking failed
 		  last_writer_pack(last_writer.get_packed()) {}
 
@@ -116,7 +116,7 @@ struct TuplePutReq : public Base<TuplePutReq, Type::TUPLE_PUT_REQ>, public Tuple
     uint8_t tuple[0];
 #pragma GCC diagnostic pop
 
-    TuplePutReq(timestamp_t ts, p4db::table_t tid, p4db::key_t rid, AccessMode mode, TxnId last_writer)
+    TuplePutReq(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode, TxnId last_writer)
         : TupleMsgHeader{ts, tid, rid, mode}, // if INVALID then tuple invalid, but free up locks
 		  last_writer_pack(last_writer.get_packed()) {}
 
@@ -127,7 +127,7 @@ struct TuplePutReq : public Base<TuplePutReq, Type::TUPLE_PUT_REQ>, public Tuple
 
 
 struct TuplePutRes : public Base<TuplePutRes, Type::TUPLE_PUT_RES>, public TupleMsgHeader {
-    TuplePutRes(timestamp_t ts, p4db::table_t tid, p4db::key_t rid, AccessMode mode)
+    TuplePutRes(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode)
         : TupleMsgHeader{ts, tid, rid, mode} {}
 };
 

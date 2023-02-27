@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <random>
 #include <queue>
+#include <stack>
 #include <vector>
 
 static constexpr size_t N_THREADS = 20;
@@ -54,7 +55,7 @@ int main() {
 	}
 
 	size_t bucket_hash_cts[N_THREADS] = {};
-	std::unordered_map<db_key_t, std::queue<std::pair<txn_t, txn_t>>> buckets;
+	std::unordered_map<db_key_t, std::stack<std::pair<txn_t, txn_t>>> buckets;
 	for (const auto& pr : txns) {
 		const txn_t& cold_txn = pr.second;
 		if (cold_txn.ops.size() == 0) {
@@ -63,7 +64,7 @@ int main() {
 			continue;
 		}
 		if (buckets.find(cold_txn.ops[0]) == buckets.end()) {
-			std::queue<std::pair<txn_t, txn_t>> q;
+			std::stack<std::pair<txn_t, txn_t>> q;
 			buckets.insert({cold_txn.ops[0], q});
 		}
 		buckets[cold_txn.ops[0]].push(pr);
@@ -100,7 +101,7 @@ int main() {
 					pqs[t].pop();
 					continue;
 				}
-				bucket_output_vs[t].push(q.front().second);
+				bucket_output_vs[t].push(q.top().second);
 				db_key_t k = pqs[t].top();
 				pqs[t].pop();
 				q.pop();
@@ -147,7 +148,7 @@ int main() {
 
 				const txn_t& txn = bucket_output_vs[t].front();
 				quick_considered[t] += 1;
-				if (quick_considered[t] >= 5*BATCH_TGT/N_THREADS) {
+				if (quick_considered[t] >= 2*BATCH_TGT/N_THREADS) {
 					if (!done[t]) {
 						done[t] = true;
 						done_ct += 1;

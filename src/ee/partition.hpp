@@ -44,7 +44,7 @@ struct PartitionInfo {
         std::cout << ss.str();
     }
 
-    auto location(p4db::key_t index) {
+    auto location(db_key_t index) {
         LocationInfo loc_info;
         loc_info.target = msg::node_t{static_cast<uint32_t>(index / partition_size)};
         loc_info.is_local = loc_info.target == my_id;
@@ -52,8 +52,8 @@ struct PartitionInfo {
         return loc_info;
     }
 
-    p4db::key_t translate(p4db::key_t index) {
-        // return p4db::key_t{index - offset};
+    db_key_t translate(db_key_t index) {
+        // return db_key_t{index - offset};
         return index;
     }
 };

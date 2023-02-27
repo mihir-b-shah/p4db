@@ -8,7 +8,7 @@
 
 struct Txn {
 	struct OP {
-		uint64_t id;
+		db_key_t id;
 		AccessMode mode;
 		uint32_t value;
 	};

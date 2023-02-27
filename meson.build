@@ -20,7 +20,6 @@ add_global_arguments('-march=native', language : ['cpp', 'c']) #vs add_global_li
 add_global_arguments('-I/u/mihirs/.local/include/', language : ['cpp', 'c'])
 add_global_arguments('-L/u/mihirs/.local/lib/', language : ['cpp', 'c'])
 add_global_arguments('-Wl,-rpath=/u/mihirs/.local/lib/', language : ['cpp', 'c'])
-add_global_arguments('-ltbb', language : ['cpp', 'c'])
 add_global_arguments('-I/u/mihirs/.local/usr/local/include', language : ['cpp', 'c'])
 
 #add_global_arguments('-Isubprojects/dpdk-20.08/lib/librte_ethdev', language : ['cpp', 'c'])
@@ -58,6 +57,7 @@ cxxopts_proj = subproject('cxxopts') #default_options: ['default_library=static'
 cxxopts_dep = cxxopts_proj.get_variable('cxxopts_dep')
 
 dpdk_dep = dependency('libdpdk', required: true)
+tbb_dep = dependency('tbb', required: true)
 
 cxx = meson.get_compiler('cpp')
 
@@ -89,6 +89,7 @@ project_deps += [
     fmt_dep,
     cxxopts_dep,
     dpdk_dep,
+	tbb_dep,
     # vtune_dep,
     # dl_dep
 ]

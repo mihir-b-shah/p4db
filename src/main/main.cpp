@@ -18,10 +18,10 @@ int main(int argc, char** argv) {
 	// config should get the txns from the trace.
 	load_txns(config);
 
-    Database db;
+    Database db(config.num_txn_workers);
 	auto table = db.make_table<StructTable>(KV::TABLE_NAME, config.table_size);
 	for (uint64_t i = 0; i < config.table_size; i++) {
-		p4db::key_t index;
+		db_key_t index;
 		auto& tuple = table->insert(index);
 		tuple.id = i;
 	}
@@ -32,17 +32,13 @@ int main(int argc, char** argv) {
     workers.reserve(config.num_txn_workers);
 
 	std::vector<std::vector<Txn>> per_core_txns(config.num_txn_workers);
-	for (size_t i = 0; i < config.num_txn_workers; ++i) {
+	for (size_t i = 0; i<config.num_txn_workers; ++i) {
 		per_core_txns[i].reserve(config.trace_txns.size() / config.num_txn_workers);
 	}
-	for (size_t j = 0; j < config.num_txns; ++j) {
-		for (size_t i = 0; i < config.num_txn_workers; ++i) {
-			const Txn& txn = config.trace_txns[(j*config.num_txn_workers+i) % config.trace_txns.size()];
-			per_core_txns[i].push_back(txn);
-		}
+	for (size_t i = 0; i<config.num_txns; ++i) {
+		per_core_txns[i % config.num_txn_workers].push_back(config.trace_txns[i]);
 	}
-
-    for (uint32_t i = 0; i < config.num_txn_workers; ++i) {
+    for (uint32_t i = 0; i<config.num_txn_workers; ++i) {
         workers.emplace_back(std::thread([&, i]() {
             const WorkerContext::guard worker_ctx;
 			// TODO: change in production- right now, running on single machine.

@@ -17,5 +17,6 @@ project_headers += files(
 project_sources += files (
     'undolog.cpp',
 	'switch.cpp',
+	'database.cpp',
     'executor.cpp',
 )

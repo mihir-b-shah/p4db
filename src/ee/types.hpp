@@ -90,12 +90,6 @@ struct table_t {
 };
 static_assert(std::is_trivial<table_t>::value, "table_t is not a POD");
 
-struct key_t {
-    uint64_t value;
-    operator uint64_t() const {
-        return value;
-    }
-};
-static_assert(std::is_trivial<key_t>::value, "key_t is not a POD");
-
 } // namespace p4db
+
+typedef uint64_t db_key_t;

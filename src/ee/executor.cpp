@@ -3,6 +3,9 @@
 
 #include <utility>
 #include <algorithm>
+#include <mutex>
+#include <thread>
+#include <pthread.h>
 
 RC TxnExecutor::execute_for_batch(Txn& arg) {
 	// acquire all locks first, ex and shared. Can rollback within loop
@@ -171,7 +174,7 @@ RC TxnExecutor::rollback() {
 	return RC::ROLLBACK;
 }
 
-TupleFuture<KV>* TxnExecutor::read(StructTable* table, p4db::key_t key) {
+TupleFuture<KV>* TxnExecutor::read(StructTable* table, db_key_t key) {
 	using Future_t = TupleFuture<KV>; // TODO return with const KV
 
 	auto loc_info = table->part_info.location(key);
@@ -218,7 +221,7 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, p4db::key_t key) {
 	return future;
 }
 
-TupleFuture<KV>* TxnExecutor::write(StructTable* table, p4db::key_t key) {
+TupleFuture<KV>* TxnExecutor::write(StructTable* table, db_key_t key) {
 	using Future_t = TupleFuture<KV>;
 
 	auto loc_info = table->part_info.location(key);
@@ -268,7 +271,7 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, p4db::key_t key) {
 TupleFuture<KV>* TxnExecutor::insert(StructTable* table) {
 	WorkerContext::get().cycl.start(stats::Cycles::local_latency);
 	using Future_t = TupleFuture<KV>;
-	p4db::key_t key;
+	db_key_t key;
 	table->insert(key);
 
 	auto future = mempool.allocate<Future_t>();
@@ -305,22 +308,6 @@ SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Switc
 
 	return future;
 }
-
-class TxnIterator {
-public:
-	TxnIterator(std::vector<Txn>& txns) : txns(txns), p(0) {}
-	Txn& next() {
-		assert(p <= txns.size());
-		if (p == txns.size()) {
-			p = 0;
-		}
-		return txns[p];
-	}
-
-private:
-	std::vector<Txn>& txns;
-	size_t p;
-};
 
 /*
 We assume a static key distribution. As such, when generating the txn vector, let us remap
@@ -362,23 +349,46 @@ static std::pair<Txn, Txn> get_hot_cold(const Txn& txn, DeclusteredLayout* layou
 	return {hot_txn, cold_txn};
 }
 
+static int wait_barrier(pthread_barrier_t* bar) {
+	int rc = pthread_barrier_wait(bar);
+	if (rc == PTHREAD_BARRIER_SERIAL_THREAD || rc == 0) {
+		return rc;
+	} else {
+		assert(false && "Barrier wait failed.");
+		return -1;
+	}
+
+}
+
 void txn_executor(Database& db, std::vector<Txn>& txns) {
     TxnExecutor tb{db};
-	TxnIterator txn_iter(txns);
 	DeclusteredLayout* layout = Config::instance().decl_layout;
-
 	size_t node_id = Config::instance().node_id;
 	size_t thread_id = WorkerContext::get().tid;
+	const size_t n_threads = Config::instance().num_txn_workers;
+
+	// TODO: remove, just for experiments.
+	txns.resize(BATCH_SIZE_TGT);
+	size_t txn_ct = 0;
+	for (Txn& txn : txns) {
+		std::pair<Txn, Txn> hot_cold = get_hot_cold(txn, layout);
+		db.schedule_txn(n_threads, hot_cold);
+	}
+
+	int rc = wait_barrier(&db.txn_exec_barrier);
+	(void) rc;
+
+	// now, we can execute using the pq, without locks.
+	std::vector<size_t>& pq_vec = db.per_core_pqs[thread_id].second;
+	auto bucket_cmp_func = [&db](const size_t p1, const size_t p2){
+		return db.buckets[p1].size() < db.buckets[p2].size();
+	};
+	std::make_heap(pq_vec.begin(), pq_vec.end(), bucket_cmp_func);
 
 	/*
-
 	// Start at epoch 1, b/c the initial states use epoch 0. We're fine to wrap-around to 0, though.
 	size_t epoch_id = 1;
 	while (1) {
-		if (epoch_id == 0) {
-			// TODO: need to reset my part of switch table? Or is that the main thread's job?
-			// Probably the main thread, since only it can do init/finish.
-		}
 		// TODO: remove, just for experiments.
 		if (epoch_id >= 30) {
 			break;

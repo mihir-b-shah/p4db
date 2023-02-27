@@ -17,10 +17,10 @@ struct Action {
 template <typename Table_t, typename Future_t>
 struct Write final : public Action {
     Table_t* table;
-    p4db::key_t index;
+    db_key_t index;
     Future_t* future;
 
-    Write(Table_t* table, p4db::key_t index, Future_t* future)
+    Write(Table_t* table, db_key_t index, Future_t* future)
         : table(table), index(index), future(future) {}
 
     void clear(Communicator*, uint32_t, const timestamp_t ts) override {
@@ -39,10 +39,10 @@ struct Write final : public Action {
 template <typename Table_t, typename Future_t>
 struct Read final : public Action {
     Table_t* table;
-    p4db::key_t index;
+    db_key_t index;
     Future_t* future;
 
-    Read(Table_t* table, p4db::key_t index, Future_t* future)
+    Read(Table_t* table, db_key_t index, Future_t* future)
         : table(table), index(index), future(future) {}
 
     void clear(Communicator*, uint32_t, const timestamp_t ts) override {
@@ -111,13 +111,13 @@ struct Undolog {
         : comm(comm), tid(WorkerContext::get().tid) {}
 
     template <typename Table_t, typename Future_t>
-    void add_write(Table_t* table, p4db::key_t index, Future_t* future) {
+    void add_write(Table_t* table, db_key_t index, Future_t* future) {
         auto action = pool.allocate<Write<Table_t, Future_t>>(table, index, future);
         actions.emplace_back(action);
     }
 
     template <typename Table_t, typename Future_t>
-    void add_read(Table_t* table, p4db::key_t index, Future_t* future) {
+    void add_read(Table_t* table, db_key_t index, Future_t* future) {
         auto action = pool.allocate<Read<Table_t, Future_t>>(table, index, future);
         actions.emplace_back(action);
     }
