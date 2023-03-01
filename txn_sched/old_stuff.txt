@@ -1,0 +1,103 @@
+
+Documentation/potential improvements:
+
+	/*	TODO: there are two potential solutions here:
+		Solution 1:
+		1)	The main thread loads the txn trace in, and round-robin assigns txns to individual queues.
+		2)	The threads in parallel, run get_hot_cold on each, and assign txns to the correct pq,
+			with locking.
+		3)	Now, there is no need to lock when building up the buckets, and keeping the buckets
+			consistent with the pq.
+		4)	Run using the pq's like normal. Advantage of this was no bucket locking, disadv was
+			an extra pass for the get_hot_cold.
+		Solution 2:
+		Same thing, but no second pass. This means multiplexing hasn't happened yet when building
+		the buckets, so they must be locked as well.
+		I'll do the second approach for now- there's some locking overheads, but I think its ok,
+		and simpler logic.
+		Two potential sources of overhead here- the std::mutex, and some indirection. */
+
+	// TODO: right now, we can only remove efficiently stack-wise. Maybe let's impl a queue-style vector?
+
+	/*	TODO: false sharing problems on this per_core_pq structure? */
+	/*	TODO: future improvements, is pq too slow?
+		1)	Maybe we don't need the full functionality of a pq?
+		2)	Ask Dr. Price in OH about solutions to boxes-of-donuts.
+		3)	There are lots of keys- 30k- but only ~86 frequencies.
+		4)	Can we tolerate an approximate solution.
+		5)	Could tbb::concurrent_priority_queue help?
+
+		A possible solution:
+		- observe as an approximate solution, we don't need a full pq.
+		- the intuition for why picking the hottest item helps is b/c there is a
+		  bimodal distribution, of sorts. Then, the reason picking cold items to
+		  fill a batch is bad, quickly we'll run out of the tail, and then be limited
+		  by the # of hot keys.
+		- instead, pick hot keys first (and use cold stuff as necessary) to
+		  fill out batches.
+		- the unordered_map representing our buckets can be indirected to point onto
+		  a vector sorted in descending popularity of key.
+		- then just split that vector into two chunks- one high popularity, one low-
+		  of equal mass.
+		- then, based on thread- threads 1-T/2 operate from the high popularity chunk,
+		  threads 1+T/2-T operate from the low-popularity one. */
+
+//	TODO: should this be batched- i.e. get the next 10 txns, to reduce overheads?
+//	TODO: are there txn copying overheads here?
+bool Database::next_txn(size_t core_id, sched_state_t& state, std::pair<Txn,Txn>& fill) {
+	return true;
+	/*
+	std::vector<size_t>& pq = per_core_pqs[core_id].second;
+	if (state.added == MINI_BATCH_TGT/n_threads) {
+		while (state.buckets_skip.size() > 0) {
+			pq.push_back(state.buckets_skip.back());
+			std::push_heap(pq.begin(), pq.end(), BUCKET_CMP_FUNC);
+			state.buckets_skip.pop_back();
+		}
+		state.added = 0;
+	}
+	// note pq[0] is the top.
+	while (pq.size() > 0 && buckets[pq[0]].size() == 0) {
+		std::pop_heap(pq.begin(), pq.end(), BUCKET_CMP_FUNC);
+		pq.pop_back();
+	}
+	if (pq.size() == 0) {
+		return false;
+	}
+	size_t pos = pq[0];
+	auto& avail_txns = buckets[pos];
+	fill = avail_txns.back();
+	std::pop_heap(pq.begin(), pq.end(), BUCKET_CMP_FUNC);
+	avail_txns.pop_back();
+	state.buckets_skip.push_back(pos);
+	state.added += 1;
+	return true;
+	*/
+}
+
+void Database::schedule_txn(const size_t n_threads, const std::pair<Txn, Txn>& hot_cold) {
+	/*
+	db_key_t cold_top_k = hot_cold.second.ops[0].mode != AccessMode::INVALID ? hot_cold.second.ops[0].id : 0;
+	tbb::concurrent_hash_map<db_key_t, size_t>::accessor acc;
+	//	TODO: this has the nice behavior that if already exists, just returns
+	//	an iterator and returns false. Does this function limit concurrency?
+	bool yes_insert = bucket_map.insert(acc, cold_top_k);
+	if (yes_insert) {
+		//	XXX: no deadlock, since we always acquire map lock before bucket lock.
+		bucket_insert_lock.lock();
+		acc->second = buckets.size();
+		buckets.emplace_back();
+		bucket_insert_lock.unlock();
+		
+		size_t pq_id = hash_key(cold_top_k) % n_threads;
+		per_core_pqs[pq_id].first.lock();
+		per_core_pqs[pq_id].second.push_back(acc->second);
+		per_core_pqs[pq_id].first.unlock();
+	}
+	// TODO: waste less than 10x space holding these, to avoid frequent allocs.
+	buckets[acc->second].reserve(8);
+	std::vector<std::pair<Txn,Txn>>& my_bucket = buckets[acc->second];
+	// XXX: safe access, since only through the map can we access the bucket.
+	my_bucket.push_back(hot_cold);
+	*/
+}

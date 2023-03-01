@@ -34,6 +34,7 @@ int main(int argc, char** argv) {
 	std::vector<std::vector<Txn>> per_core_txns(config.num_txn_workers);
 	for (size_t i = 0; i<config.num_txn_workers; ++i) {
 		per_core_txns[i].reserve(config.trace_txns.size() / config.num_txn_workers);
+		db.per_core_txns[i] = &per_core_txns[i];
 	}
 	for (size_t i = 0; i<config.num_txns; ++i) {
 		per_core_txns[i % config.num_txn_workers].push_back(config.trace_txns[i]);

@@ -353,8 +353,8 @@ static void extract_hot_cold(Txn& txn, DeclusteredLayout* layout) {
 void txn_executor(Database& db, std::vector<Txn>& txns) {
 	auto& config = Config::instance();
     TxnExecutor tb{db};
-	DeclusteredLayout* layout = config.decl_layout;
 	size_t node_id = config.node_id;
+	DeclusteredLayout* layout = config.decl_layout;
 	size_t thread_id = WorkerContext::get().tid;
 	const size_t n_threads = config.num_txn_workers;
 	const size_t batch_tgt = BATCH_SIZE_TGT/n_threads;
@@ -368,22 +368,23 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
 	while (txn_num < txns.size()) {
 		size_t orig_txn_num = txn_num;
-		size_t pkt_pos = thread_id;
+		size_t pkt_pos = 1;
 		while (txn_num < txns.size() && txn_num-orig_txn_num < batch_tgt) {
 			Txn& txn = txns[txn_num];
 			extract_hot_cold(txn, layout);
 			if (txn.hottest_any_cold_k.has_value()) {
-				db.sched_packet_buf[pkt_pos] = txn.hottest_any_cold_k.value();
-				pkt_pos += config.num_txn_workers;
+				assert(txn.hottest_any_cold_k.value() < (1ULL<<40));
+				tb.sched_packet_buf[pkt_pos].k = txn.hottest_any_cold_k.value();
+				tb.sched_packet_buf[pkt_pos].idx = txn_num;
+				pkt_pos += 1;
 			} else {
 				rest_order.push_back(txn_num);
 			}
 			txn_num += 1;
 		}
-		/*	TODO: maybe change db_key_t to 32-bit? P4DB uses 1 billion keys, so technically sufficient?
-			However, in the prototype they assume it is 64-bit, so keeping that for now. */
-		db.sched_packet_buf[pkt_pos] = std::numeric_limits<db_key_t>::max();
-		db.run_batch_txn_sched();
+		tb.sched_packet_buf[pkt_pos].k = 0xffffffffffULL;
+		tb.send_get_txn_sched();
+		// TODO: maybe add a barrier here, just to make sure everyone starts off at same time.
 		return;
 
 		// batching loop.

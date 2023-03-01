@@ -1,1 +1,1 @@
-g++ sched.cpp -O2 -o sched.run
+g++ *.cpp -O2 -o sched.run

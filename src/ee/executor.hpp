@@ -21,10 +21,31 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include <pthread.h>
 
 enum RC {
 	COMMIT,
 	ROLLBACK,
+};
+
+int setup_txn_sched_sock();
+void sendall(int sockfd, char* buf, int len);
+void recvall(int sockfd, char* buf, int len);
+
+struct sched_pkt_hdr_t {
+	size_t node_id;
+	size_t thread_id;
+};
+
+struct __attribute__((packed)) out_sched_entry_t {
+	uint64_t k : 40;
+	uint32_t idx : 24;
+};
+
+typedef uint32_t txn_pos_t;
+struct __attribute__((packed)) in_sched_entry_t {
+	txn_pos_t idx : 24;
+	uint8_t thr_id : 8;
 };
 
 struct TxnExecutor {
@@ -36,6 +57,12 @@ struct TxnExecutor {
     uint32_t tid;
 	std::vector<Txn> leftover;
 
+	char* raw_buf;
+	out_sched_entry_t* sched_packet_buf;
+	int txn_sched_sockfd;
+	int sched_packet_buf_len;
+	int sched_reply_len;
+
     TimestampFactory ts_factory;
     timestamp_t ts;
 
@@ -43,6 +70,14 @@ struct TxnExecutor {
         : db(db), log(db.comm.get()), tid(WorkerContext::get().tid) {
         db.get_casted(KV::TABLE_NAME, kvs);
 		leftover.reserve(BATCH_SIZE_TGT * 0.01/Config::instance().num_txn_workers);
+		setup_txn_sched();
+	}
+
+	void setup_txn_sched();
+	void send_get_txn_sched();
+
+	~TxnExecutor() {
+		delete[] sched_packet_buf;
 	}
 
     RC execute_for_batch(Txn& arg);

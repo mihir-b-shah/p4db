@@ -4,6 +4,7 @@ project_headers += files(
     'hex_dump.hpp',
     'mempools.hpp',
     'spinlock.hpp',
+	'rbarrier.hpp',
     'ts_factory.hpp',
     'util.hpp',
 )
