@@ -92,8 +92,9 @@ void Config::parse_cli(int argc, char** argv) {
 			ip_token = strtok(NULL, " ");
 		}
 	} else {
+		sched_server = Server("127.0.0.1", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
 		for (size_t port_it = 0; port_it < num_nodes; ++port_it) {
-			servers.emplace_back("127.0.0.1", 4001+port_it, 
+			servers.emplace_back("127.0.0.1", 4001+port_it+1, 
 				(eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
 		}
 	}

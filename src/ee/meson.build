@@ -4,6 +4,7 @@ project_headers += files(
     'defs.hpp',
     'errors.hpp',
     'future.hpp',
+	'loc_info.hpp',
 	'table.hpp',
     'executor.hpp',
 	'row.hpp',
@@ -19,4 +20,5 @@ project_sources += files (
 	'switch.cpp',
 	'database.cpp',
     'executor.cpp',
+	'sched_intf.cpp',
 )

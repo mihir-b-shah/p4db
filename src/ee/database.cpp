@@ -20,6 +20,8 @@ void Database::init_pq(size_t core_id) {
 //	TODO: should this be batched- i.e. get the next 10 txns, to reduce overheads?
 //	TODO: are there txn copying overheads here?
 bool Database::next_txn(size_t core_id, sched_state_t& state, std::pair<Txn,Txn>& fill) {
+	return true;
+	/*
 	std::vector<size_t>& pq = per_core_pqs[core_id].second;
 	if (state.added == MINI_BATCH_TGT/n_threads) {
 		while (state.buckets_skip.size() > 0) {
@@ -45,13 +47,15 @@ bool Database::next_txn(size_t core_id, sched_state_t& state, std::pair<Txn,Txn>
 	state.buckets_skip.push_back(pos);
 	state.added += 1;
 	return true;
+	*/
 }
 
 void Database::schedule_txn(const size_t n_threads, const std::pair<Txn, Txn>& hot_cold) {
+	/*
 	db_key_t cold_top_k = hot_cold.second.ops[0].mode != AccessMode::INVALID ? hot_cold.second.ops[0].id : 0;
 	tbb::concurrent_hash_map<db_key_t, size_t>::accessor acc;
-	/*	TODO: this has the nice behavior that if already exists, just returns
-		an iterator and returns false. Does this function limit concurrency? */
+	//	TODO: this has the nice behavior that if already exists, just returns
+	//	an iterator and returns false. Does this function limit concurrency?
 	bool yes_insert = bucket_map.insert(acc, cold_top_k);
 	if (yes_insert) {
 		//	XXX: no deadlock, since we always acquire map lock before bucket lock.
@@ -70,4 +74,5 @@ void Database::schedule_txn(const size_t n_threads, const std::pair<Txn, Txn>& h
 	std::vector<std::pair<Txn,Txn>>& my_bucket = buckets[acc->second];
 	// XXX: safe access, since only through the map can we access the bucket.
 	my_bucket.push_back(hot_cold);
+	*/
 }

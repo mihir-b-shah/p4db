@@ -16,7 +16,7 @@ void SwitchInfo::make_txn(const MultiOp& arg, BufferWriter& bw) {
 
     std::array<UniqInstrType_t, DeclusteredLayout::NUM_MAX_OPS> accesses;
     std::array<uint32_t, DeclusteredLayout::NUM_REGS> cntr{};
-    for (size_t i = 0; auto& op : arg.ops.ops) {
+    for (size_t i = 0; auto& op : arg.ops.hot_ops) {
         auto tl = declustered_layout->get_location(op.id);
         uint32_t id = cntr[tl.reg_array_id]++;
         accesses[i++] = UniqInstrType_t{id, tl, op};

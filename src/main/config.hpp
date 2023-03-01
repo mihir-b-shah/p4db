@@ -21,6 +21,7 @@ public:
     void parse_cli(int argc, char** argv);
 
     std::vector<Server> servers = {};
+    Server sched_server;
 
     msg::node_t node_id;
     uint32_t num_nodes;

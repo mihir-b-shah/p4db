@@ -155,8 +155,11 @@ int main() {
 					}
 					continue;
 				}
+				/*
 				if ((txn.ops.size() >= 1 && lock_bset.test(hash_key(txn.ops[0]) % N_HASH_SLOTS)) || 
 					(txn.ops.size() >= 2 && lock_bset.test(hash_key(txn.ops[1]) % N_HASH_SLOTS))) {
+				*/
+				if (txn.ops.size() >= 1 && lock_bset.test(hash_key(txn.ops[0]) % N_HASH_SLOTS)) {
 					// fast abort
 					bucket_output_vs[t].push(txn);
 					bucket_output_vs[t].pop();

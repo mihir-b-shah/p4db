@@ -20,6 +20,10 @@ struct sched_state_t {
 	sched_state_t() : added(0) {}
 };
 
+int setup_txn_sched_sock();
+void sendall(int sockfd, char* buf, int len);
+void recvall(int sockfd, char* buf, int len);
+
 class Database {
     std::vector<Table*> table_ids;
     std::unordered_map<std::string, Table*> table_names;
@@ -28,9 +32,10 @@ public:
     std::unique_ptr<MessageHandler> msg_handler;
     std::unique_ptr<Communicator> comm;
 
-	// TODO: measure, see if pthread_barrier_t is sufficiently cheap, or do I need my own spin-variant?
-	// TODO: This should **work** with C++ std::thread, right?
-	pthread_barrier_t txn_exec_barrier;
+	// TODO this is indexed by modulo operation. Causes false sharing, measure + see.
+	db_key_t* sched_packet_buf;
+	int txn_sched_sockfd;
+	int sched_packet_buf_len;
 
 	/*	TODO: there are two potential solutions here:
 		Solution 1:
@@ -94,12 +99,14 @@ public:
 
 public:
     Database(size_t n_threads) : n_threads(n_threads) {
+		sched_packet_buf = new db_key_t[BATCH_SIZE_TGT+n_threads];
+		sched_packet_buf_len = BATCH_SIZE_TGT+n_threads;
+		txn_sched_sockfd = setup_txn_sched_sock();
 		per_core_pqs = new std::pair<std::mutex, std::vector<size_t>>[n_threads];
 		init_sched_ds(n_threads);
         comm = std::make_unique<Communicator>();
         msg_handler = std::make_unique<MessageHandler>(*this, comm.get());
         msg_handler->init.wait();
-		pthread_barrier_init(&txn_exec_barrier, NULL, n_threads);
     }
 
     Database(Database&&) = default;
@@ -109,6 +116,7 @@ public:
         for (auto& table : table_ids) {
             delete table;
         }
+		delete[] sched_packet_buf;
 		delete[] per_core_pqs;
     }
 

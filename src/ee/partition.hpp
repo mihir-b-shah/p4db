@@ -1,20 +1,15 @@
 #pragma once
 
-
 #include "main/config.hpp"
 #include "ee/types.hpp"
+#include "ee/loc_info.hpp"
 
 #include <cstdint>
 #include <tuple>
 #include <utility>
 
-struct LocationInfo {
-    bool is_local;
-    msg::node_t target;
-    uint16_t abs_hot_index;
-};
-
 // hashed.
+// TODO, impl this? how does it know...
 struct PartitionInfo {
     const uint64_t total_size;
     uint64_t partition_size;
@@ -48,7 +43,6 @@ struct PartitionInfo {
         LocationInfo loc_info;
         loc_info.target = msg::node_t{static_cast<uint32_t>(index / partition_size)};
         loc_info.is_local = loc_info.target == my_id;
-
         return loc_info;
     }
 

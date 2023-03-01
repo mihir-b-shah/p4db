@@ -31,7 +31,7 @@ void load_txns(Config& config) {
 		Txn& txn = config.trace_txns.back();
 		size_t i = 0;
         while (std::getline(ss, access, ',')) {
-			if (txn.ops[NUM_OPS-1].mode != AccessMode::INVALID) {
+			if (txn.cold_ops[NUM_OPS-1].mode != AccessMode::INVALID) {
 				assert(false && "Txn is already full- error.");
 			}
 			Txn::OP op;	
@@ -46,7 +46,7 @@ void load_txns(Config& config) {
 				op.mode = AccessMode::READ;
 			}
 			op.value = rand() % 100000;
-			txn.ops[i++] = op;
+			txn.cold_ops[i++] = op;
         }
     }
 

@@ -12,6 +12,7 @@ struct BarrierHandler {
     std::atomic<uint32_t> received{0};
     std::atomic<uint32_t> local{0};
 
+	// TODO: is this ok? Don't we need two barriers due to potential scheduling problems?
     pthread_barrier_t local_barrier;
 
     BarrierHandler(Communicator* comm);

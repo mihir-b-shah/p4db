@@ -49,8 +49,8 @@ struct TxnExecutor {
     RC execute(Txn& arg);
     RC commit();
     RC rollback();
-    TupleFuture<KV>* read(StructTable* table, db_key_t key);
-    TupleFuture<KV>* write(StructTable* table, db_key_t key);
+    TupleFuture<KV>* read(StructTable* table, const Txn::OP& op);
+    TupleFuture<KV>* write(StructTable* table, const Txn::OP& op);
     TupleFuture<KV>* insert(StructTable* table);
 	SwitchFuture<SwitchInfo>* atomic(SwitchInfo& p4_switch, const SwitchInfo::MultiOp& arg);
 };
