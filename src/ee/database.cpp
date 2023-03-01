@@ -10,6 +10,23 @@ static size_t hash_key(db_key_t x) {
 	return x;
 }
 
+/*	A spinning reusable barrier impl, since pthread_barrier_t is NOT reusable.
+	TODO: optimize by rolling my own set of two counters if necessary, right now just 2 barriers.
+	https://github.com/stephentu/silo/blob/master/spinbarrier.h
+	P4DB's distributed barrier is also a 2-phase barrier, but is potentially wrong? Need to check */
+void Database::run_batch_txn_sched() {
+	int rc1 = pthread_barrier_wait(&bar1_txn_sched);
+	if (rc1 == PTHREAD_BARRIER_SERIAL_THREAD) {
+		printf("buf_len outside: %d\n", sched_packet_buf_len);
+		sendall(txn_sched_sockfd, (char*) sched_packet_buf, sched_packet_buf_len);
+		recvall(txn_sched_sockfd, (char*) sched_packet_buf, sched_packet_buf_len);
+	} else {
+		assert(rc1 == 0);
+	}
+	int rc2 = pthread_barrier_wait(&bar2_txn_sched);
+	assert(rc2 == PTHREAD_BARRIER_SERIAL_THREAD || rc2 == 0);
+}
+
 #define BUCKET_CMP_FUNC [this](const size_t p1, const size_t p2){ return buckets[p1].size() < buckets[p2].size(); }
 
 void Database::init_pq(size_t core_id) {

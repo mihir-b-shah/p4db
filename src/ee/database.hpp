@@ -12,6 +12,7 @@
 #include <mutex>
 #include <cstdio>
 #include <tbb/concurrent_hash_map.h>
+#include <pthread.h>
 
 struct sched_state_t {
 	size_t added;
@@ -36,6 +37,8 @@ public:
 	db_key_t* sched_packet_buf;
 	int txn_sched_sockfd;
 	int sched_packet_buf_len;
+	pthread_barrier_t bar1_txn_sched;
+	pthread_barrier_t bar2_txn_sched;
 
 	/*	TODO: there are two potential solutions here:
 		Solution 1:
@@ -100,8 +103,10 @@ public:
 public:
     Database(size_t n_threads) : n_threads(n_threads) {
 		sched_packet_buf = new db_key_t[BATCH_SIZE_TGT+n_threads];
-		sched_packet_buf_len = BATCH_SIZE_TGT+n_threads;
+		sched_packet_buf_len = sizeof(db_key_t)*(BATCH_SIZE_TGT+n_threads);
 		txn_sched_sockfd = setup_txn_sched_sock();
+		pthread_barrier_init(&bar1_txn_sched, NULL, n_threads);
+		pthread_barrier_init(&bar2_txn_sched, NULL, n_threads);
 		per_core_pqs = new std::pair<std::mutex, std::vector<size_t>>[n_threads];
 		init_sched_ds(n_threads);
         comm = std::make_unique<Communicator>();
@@ -120,6 +125,7 @@ public:
 		delete[] per_core_pqs;
     }
 
+	void run_batch_txn_sched();
 	void init_pq(size_t core_id);
 	bool next_txn(size_t core_id, sched_state_t& state, std::pair<Txn,Txn>& fill);
 	void schedule_txn(const size_t n_threads, const std::pair<Txn, Txn>& hot_cold);

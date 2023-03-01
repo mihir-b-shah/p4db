@@ -15,7 +15,7 @@ public class Generic {
 	static final double K_ROOT_RELAX = 0.1;
 	static final int N_OPS = 8;
 	static final int N_TXNS = 1_000_000;
-	static final int N_NODES = 1;
+	static final int N_NODES = 2;
 	static final int N_KEYS = 10_000_000;
 	static final int HOT_LIM_P_DIST = 100;
 	static final int COLD_LIM_P_DIST = 0;
@@ -93,7 +93,7 @@ public class Generic {
 
 			for (long[] txn : nodeTxns) {
 				for (int j = 0; j<txn.length; ++j) {
-					int distFrac = 10; // TODO keyCts.get(txn[j]);
+					int distFrac = 20; // TODO keyCts.get(txn[j]);
 					int rand = (int) (100*Math.random());
 					// outFile.printf("op: %d, rand: %d, distFrac: %d\n", txn[j], rand, distFrac);
 					if (rand < distFrac) {

@@ -1,6 +1,5 @@
 
 #include <ee/executor.hpp>
-#include <utils/rbarrier.hpp>
 
 #include <utility>
 #include <algorithm>
@@ -310,9 +309,10 @@ SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Switc
 	return future;
 }
 
-static bool extract_hot_cold(Txn& txn, DeclusteredLayout* layout) {
-	// Keep track of the hottest local value.
-	size_t cold1_p = 0, cold1_v = 0;
+static void extract_hot_cold(Txn& txn, DeclusteredLayout* layout) {
+	// Keep track of the hottest local/global value.
+	db_key_t cold1_lk, cold1_gk;
+	size_t cold1_lv = 0, cold1_gv = 0;
 	size_t hot_p = 0, cold_p = 0;
 
 	bool cold_all_local = true;
@@ -323,12 +323,16 @@ static bool extract_hot_cold(Txn& txn, DeclusteredLayout* layout) {
 			txn.hot_ops[hot_p++] = txn.cold_ops[i];
 		} else {
 			if (txn.cold_ops[i].loc_info.is_local) {
-				if (hot_info.second > cold1_v) {
-					cold1_p = cold_p;
-					cold1_v = hot_info.second;
+				if (hot_info.second > cold1_lv) {
+					cold1_lk = txn.cold_ops[i].id;
+					cold1_lv = hot_info.second;
 				}
 			} else {
 				cold_all_local = false;
+			}
+			if (hot_info.second > cold1_gv) {
+				cold1_gk = txn.cold_ops[i].id;
+				cold1_gv = hot_info.second;
 			}
 			txn.cold_ops[cold_p++] = txn.cold_ops[i];
 		}
@@ -338,23 +342,15 @@ static bool extract_hot_cold(Txn& txn, DeclusteredLayout* layout) {
 		}
 	}
 	txn.cold_all_local = cold_all_local;
-	if (cold1_v != 0) {
-		/*	TODO: a potential problem here, if we put the hottest cold value first, is that
-			we acquire the lock first, and as such increase probability of contention */
-		std::swap(txn.cold_ops[cold1_p], txn.cold_ops[0]);
-		return true;
-	} else {
-		return false;
+	if (cold1_lv > 0) {
+		txn.hottest_local_cold_k = cold1_lk;
+	}
+	if (cold1_gv > 0) {
+		txn.hottest_any_cold_k = cold1_gk;
 	}
 }
 
 void txn_executor(Database& db, std::vector<Txn>& txns) {
-	// TODO: is this safe, i.e. will the other threads see this thing before they init?
-	static reusable_barrier_t sched_bar(db.n_threads, [&db](){
-		sendall(db.txn_sched_sockfd, (char*) db.sched_packet_buf, db.sched_packet_buf_len);
-		recvall(db.txn_sched_sockfd, (char*) db.sched_packet_buf, db.sched_packet_buf_len);
-	});
-
 	auto& config = Config::instance();
     TxnExecutor tb{db};
 	DeclusteredLayout* layout = config.decl_layout;
@@ -375,19 +371,19 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 		size_t pkt_pos = thread_id;
 		while (txn_num < txns.size() && txn_num-orig_txn_num < batch_tgt) {
 			Txn& txn = txns[txn_num];
-			bool hash_key_exists = extract_hot_cold(txn, layout);
-			if (hash_key_exists) {
-				db.sched_packet_buf[pkt_pos] = txn.cold_ops[0].id;
+			extract_hot_cold(txn, layout);
+			if (txn.hottest_any_cold_k.has_value()) {
+				db.sched_packet_buf[pkt_pos] = txn.hottest_any_cold_k.value();
 				pkt_pos += config.num_txn_workers;
 			} else {
 				rest_order.push_back(txn_num);
 			}
+			txn_num += 1;
 		}
 		/*	TODO: maybe change db_key_t to 32-bit? P4DB uses 1 billion keys, so technically sufficient?
 			However, in the prototype they assume it is 64-bit, so keeping that for now. */
 		db.sched_packet_buf[pkt_pos] = std::numeric_limits<db_key_t>::max();
-
-		sched_bar.wait();
+		db.run_batch_txn_sched();
 		return;
 
 		// batching loop.

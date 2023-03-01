@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 
 struct Txn {
 	struct OP {
@@ -17,6 +18,8 @@ struct Txn {
 	// start off with everything in cold, opportunistically move to hot.
 	std::array<OP, NUM_OPS> cold_ops;
 	std::array<OP, NUM_OPS> hot_ops;
+	std::optional<db_key_t> hottest_any_cold_k;
+	std::optional<db_key_t> hottest_local_cold_k;
 	bool cold_all_local;
 	TxnId id;
 };
