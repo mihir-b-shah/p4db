@@ -95,15 +95,18 @@ int main() {
 	struct sockaddr_in client_addrs[N_NODES][N_NODE_THREADS];
 	in_sched_entry_t* bufs[N_NODES][N_NODE_THREADS];
 	out_sched_entry_t* out_bufs[N_NODES][N_NODE_THREADS];
+
 	for (size_t n = 0; n<N_NODES; ++n) {
 		for (size_t t = 0; t<N_NODE_THREADS; ++t) {
 			bufs[n][t] = (in_sched_entry_t*) malloc(IN_MSG_SIZE);
 			out_bufs[n][t] = (out_sched_entry_t*) malloc(OUT_MSG_SIZE);
 		}
 	}
-	// hardcoded,
+	printf("Reached 104. sockfd=%d, server_addr: %p\n", sockfd, &server_addr);
+	int bind_rc = bind(sockfd, (sockaddr*) &server_addr, sizeof(server_addr));
+	printf("rc: %d, err: %s\n", bind_rc, strerror(errno));
+	assert(bind_rc == 0);
 
-	assert(bind(sockfd, (sockaddr*) &server_addr, sizeof(server_addr)) == 0);
 	// just a reasonable backlog quantity
 	assert(listen(sockfd, N_NODES*N_NODE_THREADS+5) == 0);
 
@@ -117,12 +120,14 @@ int main() {
 
 		for (size_t t = 0; t<N_NODE_THREADS; ++t) {
 			for (size_t n = 0; n<N_NODES; ++n) {
-				socklen_t client_addr_len;
+				socklen_t client_addr_len = sizeof(client_addrs[n][t]);
 				int child_fd = accept(sockfd, (struct sockaddr*) &client_addrs[n][t], &client_addr_len);
+				printf("sockfd: %d, child_fd: %d, t: %lu, n: %lu, err: %s\n", sockfd, child_fd, t, n, strerror(errno));
 				assert(child_fd >= 0);
 
 				char hdr_buf[sizeof(sched_pkt_hdr_t)];
 				// TODO: too lazy to implement recvall here... ill fix it if it breaks...
+				printf("recv %lu bytes from fd %d\n", sizeof(sched_pkt_hdr_t), child_fd);
 				assert(recv(child_fd, hdr_buf, sizeof(sched_pkt_hdr_t), 0) == sizeof(sched_pkt_hdr_t));
 
 				node_sockfds[n][t] = child_fd;
@@ -159,23 +164,25 @@ int main() {
 		// the pair is (node_id, txn id)
 		std::vector<std::vector<bucket_txn_id_t>> buckets;
 		buckets.reserve(N_NODES*BATCH_SIZE_TGT);
-		auto bucket_cmp_func = [&buckets](const size_t p1, const size_t p2){
-			return buckets[p1].size() < buckets[p2].size();
-		};
 		std::vector<size_t> pq_vec;
-		pq_vec.reserve(BATCH_SIZE_TGT);
+		pq_vec.reserve(N_NODES*BATCH_SIZE_TGT);
 		bool node_thr_done[N_NODES][N_NODE_THREADS] = {{}};
 
-		for (size_t i = 0; i<IN_MSG_SIZE; ++i) {
+		for (size_t i = 0; i<IN_MSG_SIZE/sizeof(in_sched_entry_t); ++i) {
 			for (size_t t = 0; t<N_NODE_THREADS; ++t) {
 				for (size_t n = 0; n<N_NODES; ++n) {
-					in_sched_entry_t entry = bufs[n][t][i];
-					db_key_t key_to_hash = entry.k;
 					if (node_thr_done[n][t]) {
 						continue;
-					} else if (key_to_hash == SENTINEL_KEY) {
-						node_thr_done[n][t] = true;
 					}
+
+					in_sched_entry_t entry = bufs[n][t][i];
+					db_key_t key_to_hash = entry.k;
+					if (key_to_hash == SENTINEL_KEY) {
+						node_thr_done[n][t] = true;
+						continue;
+					}
+					assert(key_to_hash < 10000000);
+
 					auto it = bucket_map.find(key_to_hash);
 					size_t bucket_pos;
 					if (it == bucket_map.end()) {
@@ -183,41 +190,58 @@ int main() {
 						buckets.emplace_back();
 						buckets.back().reserve(8);
 						bucket_map.emplace(key_to_hash, bucket_pos);
-						pq_vec.push_back(key_to_hash);
+						pq_vec.push_back(bucket_pos);
 					} else {
 						bucket_pos = it->second;
 					}
+					assert(bucket_pos >= 0 && bucket_pos < buckets.size());
 					buckets[bucket_pos].emplace_back(n, t, static_cast<uint32_t>(entry.idx));
 				}
 			}
 		}
 
-		std::vector<size_t> buckets_skip;
+		auto bucket_cmp_func = [&buckets](const size_t p1, const size_t p2){
+			if (p1 >= buckets.size() || p2 >= buckets.size()) {
+				printf("p1: %lu, p2: %lu\n", p1, p2);
+				assert(false);
+			}
+			return buckets[p1].size() < buckets[p2].size();
+		};
 		std::make_heap(pq_vec.begin(), pq_vec.end(), bucket_cmp_func);
+		printf("rat!\n");
 		// round-robin thread assignment.
 		size_t node_thr_rr[N_NODES] = {};
 
 		// TODO: this could be multi-threaded, not for now.
+		std::vector<size_t> buckets_skip;
 		while (pq_vec.size() > 0) {
+			assert(buckets_skip.size() == 0);
 			while (pq_vec.size() > 0 && buckets_skip.size() < MINI_BATCH_TGT_SIZE) {
 				size_t b_top = pq_vec[0];
 				auto& v = buckets[b_top];
 				if (v.size() == 0) {
 					std::pop_heap(pq_vec.begin(), pq_vec.end(), bucket_cmp_func);
+					pq_vec.pop_back();
 					continue;
 				}
 				// per-core output.
 				bucket_txn_id_t& txn_id = v.back();
 				// we can re-assign among threads, not among nodes.
-				size_t thr_assign = node_thr_rr[txn_id.node_id]++;
-				auto& buf_e = out_bufs[txn_id.node_id][thr_assign][out_buf_write_p[txn_id.node_id][thr_assign]++];
+				size_t thr_assign = node_thr_rr[txn_id.node_id];
+				node_thr_rr[txn_id.node_id] = (node_thr_rr[txn_id.node_id]+1) % N_NODE_THREADS;
+
+				size_t out_bufs_idx = out_buf_write_p[txn_id.node_id][thr_assign]++;
+				assert(txn_id.node_id < N_NODES && thr_assign < N_NODE_THREADS && out_bufs_idx < OUT_MSG_SIZE/sizeof(out_sched_entry_t));
+				auto& buf_e = out_bufs[txn_id.node_id][thr_assign][out_bufs_idx];
 				buf_e.idx = txn_id.txn_id;
 				buf_e.thr_id = txn_id.thread_id;
+				v.pop_back();
 
 				std::pop_heap(pq_vec.begin(), pq_vec.end(), bucket_cmp_func);
 				pq_vec.pop_back();
 				buckets_skip.push_back(b_top);
 			}
+			// printf("pq_vec.size(): %lu, buckets_skip.size(): %lu\n", pq_vec.size(), buckets_skip.size());
 			while (buckets_skip.size() > 0) {
 				pq_vec.push_back(buckets_skip.back());
 				std::push_heap(pq_vec.begin(), pq_vec.end(), bucket_cmp_func);
@@ -238,7 +262,7 @@ int main() {
 					if (first_it) {
 						out_bufs[n][t][out_buf_write_p[n][t]].idx = SENTINEL_POS;
 					}
-					if (left[t][n] > 0) {
+					if (out_left[t][n] > 0) {
 						done = false;
 						// TODO: maybe make this zero-copy or non-blocking?
 						ssize_t sent = send(node_sockfds[n][t], out_buf_ptrs[n][t], out_left[n][t], 0);

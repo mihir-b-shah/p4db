@@ -309,7 +309,7 @@ SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Switc
 	return future;
 }
 
-static void extract_hot_cold(Txn& txn, DeclusteredLayout* layout) {
+static void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 	// Keep track of the hottest local/global value.
 	db_key_t cold1_lk, cold1_gk;
 	size_t cold1_lv = 0, cold1_gv = 0;
@@ -318,6 +318,7 @@ static void extract_hot_cold(Txn& txn, DeclusteredLayout* layout) {
 	bool cold_all_local = true;
 	size_t i = 0;
 	while (i < NUM_OPS && txn.cold_ops[i].mode != AccessMode::INVALID) {
+		txn.cold_ops[i].loc_info = table->part_info.location(txn.cold_ops[i].id);
 		std::pair<bool, size_t> hot_info = layout->is_hot(txn.cold_ops[i].id);
 		if (hot_info.first) {
 			txn.hot_ops[hot_p++] = txn.cold_ops[i];
@@ -368,10 +369,10 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
 	while (txn_num < txns.size()) {
 		size_t orig_txn_num = txn_num;
-		size_t pkt_pos = 1;
+		size_t pkt_pos = 0;
 		while (txn_num < txns.size() && txn_num-orig_txn_num < batch_tgt) {
 			Txn& txn = txns[txn_num];
-			extract_hot_cold(txn, layout);
+			extract_hot_cold(tb.kvs, txn, layout);
 			if (txn.hottest_any_cold_k.has_value()) {
 				assert(txn.hottest_any_cold_k.value() < (1ULL<<40));
 				tb.sched_packet_buf[pkt_pos].k = txn.hottest_any_cold_k.value();
@@ -383,6 +384,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 			txn_num += 1;
 		}
 		tb.sched_packet_buf[pkt_pos].k = 0xffffffffffULL;
+		printf("Before send_sched.\n");
 		tb.send_get_txn_sched();
 		// TODO: maybe add a barrier here, just to make sure everyone starts off at same time.
 		return;

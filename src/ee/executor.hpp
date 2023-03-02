@@ -77,7 +77,7 @@ struct TxnExecutor {
 	void send_get_txn_sched();
 
 	~TxnExecutor() {
-		delete[] sched_packet_buf;
+		free(raw_buf);
 	}
 
     RC execute_for_batch(Txn& arg);
