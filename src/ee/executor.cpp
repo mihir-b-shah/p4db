@@ -314,6 +314,12 @@ static void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* la
 	db_key_t cold1_lk, cold1_gk;
 	size_t cold1_lv = 0, cold1_gv = 0;
 	size_t hot_p = 0, cold_p = 0;
+	
+	size_t dbg_i = 0;
+	while (dbg_i < NUM_OPS && txn.cold_ops[dbg_i].mode != AccessMode::INVALID) {
+		dbg_i += 1;
+	}
+	fprintf(stderr, "dbg_i: %lu\n", dbg_i);
 
 	bool cold_all_local = true;
 	size_t i = 0;
@@ -338,9 +344,9 @@ static void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* la
 			txn.cold_ops[cold_p++] = txn.cold_ops[i];
 		}
 		i += 1;
-		if (i > cold_p) {
-			txn.cold_ops[i].mode = AccessMode::INVALID;
-		}
+	}
+	if (cold_p < NUM_OPS) {
+		txn.cold_ops[cold_p].mode == AccessMode::INVALID;
 	}
 	txn.cold_all_local = cold_all_local;
 	if (cold1_lv > 0) {
@@ -349,6 +355,7 @@ static void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* la
 	if (cold1_gv > 0) {
 		txn.hottest_any_cold_k = cold1_gk;
 	}
+	assert(cold_p + hot_p == NUM_OPS);
 }
 
 void txn_executor(Database& db, std::vector<Txn>& txns) {
@@ -384,7 +391,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 			txn_num += 1;
 		}
 		tb.sched_packet_buf[pkt_pos].k = 0xffffffffffULL;
-		printf("Before send_sched.\n");
+		printf("Before send_sched. rest_order.size(): %lu, txn_num: %lu, orig_txn_num: %lu\n", rest_order.size(), txn_num, orig_txn_num);
 		tb.send_get_txn_sched();
 		// TODO: maybe add a barrier here, just to make sure everyone starts off at same time.
 		return;

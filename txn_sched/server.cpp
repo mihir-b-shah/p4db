@@ -235,6 +235,7 @@ int main() {
 				auto& buf_e = out_bufs[txn_id.node_id][thr_assign][out_bufs_idx];
 				buf_e.idx = txn_id.txn_id;
 				buf_e.thr_id = txn_id.thread_id;
+				fprintf(stderr, "n: %lu, t: %lu, i: %lu | idx: %u, thr: %u\n", txn_id.node_id, thr_assign, out_bufs_idx, buf_e.idx, buf_e.thr_id);
 				v.pop_back();
 
 				std::pop_heap(pq_vec.begin(), pq_vec.end(), bucket_cmp_func);
