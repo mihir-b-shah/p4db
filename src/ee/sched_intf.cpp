@@ -71,7 +71,7 @@ void TxnExecutor::send_get_txn_sched() {
 	printf("Sending first 4 bytes: %lu %lu %lu %lu\n", buf_view[0], buf_view[1], buf_view[2], buf_view[3]);
 	sendall(txn_sched_sockfd, raw_buf, sched_packet_buf_len);
 	printf("Line %d\n", __LINE__);
-	db.txn_sched_bar.wait(NULL);
+	db.txn_sched_bar.wait(NULL, true);
 	printf("Line %d\n", __LINE__);
 	recvall(txn_sched_sockfd, raw_buf, sched_reply_len);
 	printf("Line %d\n", __LINE__);

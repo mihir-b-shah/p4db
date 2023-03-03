@@ -2,15 +2,22 @@
 
 #include "main/config.hpp"
 
+struct barrier_handler_arg_t {
+	BarrierHandler* handler;
+	uint32_t my_wait;
+};
 
-BarrierHandler::BarrierHandler(Communicator* comm) : comm(comm) {
-    auto& config = Config::instance();
-    pthread_barrier_init(&local_barrier, nullptr, config.num_txn_workers);
-    num_nodes = comm->num_nodes;
+static void* critical_wait(void* arg) {
+	barrier_handler_arg_t* bar_arg = (barrier_handler_arg_t*) arg;
+    if (bar_arg->my_wait == 0) {
+        bar_arg->handler->wait();
+    }
+	return NULL;
 }
 
-BarrierHandler::~BarrierHandler() {
-    pthread_barrier_destroy(&local_barrier);
+BarrierHandler::BarrierHandler(Communicator* comm) : comm(comm),
+	local_barrier(Config::instance().num_txn_workers, critical_wait) {
+    num_nodes = comm->num_nodes;
 }
 
 void BarrierHandler::handle() {
@@ -22,12 +29,10 @@ void BarrierHandler::wait_nodes() {
 }
 
 void BarrierHandler::wait_workers() {
-    uint32_t my_wait = local.fetch_add(1);
-    pthread_barrier_wait(&local_barrier);
-    if (my_wait == 0) { // execute only by one
-        wait();
-    }
-    pthread_barrier_wait(&local_barrier);
+	barrier_handler_arg_t arg;
+	arg.handler = this;
+	arg.my_wait = local.fetch_add(1);
+	local_barrier.wait(&arg, false);
 }
 
 // private

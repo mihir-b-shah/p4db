@@ -22,10 +22,10 @@ public:
 	}
 	reusable_barrier_t(size_t n_threads) : reusable_barrier_t(n_threads, empty_serial_func) {}
 
-	void* wait(void* arg) {
+	void* wait(void* arg, bool single_action) {
 		int rc1 = pthread_barrier_wait(&bar1);
 		void* res;
-		if (rc1 == PTHREAD_BARRIER_SERIAL_THREAD) {
+		if (rc1 == PTHREAD_BARRIER_SERIAL_THREAD || (rc1 == 0 && !single_action)) {
 			res = sf(arg);
 		} else {
 			res = NULL;

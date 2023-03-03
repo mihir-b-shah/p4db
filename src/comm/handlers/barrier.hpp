@@ -1,6 +1,7 @@
 #pragma once
 
-#include "comm/comm.hpp"
+#include <comm/comm.hpp>
+#include <utils/rbarrier.hpp>
 
 #include <atomic>
 #include <cstdint>
@@ -12,16 +13,16 @@ struct BarrierHandler {
     std::atomic<uint32_t> received{0};
     std::atomic<uint32_t> local{0};
 
-	// TODO: is this ok? Don't we need two barriers due to potential scheduling problems?
-    pthread_barrier_t local_barrier;
+	// TODO I changed this, is this a problem?
+	reusable_barrier_t local_barrier;
 
     BarrierHandler(Communicator* comm);
-    ~BarrierHandler();
+    ~BarrierHandler() {}
 
     void handle();
     void wait_nodes();
     void wait_workers();
+    void wait();
 
 private:
-    void wait();
 };
