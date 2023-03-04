@@ -7,7 +7,9 @@
 #include <thread>
 #include <pthread.h>
 #include <limits>
+#include <optional>
 
+/*
 RC TxnExecutor::execute_for_batch(Txn& arg) {
 	// acquire all locks first, ex and shared. Can rollback within loop
 
@@ -78,7 +80,63 @@ RC TxnExecutor::execute_for_batch(Txn& arg) {
 	// locks automatically released
 	return commit();
 }
+*/
 
+RC TxnExecutor::execute_mini_batch(TxnIterator& iter) {
+	/*
+	// acquire all locks first, ex and shared. Can rollback within loop
+	while (1) {
+		std::optional<in_sched_entry_t> e = iter.next_entry();
+		if (!e.has_value()) {
+			break;
+		}
+	}
+	
+	TupleFuture<KV>* ops[NUM_OPS];
+	for (size_t i = 0; auto& op : arg.cold_ops) {
+		if (op.mode == AccessMode::WRITE) {
+			ops[i] = write(kvs, op);
+		} else if (op.mode == AccessMode::READ) {
+			ops[i] = read(kvs, op);
+		} else {
+			assert(op.mode == AccessMode::INVALID);
+			ops[i] = nullptr;
+		}
+
+		if (!ops[i]) {
+			return rollback();
+		}
+		++i;
+	}
+
+	// Use obtained write-locks to write values
+	for (size_t i = 0; auto& op : arg.cold_ops) {
+		if (op.mode == AccessMode::WRITE) {
+			auto x = ops[i]->get();
+			if (!x) {
+				return rollback();
+			}
+			x->value = op.value;
+		} else if (op.mode == AccessMode::READ) {
+			const auto x = ops[i]->get();
+			if (!x) {
+				return rollback();
+			}
+			const auto value = x->value;
+			do_not_optimize(value);
+		} else {
+			break;
+		}
+		++i;
+	}
+
+	*/
+	// locks automatically released
+	return commit();
+}
+
+
+// XXX: check before 3/1/2023 to see execute_for_batch- or use git bisect?
 RC TxnExecutor::execute(Txn& arg) {
 	ts = ts_factory.get();
 	// std::stringstream ss;
@@ -368,8 +426,8 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 	const size_t batch_tgt = BATCH_SIZE_TGT/n_threads;
 	size_t batch_num = 0;
 	size_t txn_num = 0;
-	std::vector<size_t> shuffle_order;
-	shuffle_order.reserve(batch_tgt);
+
+	/*
 	// just a heuristic, change if allocs happening
 	std::vector<size_t> rest_order;
 	rest_order.reserve(batch_tgt*0.05);
@@ -391,43 +449,22 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 			txn_num += 1;
 		}
 		tb.sched_packet_buf[pkt_pos].k = 0xffffffffffULL;
-		printf("Before send_sched. rest_order.size(): %lu, txn_num: %lu, orig_txn_num: %lu\n", rest_order.size(), txn_num, orig_txn_num);
 		tb.send_get_txn_sched();
-		// TODO: maybe add a barrier here, just to make sure everyone starts off at same time.
-		return;
 
+		TxnIterator txn_iter(tb);
+		std::optional<in_sched_entry_t> e_res;
+		while (1) {
+			e_res = txn_iter.next_entry();
+			if (!e_res.has_value()) {
+				break;
+			}
+			Txn& txn = txn_iter.entry_to_txn(e_res.value());
+			fprintf(stderr, "Got txn\n");
+		}
+		*/
+
+		// TODO: maybe add a barrier here, just to make sure everyone starts off at same time.
 		// batching loop.
 		batch_num += 1;
 	}
-
-	/*
-	// Start at epoch 1, b/c the initial states use epoch 0. We're fine to wrap-around to 0, though.
-	size_t epoch_id = 1;
-	while (1) {
-		// TODO: remove, just for experiments.
-		if (epoch_id >= 30) {
-			break;
-		}
-
-		printf("epoch_id: %lu\n", epoch_id);
-		// batch
-		size_t batch_ct = 0;
-		while (batch_ct < BATCH_SIZE_TGT/n_threads) {
-			std::pair<Txn, Txn> hot_cold = get_hot_cold(txn_iter.next(), layout);
-			Txn& cold = hot_cold.second;
-
-			//	TODO: batch_ct right now increments whether the cold txn aborts or not.
-			//	This is ok, but if the id's are used in packet loss detection, keep in mind
-			//	what was dropped
-			cold.id = TxnId(node_id, thread_id, batch_ct, epoch_id);
-			RC rc = tb.execute_for_batch(cold);
-			(void) rc;
-			batch_ct += 1;
-		}
-
-		epoch_id = (epoch_id + 1) & ((1 << TxnId::EPOCH_BITS) - 1);
-		db.msg_handler->barrier.wait_workers();
-	}
-	printf("Done.\n");
-	*/
 }

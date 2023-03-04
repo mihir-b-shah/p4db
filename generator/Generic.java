@@ -17,12 +17,7 @@ public class Generic {
 	static final int N_TXNS = 1_000_000;
 	static final int N_NODES = 2;
 	static final int N_KEYS = 10_000_000;
-	static final int HOT_LIM_P_DIST = 100;
-	static final int COLD_LIM_P_DIST = 0;
-
-	/*
-	genKey() 16 times.
-	*/
+	static final int FRAC_DIST_TXNS = 20;
 
 	static String getTxnLine(long[] arr) {
 		StringBuilder line = new StringBuilder();
@@ -77,26 +72,15 @@ public class Generic {
 				}
 			}
 
-			String fname = String.format("node%d_z%d_N%d_n%d_k%d_h%d_c%d_txns.csv",
-				i, K_ZIPF, N_TXNS, N_OPS, N_KEYS, HOT_LIM_P_DIST, COLD_LIM_P_DIST);
+			String fname = String.format("node%d_z%d_N%d_n%d_k%d_txns.csv",
+				i, K_ZIPF, N_TXNS, N_OPS, N_KEYS);
 			PrintWriter outFile = new PrintWriter(new File(fname));
-
-			/*
-			for (Map.Entry<Long, Integer> entry : keyCts.entrySet()) {
-				System.out.println(entry.getValue());
-				double v = (double) entry.getValue()/maxCt;
-				v = Math.pow(v, K_ROOT_RELAX);
-				entry.setValue(COLD_LIM_P_DIST+(int) ((HOT_LIM_P_DIST - COLD_LIM_P_DIST)*v));
-				assert(entry.getValue() >= COLD_LIM_P_DIST && entry.getValue() <= HOT_LIM_P_DIST);
-			}
-			*/
 
 			for (long[] txn : nodeTxns) {
 				for (int j = 0; j<txn.length; ++j) {
-					int distFrac = 20; // TODO keyCts.get(txn[j]);
 					int rand = (int) (100*Math.random());
 					// outFile.printf("op: %d, rand: %d, distFrac: %d\n", txn[j], rand, distFrac);
-					if (rand < distFrac) {
+					if (rand < FRAC_DIST_TXNS) {
 						// randomly pick something from one of our nodes.
 						txn[j] = getKey(txn[j], (int) (Math.random()*N_NODES));
 					} else {
@@ -130,8 +114,8 @@ public class Generic {
 			return Integer.compare(e2.getValue(), e1.getValue());
 		});
 
-		String dist_fname = String.format("dist_z%d_N%d_n%d_k%d_h%d_c%d.txt",
-			K_ZIPF, N_TXNS, N_OPS, N_KEYS, HOT_LIM_P_DIST, COLD_LIM_P_DIST);
+		String dist_fname = String.format("dist_z%d_N%d_n%d_k%d.txt",
+			K_ZIPF, N_TXNS, N_OPS, N_KEYS);
 		PrintWriter dist_pw = new PrintWriter(new File(dist_fname));
 		for (Map.Entry<Long, Integer> entry : sortedFreqs) {
 			dist_pw.printf("%d:%d\n", entry.getKey(), entry.getValue());

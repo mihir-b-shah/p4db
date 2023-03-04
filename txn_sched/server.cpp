@@ -248,6 +248,7 @@ int main() {
 				std::push_heap(pq_vec.begin(), pq_vec.end(), bucket_cmp_func);
 				buckets_skip.pop_back();
 			}
+			fprintf(stderr, "Txn group barrier.\n");
 		}
 		
 		/*	send revised schedules out.

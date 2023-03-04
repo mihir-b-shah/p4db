@@ -53,11 +53,15 @@ void recvall(int sockfd, char* buf, int len) {
 }
 
 void TxnExecutor::setup_txn_sched() {
+	assert(BATCH_SIZE_TGT % db.n_threads == 0);
 	size_t node_id = Config::instance().node_id;
 	sched_packet_buf_len = sizeof(sched_pkt_hdr_t) + sizeof(out_sched_entry_t)*(BATCH_SIZE_TGT/db.n_threads+1);
 	// TODO: can I get away with 2-byte ids in the reply instead?
 	sched_reply_len = sizeof(uint32_t)*(BATCH_SIZE_TGT/db.n_threads+1);
+
 	raw_buf = (char*) malloc(sched_packet_buf_len);
+	assert(sched_reply_len <= sched_packet_buf_len);
+
 	sched_pkt_hdr_t* hdr = (sched_pkt_hdr_t*) raw_buf;
 	hdr->node_id = node_id;
 	hdr->thread_id = tid;
@@ -66,13 +70,8 @@ void TxnExecutor::setup_txn_sched() {
 }
 
 void TxnExecutor::send_get_txn_sched() {
-	printf("Line %d\n", __LINE__);
 	uint64_t* buf_view = (uint64_t*) raw_buf;
-	printf("Sending first 4 bytes: %lu %lu %lu %lu\n", buf_view[0], buf_view[1], buf_view[2], buf_view[3]);
 	sendall(txn_sched_sockfd, raw_buf, sched_packet_buf_len);
-	printf("Line %d\n", __LINE__);
 	db.txn_sched_bar.wait(NULL, true);
-	printf("Line %d\n", __LINE__);
 	recvall(txn_sched_sockfd, raw_buf, sched_reply_len);
-	printf("Line %d\n", __LINE__);
 }

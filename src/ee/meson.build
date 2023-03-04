@@ -20,4 +20,5 @@ project_sources += files (
 	'switch.cpp',
     'executor.cpp',
 	'sched_intf.cpp',
+	'txn_iterator.cpp',
 )

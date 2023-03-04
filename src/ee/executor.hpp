@@ -49,13 +49,26 @@ struct __attribute__((packed)) in_sched_entry_t {
 };
 
 struct TxnExecutor {
+	class TxnIterator {
+	public:
+		TxnIterator(TxnExecutor& txn_exec);
+		std::optional<in_sched_entry_t> next_entry();
+		Txn& entry_to_txn(in_sched_entry_t entry);
+		void retry_txn(in_sched_entry_t entry);
+
+	private:
+		TxnExecutor& exec;
+		in_sched_entry_t* orig_sched;
+		size_t read_p;
+		size_t write_p;
+	};
+
     StructTable* kvs;
     SwitchInfo p4_switch;
     Database& db;
     Undolog log;
     StackPool<8192> mempool;
     uint32_t tid;
-	std::vector<Txn> leftover;
 
 	char* raw_buf;
 	out_sched_entry_t* sched_packet_buf;
@@ -69,7 +82,6 @@ struct TxnExecutor {
     TxnExecutor(Database& db)
         : db(db), log(db.comm.get()), tid(WorkerContext::get().tid) {
         db.get_casted(KV::TABLE_NAME, kvs);
-		leftover.reserve(BATCH_SIZE_TGT * 0.01/Config::instance().num_txn_workers);
 		setup_txn_sched();
 	}
 
@@ -80,7 +92,7 @@ struct TxnExecutor {
 		free(raw_buf);
 	}
 
-    RC execute_for_batch(Txn& arg);
+	RC execute_mini_batch(TxnIterator& iter);
     RC execute(Txn& arg);
     RC commit();
     RC rollback();
