@@ -46,38 +46,23 @@ struct AccessMode {
 };
 
 struct TxnId {
-	static constexpr size_t NODE_BITS = 5;
-	static constexpr size_t THREAD_BITS = 5;
-	static constexpr size_t TXN_BITS = 14;
-	static constexpr size_t EPOCH_BITS = 8;
+	struct __attribute__((packed)) id_field_t {
+		uint8_t node_id : 8;
+		uint8_t valid : 1;
+		// XXX deliberately keep this big enough we are never at risk of overflowing...
+		uint32_t mini_batch_id : 23;
 
-	uint8_t node_id;
-	uint8_t thread_id;
-	uint16_t txn_id;
-	uint8_t epoch_id;
+		id_field_t (bool valid, size_t node_id, size_t mini_batch_id) : node_id(node_id), valid(valid), mini_batch_id(mini_batch_id) {}
+	};
+	union {
+		id_field_t field;
+		uint32_t repr;
+	};
 
-	TxnId() {}
-	TxnId(size_t node_id, size_t thread_id, size_t txn_id, size_t epoch_id) :
-		node_id(node_id), thread_id(thread_id), txn_id(txn_id), epoch_id(epoch_id) {
-		
-		assert(node_id < (1 << NODE_BITS));
-		assert(thread_id < (1 << THREAD_BITS));
-		assert(txn_id < (1 << TXN_BITS));
-		assert(epoch_id < (1 << EPOCH_BITS));
-	}
-
-	TxnId(uint32_t packed) {
-		node_id = packed & ((1 << NODE_BITS) - 1);
-		thread_id = (packed >> NODE_BITS) & ((1 << THREAD_BITS) - 1);
-		txn_id = (packed >> (NODE_BITS + THREAD_BITS)) & ((1 << TXN_BITS) - 1);
-		epoch_id = (packed >> (NODE_BITS + THREAD_BITS + TXN_BITS)) & ((1 << EPOCH_BITS) - 1);
-	}
-
-	uint32_t get_packed() {
-		return node_id | (thread_id << NODE_BITS) |
-			(txn_id << (NODE_BITS + THREAD_BITS)) | 
-			(epoch_id << (NODE_BITS + THREAD_BITS + TXN_BITS));
-	}
+	TxnId() : field(false, 0, 0) {}
+	TxnId(uint32_t packed) : repr(packed) {}
+	TxnId(bool valid, size_t node_id, size_t mini_batch_id) : field(valid, node_id, mini_batch_id) {}
+	uint32_t get_packed() { return repr; }
 };
 
 namespace p4db {

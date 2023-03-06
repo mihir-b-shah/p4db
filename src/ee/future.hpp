@@ -38,7 +38,7 @@ struct TupleFuture final : public AbstractFuture {
 	// TODO: don't understand why this needs to be atomic.
     std::atomic<Tuple_t*> tuple{nullptr};
     // char __cache_align[64-16];
-	TxnId last_writer;
+	TxnId last_acq;
 
     TupleFuture() : AbstractFuture{}, tuple(nullptr) {}
     TupleFuture(Tuple_t* tuple) : AbstractFuture{}, tuple(tuple) {}
@@ -65,7 +65,7 @@ private:
                     return nullptr;
                 }
                 tuple = reinterpret_cast<Tuple_t*>(res->tuple);
-				last_writer = TxnId(res->last_writer_pack);
+				last_acq = TxnId(res->last_acq_pack);
 
                 return tuple;
             }

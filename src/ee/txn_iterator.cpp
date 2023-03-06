@@ -7,15 +7,14 @@ TxnExecutor::TxnIterator::TxnIterator(TxnExecutor& txn_exec) : exec(txn_exec), r
 }
 
 std::optional<in_sched_entry_t> TxnExecutor::TxnIterator::next_entry() {
-	static constexpr txn_pos_t SENTINEL_POS = 0xffffffU;
-
-	in_sched_entry_t entry = orig_sched[read_p++];
+	in_sched_entry_t entry = orig_sched[read_p];
 	if (entry.idx == SENTINEL_POS) {
 		orig_sched[write_p].idx = SENTINEL_POS;
 		read_p = 0;
 		write_p = 0;
 		entry = orig_sched[read_p];
 	}
+	read_p += 1;
 	if (orig_sched[0].idx == SENTINEL_POS) {
 		return std::nullopt;
 	} else {
@@ -28,5 +27,6 @@ Txn& TxnExecutor::TxnIterator::entry_to_txn(in_sched_entry_t entry) {
 }
 
 void TxnExecutor::TxnIterator::retry_txn(in_sched_entry_t entry) {
+	// fprintf(stderr, "write_p: %lu\n", write_p);
 	orig_sched[write_p++] = entry;
 }

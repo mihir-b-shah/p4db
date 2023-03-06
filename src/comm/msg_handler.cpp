@@ -91,6 +91,7 @@ void MessageHandler::handle(Pkt_t* pkt, msg::TupleGetRes* res) {
 void MessageHandler::handle(Pkt_t* pkt, msg::TuplePutReq* req) {
     // std::cerr << "msg::TuplePutReq tid=" << req->tid << " rid=" << req->rid << " mode=" << static_cast<int>(req->mode) << '\n';
     auto table = db[req->tid];
+	// fprintf(stderr, "Executing put with id: %u\n", req->last_acq_pack);
     table->remote_put(req);
 
     auto res = req->convert<msg::TuplePutRes>();

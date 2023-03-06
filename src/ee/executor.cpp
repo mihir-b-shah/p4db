@@ -8,101 +8,21 @@
 #include <pthread.h>
 #include <limits>
 #include <optional>
-
-/*
-RC TxnExecutor::execute_for_batch(Txn& arg) {
-	// acquire all locks first, ex and shared. Can rollback within loop
-
-	TupleFuture<KV>* ops[NUM_OPS];
-	for (size_t i = 0; auto& op : arg.cold_ops) {
-		if (op.mode == AccessMode::WRITE) {
-			ops[i] = write(kvs, op);
-		} else if (op.mode == AccessMode::READ) {
-			ops[i] = read(kvs, op);
-		} else {
-			assert(op.mode == AccessMode::INVALID);
-			ops[i] = nullptr;
-		}
-		if (!ops[i]) {
-			leftover.push_back(arg);
-			return rollback();
-		}
-		++i;
-	}
-
-	TxnId dep;
-	size_t depend_size = 0;
-	// Use obtained write-locks to write values
-	for (size_t i = 0; auto& op : arg.cold_ops) {
-		if (op.mode == AccessMode::WRITE) {
-			auto x = ops[i]->get();
-			if (!x) {
-				leftover.push_back(arg);
-				return rollback();
-			}
-			if (ops[i]->last_writer.epoch_id == arg.id.epoch_id) {
-				dep = ops[i]->last_writer;
-				depend_size += 1;
-			}
-			x->value = op.value;
-			ops[i]->last_writer = arg.id;
-		} else if (op.mode == AccessMode::READ) {
-			const auto x = ops[i]->get();
-			if (!x) {
-				leftover.push_back(arg);
-				return rollback();
-			}
-			// checking less than can be vulnerable to epoch wrap-around.
-			if (ops[i]->last_writer.epoch_id == arg.id.epoch_id) {
-				dep = ops[i]->last_writer;
-				depend_size += 1;
-			}
-			const auto value = x->value;
-			do_not_optimize(value);
-		} else {
-			break;
-		}
-		++i;
-	}
-
-	printf("depend_size: %lu\n", depend_size);
-	if (depend_size == 0) {
-		// common case- no dependencies.
-	} else if (depend_size == 1) {
-		// I am dependent on txn {dep}.
-		printf("txn %u depends on %u\n", arg.id.get_packed(), dep.get_packed()); 
-	} else {
-		// Too many dependencies, run via 2-phase commit.
-		leftover.push_back(arg);
-		return rollback();
-	}
-
-	// locks automatically released
-	return commit();
-}
-*/
-
-RC TxnExecutor::execute_mini_batch(TxnIterator& iter) {
-	/*
-	// acquire all locks first, ex and shared. Can rollback within loop
-	while (1) {
-		std::optional<in_sched_entry_t> e = iter.next_entry();
-		if (!e.has_value()) {
-			break;
-		}
-	}
 	
+RC TxnExecutor::my_execute(Txn& arg) {
+	arg.id.field.valid = true;
+	// acquire all locks first, ex and shared. Can rollback within loop
+
 	TupleFuture<KV>* ops[NUM_OPS];
 	for (size_t i = 0; auto& op : arg.cold_ops) {
 		if (op.mode == AccessMode::WRITE) {
-			ops[i] = write(kvs, op);
+			ops[i] = write(kvs, op, arg.id);
 		} else if (op.mode == AccessMode::READ) {
-			ops[i] = read(kvs, op);
+			ops[i] = read(kvs, op, arg.id);
 		} else {
 			assert(op.mode == AccessMode::INVALID);
-			ops[i] = nullptr;
+			break;
 		}
-
 		if (!ops[i]) {
 			return rollback();
 		}
@@ -117,6 +37,7 @@ RC TxnExecutor::execute_mini_batch(TxnIterator& iter) {
 				return rollback();
 			}
 			x->value = op.value;
+			ops[i]->last_acq = arg.id;
 		} else if (op.mode == AccessMode::READ) {
 			const auto x = ops[i]->get();
 			if (!x) {
@@ -130,14 +51,12 @@ RC TxnExecutor::execute_mini_batch(TxnIterator& iter) {
 		++i;
 	}
 
-	*/
 	// locks automatically released
 	return commit();
 }
 
-
-// XXX: check before 3/1/2023 to see execute_for_batch- or use git bisect?
 RC TxnExecutor::execute(Txn& arg) {
+	arg.id.field.valid = false;
 	ts = ts_factory.get();
 	// std::stringstream ss;
 	// ss << "Starting txn tid=" << tid << " ts=" << ts << '\n';
@@ -166,9 +85,9 @@ RC TxnExecutor::execute(Txn& arg) {
 	TupleFuture<KV>* ops[NUM_OPS];
 	for (size_t i = 0; auto& op : arg.cold_ops) {
 		if (op.mode == AccessMode::WRITE) {
-			ops[i] = write(kvs, op);
+			ops[i] = write(kvs, op, arg.id);
 		} else if (op.mode == AccessMode::READ) {
-			ops[i] = read(kvs, op);
+			ops[i] = read(kvs, op, arg.id);
 		} else {
 			assert(op.mode == AccessMode::INVALID);
 			ops[i] = nullptr;
@@ -207,7 +126,7 @@ RC TxnExecutor::execute(Txn& arg) {
 
 RC TxnExecutor::commit() {
 	// TODO: log should not clear until the end of a batch.
-	// TODO: now, the undolog has in the future both the value,last_writer fields to be written.
+	// TODO: now, the undolog has in the future both the value,last_acq fields to be written.
 	log.commit(ts);
 	mempool.clear();
 	WorkerContext::get().cycl.stop(stats::Cycles::commit_latency);
@@ -233,8 +152,9 @@ RC TxnExecutor::rollback() {
 	return RC::ROLLBACK;
 }
 
-TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op) {
-	using Future_t = TupleFuture<KV>; // TODO return with const KV
+TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op, TxnId id) {
+	// fprintf(stderr, "Running read.\n");
+	using Future_t = TupleFuture<KV>;
 	auto loc_info = op.loc_info;
 
 	if constexpr (error::LOG_TABLE) {
@@ -247,6 +167,9 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op) {
 	if (loc_info.is_local) {
 		WorkerContext::get().cycl.start(stats::Cycles::local_latency);
 		auto future = mempool.allocate<Future_t>();
+		// XXX a hack, just to pass my id in.
+		future->last_acq = id;
+		// fprintf(stderr, "id: (%u,%u,%u) future->last_acq: %u\n", id.field.valid, id.field.node_id, id.field.mini_batch_id, future->last_acq.get_packed());
 		if (!table->get(op.id, AccessMode::READ, future, ts)) [[unlikely]] {
 			return nullptr;
 		}
@@ -262,8 +185,9 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op) {
 	AccessMode mode = AccessMode::READ;
 	WorkerContext::get().cycl.start(stats::Cycles::remote_latency);
 	auto pkt = db.comm->make_pkt();
-	auto req = pkt->ctor<msg::TupleGetReq>(ts, table->id, op.id, mode);
+	auto req = pkt->ctor<msg::TupleGetReq>(ts, table->id, op.id, mode, id);
 	req->sender = db.comm->node_id;
+	req->me_pack = id.get_packed();
 
 	auto future = mempool.allocate<Future_t>();
 	auto msg_id = db.msg_handler->set_new_id(req);
@@ -279,7 +203,8 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op) {
 	return future;
 }
 
-TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op) {
+TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op, TxnId id) {
+	// fprintf(stderr, "Running write.\n");
 	using Future_t = TupleFuture<KV>;
 
 	auto loc_info = op.loc_info;
@@ -291,10 +216,14 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op) {
 		std::cout << ss.str();
 	}
 
+	char* rv = (char*) &loc_info.is_local;
+	assert(*rv == 1 || *rv == 0);
 	if (loc_info.is_local) {
 		WorkerContext::get().cycl.start(stats::Cycles::local_latency);
 		auto future = mempool.allocate<Future_t>();
+		future->last_acq = id;
 		future->tuple = nullptr;
+		// fprintf(stderr, "id: (%u,%u,%u) future->last_acq: %u\n", id.field.valid, id.field.node_id, id.field.mini_batch_id, future->last_acq.get_packed());
 		if (!table->get(op.id, AccessMode::WRITE, future, ts)) [[unlikely]] {
 			return nullptr;
 		}
@@ -309,8 +238,9 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op) {
 	AccessMode mode = AccessMode::WRITE;
 	WorkerContext::get().cycl.start(stats::Cycles::remote_latency);
 	auto pkt = db.comm->make_pkt();
-	auto req = pkt->ctor<msg::TupleGetReq>(ts, table->id, op.id, mode);
+	auto req = pkt->ctor<msg::TupleGetReq>(ts, table->id, op.id, mode, id);
 	req->sender = db.comm->node_id;
+	req->me_pack = id.get_packed();
 
 	auto future = mempool.allocate<Future_t>();
 	auto msg_id = db.msg_handler->set_new_id(req);
@@ -373,12 +303,6 @@ static void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* la
 	size_t cold1_lv = 0, cold1_gv = 0;
 	size_t hot_p = 0, cold_p = 0;
 	
-	size_t dbg_i = 0;
-	while (dbg_i < NUM_OPS && txn.cold_ops[dbg_i].mode != AccessMode::INVALID) {
-		dbg_i += 1;
-	}
-	fprintf(stderr, "dbg_i: %lu\n", dbg_i);
-
 	bool cold_all_local = true;
 	size_t i = 0;
 	while (i < NUM_OPS && txn.cold_ops[i].mode != AccessMode::INVALID) {
@@ -404,7 +328,7 @@ static void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* la
 		i += 1;
 	}
 	if (cold_p < NUM_OPS) {
-		txn.cold_ops[cold_p].mode == AccessMode::INVALID;
+		txn.cold_ops[cold_p].mode = AccessMode::INVALID;
 	}
 	txn.cold_all_local = cold_all_local;
 	if (cold1_lv > 0) {
@@ -414,6 +338,7 @@ static void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* la
 		txn.hottest_any_cold_k = cold1_gk;
 	}
 	assert(cold_p + hot_p == NUM_OPS);
+	txn.init_done = true;
 }
 
 void txn_executor(Database& db, std::vector<Txn>& txns) {
@@ -423,48 +348,57 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 	DeclusteredLayout* layout = config.decl_layout;
 	size_t thread_id = WorkerContext::get().tid;
 	const size_t n_threads = config.num_txn_workers;
-	const size_t batch_tgt = BATCH_SIZE_TGT/n_threads;
-	size_t batch_num = 0;
+	const size_t mini_batch_tgt = MINI_BATCH_SIZE_THR_TGT;
+	const size_t batch_tgt = BATCH_SIZE_THR_TGT;
 	size_t txn_num = 0;
+	std::vector<Txn> aborted;
+	assert(txns.size() % batch_tgt == 0);
 
-	/*
-	// just a heuristic, change if allocs happening
-	std::vector<size_t> rest_order;
-	rest_order.reserve(batch_tgt*0.05);
+	// input of scheduler, maybe?
+	for (size_t i = 0; i<txns.size(); i+=batch_tgt) {
+		size_t batch_num = i/batch_tgt;
+		for (size_t j = 0; j<batch_tgt; ++j) {
+			in_sched_entry_t& entry = ((in_sched_entry_t*) tb.raw_buf)[j];
+			entry.thr_id = thread_id;
+			entry.idx = i+j;
+		}
+		((in_sched_entry_t*) tb.raw_buf)[batch_tgt].idx = TxnExecutor::TxnIterator::SENTINEL_POS;
 
-	while (txn_num < txns.size()) {
-		size_t orig_txn_num = txn_num;
-		size_t pkt_pos = 0;
-		while (txn_num < txns.size() && txn_num-orig_txn_num < batch_tgt) {
-			Txn& txn = txns[txn_num];
-			extract_hot_cold(tb.kvs, txn, layout);
-			if (txn.hottest_any_cold_k.has_value()) {
-				assert(txn.hottest_any_cold_k.value() < (1ULL<<40));
-				tb.sched_packet_buf[pkt_pos].k = txn.hottest_any_cold_k.value();
-				tb.sched_packet_buf[pkt_pos].idx = txn_num;
-				pkt_pos += 1;
-			} else {
-				rest_order.push_back(txn_num);
+		// execute a batch, break into mini-batches as we see fit.
+		// XXX: measure from here.
+		TxnExecutor::TxnIterator txn_iter(tb);
+		size_t txn_num = 0;
+		tb.mini_batch_num = 1;
+
+		while (1) {
+			if (txn_num == MINI_BATCH_SIZE_THR_TGT) {
+				db.msg_handler->barrier.wait_workers();
+				txn_num = 0;
+				/*	TODO: what happens when different nodes end up with different amts of txns
+					due to aborts- we need a way to handle this with minimum sync. */
+				tb.mini_batch_num += 1;
+			}
+
+			std::optional<in_sched_entry_t> e = txn_iter.next_entry();
+			if (!e.has_value()) {
+				break;
+			}
+
+			fprintf(stderr, "Running txn %u from thread %u's queue.\n", e.value().idx, e.value().thr_id);
+			Txn& txn = txn_iter.entry_to_txn(e.value());
+			txn.id = TxnId(true, node_id, tb.mini_batch_num);
+			assert(txn.id.field.valid == true && txn.id.field.node_id == node_id && txn.id.field.mini_batch_id == tb.mini_batch_num);
+			// Make sure extract_hot_cold is run only once.
+			if (!txn.init_done) {
+				extract_hot_cold(tb.kvs, txn, layout);
+			}
+			RC res = tb.my_execute(txn);
+			if (res == ROLLBACK) {
+				fprintf(stderr, "Rollback.\n");
+				txn_iter.retry_txn(e.value());
 			}
 			txn_num += 1;
 		}
-		tb.sched_packet_buf[pkt_pos].k = 0xffffffffffULL;
-		tb.send_get_txn_sched();
-
-		TxnIterator txn_iter(tb);
-		std::optional<in_sched_entry_t> e_res;
-		while (1) {
-			e_res = txn_iter.next_entry();
-			if (!e_res.has_value()) {
-				break;
-			}
-			Txn& txn = txn_iter.entry_to_txn(e_res.value());
-			fprintf(stderr, "Got txn\n");
-		}
-		*/
-
-		// TODO: maybe add a barrier here, just to make sure everyone starts off at same time.
-		// batching loop.
-		batch_num += 1;
+		db.msg_handler->barrier.wait_workers();
 	}
 }

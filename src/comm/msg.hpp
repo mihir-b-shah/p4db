@@ -88,21 +88,22 @@ struct TupleMsgHeader {
 };
 
 struct TupleGetReq : public Base<TupleGetReq, Type::TUPLE_GET_REQ>, public TupleMsgHeader {
-    TupleGetReq(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode)
-        : TupleMsgHeader{ts, tid, rid, mode} {}
+	uint32_t me_pack;
+
+    TupleGetReq(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode, TxnId me)
+        : TupleMsgHeader{ts, tid, rid, mode}, me_pack(me.get_packed()) {}
 };
 
-
 struct TupleGetRes : public Base<TupleGetRes, Type::TUPLE_GET_RES>, public TupleMsgHeader {
-	uint32_t last_writer_pack;
+	uint32_t last_acq_pack;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
     uint8_t tuple[0];
 #pragma GCC diagnostic pop
 
-    TupleGetRes(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode, TxnId last_writer)
+    TupleGetRes(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode, TxnId last_acq)
         : TupleMsgHeader{ts, tid, rid, mode}, // mode==INVALID if e.g. locking failed
-		  last_writer_pack(last_writer.get_packed()) {}
+		  last_acq_pack(last_acq.get_packed()) {}
 
     static constexpr auto size(size_t tuple_size) {
         return sizeof(TupleGetRes) + tuple_size;
@@ -110,15 +111,15 @@ struct TupleGetRes : public Base<TupleGetRes, Type::TUPLE_GET_RES>, public Tuple
 };
 
 struct TuplePutReq : public Base<TuplePutReq, Type::TUPLE_PUT_REQ>, public TupleMsgHeader {
-	uint32_t last_writer_pack;
+	uint32_t last_acq_pack;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
     uint8_t tuple[0];
 #pragma GCC diagnostic pop
 
-    TuplePutReq(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode, TxnId last_writer)
+    TuplePutReq(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode, TxnId last_acq)
         : TupleMsgHeader{ts, tid, rid, mode}, // if INVALID then tuple invalid, but free up locks
-		  last_writer_pack(last_writer.get_packed()) {}
+		  last_acq_pack(last_acq.get_packed()) {}
 
     static constexpr auto size(size_t tuple_size) {
         return sizeof(TuplePutReq) + tuple_size;

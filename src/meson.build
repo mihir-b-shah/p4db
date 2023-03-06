@@ -3,7 +3,6 @@ subdir('main')
 subdir('stats')
 subdir('comm')
 subdir('ee')
-subdir('dpdk_lib')
 subdir('layout')
 
 

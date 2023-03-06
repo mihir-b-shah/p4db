@@ -51,6 +51,8 @@ struct __attribute__((packed)) in_sched_entry_t {
 struct TxnExecutor {
 	class TxnIterator {
 	public:
+		static constexpr txn_pos_t SENTINEL_POS = 0xffffffU;
+
 		TxnIterator(TxnExecutor& txn_exec);
 		std::optional<in_sched_entry_t> next_entry();
 		Txn& entry_to_txn(in_sched_entry_t entry);
@@ -69,6 +71,7 @@ struct TxnExecutor {
     Undolog log;
     StackPool<8192> mempool;
     uint32_t tid;
+	size_t mini_batch_num;
 
 	char* raw_buf;
 	out_sched_entry_t* sched_packet_buf;
@@ -80,7 +83,7 @@ struct TxnExecutor {
     timestamp_t ts;
 
     TxnExecutor(Database& db)
-        : db(db), log(db.comm.get()), tid(WorkerContext::get().tid) {
+        : db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1) {
         db.get_casted(KV::TABLE_NAME, kvs);
 		setup_txn_sched();
 	}
@@ -92,12 +95,12 @@ struct TxnExecutor {
 		free(raw_buf);
 	}
 
-	RC execute_mini_batch(TxnIterator& iter);
+	RC my_execute(Txn& arg);
     RC execute(Txn& arg);
     RC commit();
     RC rollback();
-    TupleFuture<KV>* read(StructTable* table, const Txn::OP& op);
-    TupleFuture<KV>* write(StructTable* table, const Txn::OP& op);
+    TupleFuture<KV>* read(StructTable* table, const Txn::OP& op, TxnId id);
+    TupleFuture<KV>* write(StructTable* table, const Txn::OP& op, TxnId id);
     TupleFuture<KV>* insert(StructTable* table);
 	SwitchFuture<SwitchInfo>* atomic(SwitchInfo& p4_switch, const SwitchInfo::MultiOp& arg);
 };

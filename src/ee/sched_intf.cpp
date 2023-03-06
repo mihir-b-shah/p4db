@@ -53,11 +53,10 @@ void recvall(int sockfd, char* buf, int len) {
 }
 
 void TxnExecutor::setup_txn_sched() {
-	assert(BATCH_SIZE_TGT % db.n_threads == 0);
 	size_t node_id = Config::instance().node_id;
-	sched_packet_buf_len = sizeof(sched_pkt_hdr_t) + sizeof(out_sched_entry_t)*(BATCH_SIZE_TGT/db.n_threads+1);
+	sched_packet_buf_len = sizeof(sched_pkt_hdr_t) + sizeof(out_sched_entry_t)*(BATCH_SIZE_THR_TGT+1);
 	// TODO: can I get away with 2-byte ids in the reply instead?
-	sched_reply_len = sizeof(uint32_t)*(BATCH_SIZE_TGT/db.n_threads+1);
+	sched_reply_len = sizeof(uint32_t)*(BATCH_SIZE_THR_TGT+1);
 
 	raw_buf = (char*) malloc(sched_packet_buf_len);
 	assert(sched_reply_len <= sched_packet_buf_len);
@@ -66,7 +65,8 @@ void TxnExecutor::setup_txn_sched() {
 	hdr->node_id = node_id;
 	hdr->thread_id = tid;
 	sched_packet_buf = (out_sched_entry_t*) (sizeof(sched_pkt_hdr_t) + raw_buf);
-	txn_sched_sockfd = setup_txn_sched_sock();
+	// TODO need to setup the socket.
+	// txn_sched_sockfd = setup_txn_sched_sock();
 }
 
 void TxnExecutor::send_get_txn_sched() {

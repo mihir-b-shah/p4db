@@ -9,6 +9,8 @@
 #include <tbb/queuing_mutex.h>
 #include <tbb/queuing_rw_mutex.h>
 
+#include <cstdio>
+
 template <typename Tuple_t>
 struct Row {
     using lock_t = std::mutex;
@@ -21,9 +23,10 @@ struct Row {
     uint32_t owner_cnt = 0;
 
     Tuple_t tuple;
-	TxnId last_writer;
+	// TODO: maybe split into reader/writer for higher concurrency?
+	TxnId last_acq;
 
-	Row() : last_writer(0, 0, 0, 0) {}
+	Row() : last_acq(true, 0, 0) {}
 
     using Future_t = TupleFuture<Tuple_t>;
 
@@ -47,7 +50,19 @@ struct Row {
         // lock_t::scoped_lock lock;
         // lock.acquire(mutex);
 
-        if (!is_compatible(mode)) {
+		// TODO last_acq is a bad name, maybe use a union in the future?
+		TxnId txn_id = future->last_acq;
+		bool allow_lock = true;
+		// TODO check for wrap-around!
+		if (txn_id.field.valid) {
+			assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
+			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id) {
+				allow_lock = false;
+			}
+			fprintf(stderr, "local_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+		}
+
+        if (!is_compatible(mode) || !allow_lock) {
             switch (mode) {
                 case AccessMode::READ:
                     WorkerContext::get().cntr.incr(stats::Counter::local_read_lock_failed);
@@ -63,7 +78,7 @@ struct Row {
         ++owner_cnt;
         lock_type = mode;
         future->tuple.store(&tuple);
-		future->last_writer = last_writer;
+		future->last_acq = last_acq;
 
         WorkerContext::get().cntr.incr(stats::Counter::local_lock_success);
         return ErrorCode::SUCCESS;
@@ -76,8 +91,19 @@ struct Row {
         // lock_t::scoped_lock lock;
         // lock.acquire(mutex);
 
+		// TxnId(req->me_pack) gives me my current txn id.
+		TxnId txn_id(req->me_pack);
+		bool allow_lock = true;
+		// TODO check for wrap-around!
+		if (txn_id.field.valid) {
+			assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
+			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id) {
+				allow_lock = false;
+			}
+			fprintf(stderr, "remote_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+		}
 
-        if (!is_compatible(req->mode)) {
+        if (!is_compatible(req->mode) || !allow_lock) {
             auto res = req->convert<msg::TupleGetRes>();
             res->mode = AccessMode::INVALID;
             comm.send(res->sender, pkt, comm.mh_tid); // always called from msg-handler
@@ -91,7 +117,7 @@ struct Row {
         auto res = req->convert<msg::TupleGetRes>();
         auto size = msg::TupleGetRes::size(sizeof(tuple));
         pkt->resize(size);
-		res->last_writer_pack = last_writer.get_packed();
+		res->last_acq_pack = last_acq.get_packed();
         std::memcpy(res->tuple, &tuple, sizeof(tuple));
 
         WorkerContext::get().cntr.incr(stats::Counter::remote_lock_success);
@@ -101,19 +127,20 @@ struct Row {
     void remote_unlock(msg::TuplePutReq* req, Communicator& comm) {
         if (req->mode == AccessMode::WRITE) {
             std::memcpy(&tuple, req->tuple, sizeof(tuple));
-			last_writer = TxnId(req->last_writer_pack);
         }
-        auto rc = local_unlock(req->mode, req->ts, comm);
+        auto rc = local_unlock(req->mode, req->ts, comm, TxnId(req->last_acq_pack));
         (void)rc;
     }
 
-    ErrorCode local_unlock(const AccessMode mode, const timestamp_t, Communicator&) {
+    ErrorCode local_unlock(const AccessMode mode, const timestamp_t, Communicator&, TxnId id) {
         WorkerContext::get().cycl.start(stats::Cycles::latch_contention);
         const std::lock_guard<lock_t> lock(mutex);
         WorkerContext::get().cycl.stop(stats::Cycles::latch_contention);
         // lock_t::scoped_lock lock;
         // lock.acquire(mutex);
 
+		// fprintf(stderr, "id: (%u,%u,%u)\n", id.field.valid, id.field.node_id, id.field.mini_batch_id);
+		last_acq = id;
         if (lock_type != mode) [[unlikely]] {
             std::cout << "lock_type=" << lock_type << " mode=" << mode << '\n';
             return ErrorCode::INVALID_ACCESS_MODE;

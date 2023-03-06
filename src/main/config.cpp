@@ -125,4 +125,5 @@ void Config::parse_cli(int argc, char** argv) {
 
     num_txns = result.as<uint64_t>("num_txns");
 	table_size = result.as<uint64_t>("table_size");
+	write_prob = result.as<int>("write_prob");
 }

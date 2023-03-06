@@ -11,6 +11,7 @@
 #include <array>
 #include <atomic>
 #include <cstring>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <shared_mutex>
@@ -151,21 +152,18 @@ struct StructTable final : public Table {
         return true;
     }
 
-	Row_t& get_direct_row(const db_key_t index) {
-        return data[index];
-	}
-
     ErrorCode get(const db_key_t index, const AccessMode mode, Future_t* future, const timestamp_t ts) {
         auto local_index = part_info.translate(index);
         if (local_index >= size) {
             return ErrorCode::INVALID_ROW_ID;
         }
 
+		// fprintf(stderr, "Trying to lock key %lu\n", index);
         auto& row = data[local_index];
         return row.local_lock(mode, ts, future);
     }
 
-    ErrorCode put(db_key_t index, const AccessMode mode, const timestamp_t ts) {
+    ErrorCode put(db_key_t index, const AccessMode mode, const timestamp_t ts, TxnId id) {
         auto local_index = part_info.translate(index);
         if (local_index >= size) {
             return ErrorCode::INVALID_ROW_ID;
@@ -178,7 +176,7 @@ struct StructTable final : public Table {
         }
 
         auto& row = data[local_index];
-        return row.local_unlock(mode, ts, comm);
+        return row.local_unlock(mode, ts, comm, id);
     }
 
 
@@ -194,6 +192,7 @@ struct StructTable final : public Table {
     virtual void remote_get(Communicator::Pkt_t* pkt, msg::TupleGetReq* req) override {
         auto local_index = part_info.translate(req->rid);
         auto& row = data[local_index];
+		// fprintf(stderr, "Trying to lock key %lu\n", req->rid);
         row.remote_lock(comm, pkt, req);
     }
 
@@ -205,7 +204,6 @@ struct StructTable final : public Table {
             ss << "remote_put to " << name << " index=" << req->rid << " local_index=" << local_index << " mode=" << req->mode << '\n';
             std::cout << ss.str();
         }
-
 
         auto& row = data[local_index];
         row.remote_unlock(req, comm);

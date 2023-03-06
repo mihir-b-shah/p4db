@@ -11,11 +11,6 @@ void pin_worker(uint32_t core, pthread_t pid /*= pthread_self()*/) {
 	// TODO: remove when we run on multiple machines, for real.
     WorkerContext::get().tid = core % Config::instance().num_txn_workers;
     
-    #ifdef DPDK
-    // make space for dpdk main, receiver thread
-    core += 2
-    #endif
-
 	// TODO: fix this.
     constexpr auto NUM_SOCKETS = 1;
     constexpr auto NUM_HYPERTHREADS = 2;

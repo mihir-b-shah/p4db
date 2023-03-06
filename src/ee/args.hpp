@@ -21,5 +21,8 @@ struct Txn {
 	std::optional<db_key_t> hottest_any_cold_k;
 	std::optional<db_key_t> hottest_local_cold_k;
 	bool cold_all_local;
+	bool init_done;
 	TxnId id;
+
+	Txn() : init_done(false) {}
 };

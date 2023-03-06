@@ -9,9 +9,31 @@
 #include <string>
 #include <sstream>
 #include <cstring>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 
+#include <unistd.h>
+#include <execinfo.h>
+
+void print_backtrace(int sig) {
+	printf("signal: %d\n", sig);
+	void* array[1024];
+	size_t size = backtrace(array, 1024);
+	char** strings = backtrace_symbols(array, size);
+	for (size_t i = 0; i < size; i++) {
+		printf("\t%s\n", strings[i]);
+	}
+	puts("");
+	free(strings);
+	exit(EXIT_FAILURE);
+}
+
 int main(int argc, char** argv) {
+	signal(SIGSEGV, print_backtrace);
+	signal(SIGABRT, print_backtrace);
+
     auto& config = Config::instance();
     config.parse_cli(argc, argv);
 

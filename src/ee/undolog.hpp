@@ -27,10 +27,8 @@ struct Write final : public Action {
         if (!future->tuple) {
             throw std::runtime_error("tuple not set in undolog clear");
         }
-		Row<KV>& row = table->get_direct_row(index);
-		row.last_writer = future->last_writer;
-
-        if (!table->put(index, AccessMode::WRITE, ts)) {
+		// fprintf(stderr, "Executing put with id: %u\n", future->last_acq.get_packed());
+        if (!table->put(index, AccessMode::WRITE, ts, future->last_acq)) {
             throw error::UndoException();
         }
     }
@@ -49,7 +47,8 @@ struct Read final : public Action {
         if (!future->tuple) {
             throw std::runtime_error("tuple not set in undolog clear");
         }
-        if (!table->put(index, AccessMode::READ, ts)) {
+		// fprintf(stderr, "Executing put with id: %u\n", future->last_acq.get_packed());
+        if (!table->put(index, AccessMode::READ, ts, future->last_acq)) {
             throw error::UndoException();
         }
     }
@@ -78,6 +77,7 @@ struct Remote final : public Action {
             throw std::runtime_error("sth wrong");
         }
         req->sender = msg::node_t{comm->node_id, tid};
+		req->last_acq_pack = future->last_acq.get_packed();
 
         switch (mode) {
             case AccessMode::READ: {
@@ -87,8 +87,7 @@ struct Remote final : public Action {
             }
             case AccessMode::WRITE: {
                 // size is already enough because we received the tuple of same size
-				req->last_writer_pack = future->last_writer.get_packed();
-                std::memcpy(req->tuple, tuple, sizeof(Tuple_t));
+				std::memcpy(req->tuple, tuple, sizeof(Tuple_t));
                 break;
             }
             default:
