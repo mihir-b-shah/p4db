@@ -22,7 +22,7 @@ struct BarrierHandler {
     void handle();
     void wait_nodes();
     void wait_workers();
+    void wait();
 
 private:
-    void wait();
 };
