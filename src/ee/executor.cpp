@@ -368,11 +368,14 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 		// XXX: measure from here.
 		TxnExecutor::TxnIterator txn_iter(tb);
 		size_t txn_num = 0;
+		size_t committed = 0;
 		tb.mini_batch_num = 1;
 
 		while (1) {
 			if (txn_num == MINI_BATCH_SIZE_THR_TGT) {
 				db.msg_handler->barrier.wait_workers();
+				fprintf(stderr, "Committed: %lu\n", committed);
+				committed = 0;
 				txn_num = 0;
 				/*	TODO: what happens when different nodes end up with different amts of txns
 					due to aborts- we need a way to handle this with minimum sync. */
@@ -396,6 +399,8 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 			if (res == ROLLBACK) {
 				fprintf(stderr, "Rollback.\n");
 				txn_iter.retry_txn(e.value());
+			} else {
+				committed += 1;
 			}
 			txn_num += 1;
 		}

@@ -59,7 +59,9 @@ struct Row {
 			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id) {
 				allow_lock = false;
 			}
-			fprintf(stderr, "local_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+			if (is_compatible(mode)) {
+				fprintf(stderr, "local_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+			}
 		}
 
         if (!is_compatible(mode) || !allow_lock) {
@@ -100,7 +102,9 @@ struct Row {
 			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id) {
 				allow_lock = false;
 			}
-			fprintf(stderr, "remote_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+			if (is_compatible(req->mode)) {
+				fprintf(stderr, "remote_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+			}
 		}
 
         if (!is_compatible(req->mode) || !allow_lock) {
