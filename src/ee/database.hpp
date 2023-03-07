@@ -22,11 +22,12 @@ public:
     std::unique_ptr<Communicator> comm;
 
 	size_t n_threads;
+	uint32_t thr_batch_done_ct;
 	reusable_barrier_t txn_sched_bar;
 	std::vector<Txn>** per_core_txns;
 
 public:
-    Database(size_t n_threads) : n_threads(n_threads), txn_sched_bar(n_threads) {
+    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), txn_sched_bar(n_threads) {
         comm = std::make_unique<Communicator>();
         msg_handler = std::make_unique<MessageHandler>(*this, comm.get());
         msg_handler->init.wait();

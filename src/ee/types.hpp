@@ -46,11 +46,12 @@ struct AccessMode {
 };
 
 struct TxnId {
+	static constexpr size_t MINI_BATCH_ID_WIDTH = 27;
 	struct __attribute__((packed)) id_field_t {
-		uint8_t node_id : 8;
+		uint8_t node_id : 4;
 		uint8_t valid : 1;
 		// XXX deliberately keep this big enough we are never at risk of overflowing...
-		uint32_t mini_batch_id : 23;
+		uint32_t mini_batch_id : MINI_BATCH_ID_WIDTH;
 
 		id_field_t (bool valid, size_t node_id, size_t mini_batch_id) : node_id(node_id), valid(valid), mini_batch_id(mini_batch_id) {}
 	};

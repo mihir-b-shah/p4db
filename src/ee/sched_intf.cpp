@@ -72,6 +72,6 @@ void TxnExecutor::setup_txn_sched() {
 void TxnExecutor::send_get_txn_sched() {
 	uint64_t* buf_view = (uint64_t*) raw_buf;
 	sendall(txn_sched_sockfd, raw_buf, sched_packet_buf_len);
-	db.txn_sched_bar.wait(NULL, true);
+	db.txn_sched_bar.wait(NULL);
 	recvall(txn_sched_sockfd, raw_buf, sched_reply_len);
 }

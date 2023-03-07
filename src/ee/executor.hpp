@@ -71,7 +71,7 @@ struct TxnExecutor {
     Undolog log;
     StackPool<8192> mempool;
     uint32_t tid;
-	size_t mini_batch_num;
+	uint32_t mini_batch_num;
 
 	char* raw_buf;
 	out_sched_entry_t* sched_packet_buf;

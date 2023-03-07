@@ -15,7 +15,7 @@ public class Generic {
 	static final double K_ROOT_RELAX = 0.1;
 	static final int N_OPS = 8;
 	static final int N_TXNS = 1_000_000;
-	static final int N_NODES = 2;
+	static final int N_NODES = 1;
 	static final int N_KEYS = 10_000_000;
 	static final int FRAC_DIST_TXNS = 20;
 
@@ -72,8 +72,8 @@ public class Generic {
 				}
 			}
 
-			String fname = String.format("node%d_z%d_N%d_n%d_k%d_txns.csv",
-				i, K_ZIPF, N_TXNS, N_OPS, N_KEYS);
+			String fname = String.format("node%d_S%d_z%d_N%d_n%d_k%d_txns.csv",
+				i, N_NODES, K_ZIPF, N_TXNS, N_OPS, N_KEYS);
 			PrintWriter outFile = new PrintWriter(new File(fname));
 
 			for (long[] txn : nodeTxns) {
@@ -114,8 +114,8 @@ public class Generic {
 			return Integer.compare(e2.getValue(), e1.getValue());
 		});
 
-		String dist_fname = String.format("dist_z%d_N%d_n%d_k%d.txt",
-			K_ZIPF, N_TXNS, N_OPS, N_KEYS);
+		String dist_fname = String.format("dist_S%d_z%d_N%d_n%d_k%d.txt",
+			N_NODES, K_ZIPF, N_TXNS, N_OPS, N_KEYS);
 		PrintWriter dist_pw = new PrintWriter(new File(dist_fname));
 		for (Map.Entry<Long, Integer> entry : sortedFreqs) {
 			dist_pw.printf("%d:%d\n", entry.getKey(), entry.getValue());

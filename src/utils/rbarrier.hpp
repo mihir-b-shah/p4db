@@ -22,17 +22,17 @@ public:
 	}
 	reusable_barrier_t(size_t n_threads) : reusable_barrier_t(n_threads, empty_serial_func) {}
 
-	void* wait(void* arg, bool single_action) {
+	void* wait(void* arg) {
 		int rc1 = pthread_barrier_wait(&bar1);
-		void* res;
-		if (rc1 == PTHREAD_BARRIER_SERIAL_THREAD || (rc1 == 0 && !single_action)) {
-			res = sf(arg);
+		if (rc1 == PTHREAD_BARRIER_SERIAL_THREAD) {
+			//	TODO: Is seq cst necessary here? I don't think so...
+			__atomic_store_n(&res, sf(arg), __ATOMIC_SEQ_CST);
 		} else {
-			res = NULL;
 			assert(rc1 == 0);
 		}
 		int rc2 = pthread_barrier_wait(&bar2);
 		assert(rc2 == PTHREAD_BARRIER_SERIAL_THREAD || rc2 == 0);
+		// everyone should read the new value...
 		return res;
 	}
 
@@ -40,4 +40,5 @@ private:
 	pthread_barrier_t bar1;
 	pthread_barrier_t bar2;
 	serial_func sf;
+	void* res;
 };

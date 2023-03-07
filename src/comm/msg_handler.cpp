@@ -60,7 +60,7 @@ void MessageHandler::handle(Pkt_t* pkt, msg::Init* msg) {
 
 void MessageHandler::handle(Pkt_t* pkt, msg::Barrier* msg) {
     std::cout << "Received msg::Barrier from " << msg->sender << '\n';
-    barrier.handle();
+    barrier.handle(msg);
     pkt->free();
 }
 

@@ -370,10 +370,18 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 		size_t txn_num = 0;
 		size_t committed = 0;
 		tb.mini_batch_num = 1;
+		bool done_batch = false;
 
 		while (1) {
+			// TODO: policy choice- do we consider MINI_BATCH_TGT, or commit MINI_BATCH_TGT?
+			// TODO: note, we need to keep the mini_batch_num consistent across nodes during execution.
 			if (txn_num == MINI_BATCH_SIZE_THR_TGT) {
-				db.msg_handler->barrier.wait_workers();
+				// TODO do I need sequential consistency here, is relaxed sufficient?
+				if (__atomic_load_n(&db.thr_batch_done_ct, __ATOMIC_SEQ_CST) == n_threads) {
+					break;
+				}
+				// guaranteed that all local threads call this.
+				db.msg_handler->barrier.wait_workers_soft();
 				fprintf(stderr, "Committed: %lu\n", committed);
 				committed = 0;
 				txn_num = 0;
@@ -382,28 +390,35 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 				tb.mini_batch_num += 1;
 			}
 
-			std::optional<in_sched_entry_t> e = txn_iter.next_entry();
-			if (!e.has_value()) {
-				break;
+			if (!done_batch) {
+				std::optional<in_sched_entry_t> e = txn_iter.next_entry();
+				if (e.has_value()) {
+					fprintf(stderr, "Running txn %u from thread %u's queue.\n", e.value().idx, e.value().thr_id);
+					Txn& txn = txn_iter.entry_to_txn(e.value());
+					txn.id = TxnId(true, node_id, tb.mini_batch_num);
+					assert(txn.id.field.valid == true && txn.id.field.node_id == node_id && txn.id.field.mini_batch_id == tb.mini_batch_num);
+					// Make sure extract_hot_cold is run only once.
+					if (!txn.init_done) {
+						extract_hot_cold(tb.kvs, txn, layout);
+					}
+					RC res = tb.my_execute(txn);
+					if (res == ROLLBACK) {
+						fprintf(stderr, "Rollback.\n");
+						txn_iter.retry_txn(e.value());
+					} else {
+						committed += 1;
+					}
+				} else {
+					// TODO do I need sequential consistency here, is relaxed sufficient?
+					__atomic_add_fetch(&db.thr_batch_done_ct, 1, __ATOMIC_SEQ_CST);
+					done_batch = true;
+				}
 			}
-
-			fprintf(stderr, "Running txn %u from thread %u's queue.\n", e.value().idx, e.value().thr_id);
-			Txn& txn = txn_iter.entry_to_txn(e.value());
-			txn.id = TxnId(true, node_id, tb.mini_batch_num);
-			assert(txn.id.field.valid == true && txn.id.field.node_id == node_id && txn.id.field.mini_batch_id == tb.mini_batch_num);
-			// Make sure extract_hot_cold is run only once.
-			if (!txn.init_done) {
-				extract_hot_cold(tb.kvs, txn, layout);
-			}
-			RC res = tb.my_execute(txn);
-			if (res == ROLLBACK) {
-				fprintf(stderr, "Rollback.\n");
-				txn_iter.retry_txn(e.value());
-			} else {
-				committed += 1;
-			}
+			// we use this as a dummy to maintain same # of mini-batches across all threads.
 			txn_num += 1;
+
+			assert(tb.mini_batch_num < (1ULL << TxnId::MINI_BATCH_ID_WIDTH));
 		}
-		db.msg_handler->barrier.wait_workers();
+		db.msg_handler->barrier.wait_workers_hard(&tb.mini_batch_num, &db.thr_batch_done_ct);
 	}
 }
