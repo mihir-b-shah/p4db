@@ -57,7 +57,7 @@ struct Row {
 		if (txn_id.field.valid) {
 			if (txn_id.field.mini_batch_id < last_acq.field.mini_batch_id) {
 				fprintf(stderr, "Ids: %u %u\n", txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
-				assert(false && "Mini-batch ordering violated.\n");
+				assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
 			}
 			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id) {
 				allow_lock = false;
@@ -96,15 +96,11 @@ struct Row {
         // lock_t::scoped_lock lock;
         // lock.acquire(mutex);
 
-		// TxnId(req->me_pack) gives me my current txn id.
 		TxnId txn_id(req->me_pack);
 		bool allow_lock = true;
 		// TODO check for wrap-around!
 		if (txn_id.field.valid) {
-			if (txn_id.field.mini_batch_id < last_acq.field.mini_batch_id) {
-				fprintf(stderr, "Ids: %u %u\n", txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
-				assert(false && "Mini-batch ordering violated.\n");
-			}
+			assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
 			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id) {
 				allow_lock = false;
 			}

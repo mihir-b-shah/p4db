@@ -11,6 +11,7 @@
 	
 RC TxnExecutor::my_execute(Txn& arg) {
 	arg.id.field.valid = true;
+	assert(arg.id.field.mini_batch_id == mini_batch_num);
 	// acquire all locks first, ex and shared. Can rollback within loop
 
 	TupleFuture<KV>* ops[NUM_OPS];
@@ -45,6 +46,7 @@ RC TxnExecutor::my_execute(Txn& arg) {
 			}
 			const auto value = x->value;
 			do_not_optimize(value);
+			ops[i]->last_acq = arg.id;
 		} else {
 			break;
 		}
@@ -170,6 +172,7 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op, TxnId 
 		// XXX a hack, just to pass my id in.
 		future->last_acq = id;
 		// fprintf(stderr, "id: (%u,%u,%u) future->last_acq: %u\n", id.field.valid, id.field.node_id, id.field.mini_batch_id, future->last_acq.get_packed());
+		assert(future->last_acq.field.mini_batch_id == mini_batch_num);
 		if (!table->get(op.id, AccessMode::READ, future, ts)) [[unlikely]] {
 			return nullptr;
 		}
@@ -224,6 +227,7 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op, TxnId
 		future->last_acq = id;
 		future->tuple = nullptr;
 		// fprintf(stderr, "id: (%u,%u,%u) future->last_acq: %u\n", id.field.valid, id.field.node_id, id.field.mini_batch_id, future->last_acq.get_packed());
+		assert(future->last_acq.field.mini_batch_id == mini_batch_num);
 		if (!table->get(op.id, AccessMode::WRITE, future, ts)) [[unlikely]] {
 			return nullptr;
 		}
@@ -353,6 +357,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 	size_t txn_num = 0;
 	std::vector<Txn> aborted;
 	assert(txns.size() % batch_tgt == 0);
+	tb.mini_batch_num = 1;
 
 	// input of scheduler, maybe?
 	for (size_t i = 0; i<txns.size(); i+=batch_tgt) {
@@ -369,7 +374,6 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 		TxnExecutor::TxnIterator txn_iter(tb);
 		size_t txn_num = 0;
 		size_t committed = 0;
-		tb.mini_batch_num = 1;
 		bool done_batch = false;
 
 		while (1) {
