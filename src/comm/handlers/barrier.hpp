@@ -5,6 +5,7 @@
 #include <utils/rbarrier.hpp>
 
 #include <cstdint>
+#include <queue>
 #include <pthread.h>
 
 struct BarrierHandler;
@@ -17,16 +18,27 @@ struct barrier_handler_arg_t {
 	uint32_t* thr_batch_done_ct;
 };
 
+struct queued_msg_t {
+    msg::node_t sender;
+	bool is_hard;
+	uint32_t mini_batch_num;
+
+	queued_msg_t(msg::node_t s, bool hard, uint32_t n) : sender(s), is_hard(hard), mini_batch_num(n) {}
+};
+
 struct BarrierHandler {
     Communicator* comm;
     uint32_t num_nodes;
+	uint32_t all_nodes_mask;
 	uint32_t* mini_batch_ids;
 
 	uint32_t soft_received;
     uint32_t hard_received;
 
-	// TODO	This is my barrier impl, is this a problem?
+	//	TODO This is my barrier impl, is this a problem?
 	reusable_barrier_t local_barrier;
+	//	TODO Replace with a circular queue.
+	std::queue<queued_msg_t> q;
 
     BarrierHandler(Communicator* comm);
     ~BarrierHandler() {

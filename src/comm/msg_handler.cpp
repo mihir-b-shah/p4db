@@ -53,13 +53,13 @@ void MessageHandler::handle(Pkt_t* pkt) {
 // Private methods
 
 void MessageHandler::handle(Pkt_t* pkt, msg::Init* msg) {
-    std::cout << "Received msg::Init from " << msg->sender << '\n';
+    // std::cout << "Received msg::Init from " << msg->sender << '\n';
     init.handle(msg->sender);
     pkt->free();
 }
 
 void MessageHandler::handle(Pkt_t* pkt, msg::Barrier* msg) {
-    std::cout << "Received msg::Barrier from " << msg->sender << '\n';
+    // std::cout << "Received msg::Barrier from " << msg->sender << '\n';
     barrier.handle(msg);
     pkt->free();
 }

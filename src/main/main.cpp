@@ -31,8 +31,8 @@ void print_backtrace(int sig) {
 }
 
 int main(int argc, char** argv) {
-	signal(SIGSEGV, print_backtrace);
-	signal(SIGABRT, print_backtrace);
+	// signal(SIGSEGV, print_backtrace);
+	// signal(SIGABRT, print_backtrace);
 
     auto& config = Config::instance();
     config.parse_cli(argc, argv);
@@ -66,9 +66,7 @@ int main(int argc, char** argv) {
             const WorkerContext::guard worker_ctx;
 			// TODO: change in production- right now, running on single machine.
             pin_worker(i + 2*config.node_id);
-			// TODO change this to a regular barrier, since wait_workers does not exist.
-			uint32_t trash_v1, trash_v2;
-			db.msg_handler->barrier.wait_workers_hard(&trash_v1, &trash_v2);
+			db.msg_handler->barrier.wait_workers();
 			txn_executor(db, per_core_txns[i]);
         }));
     }

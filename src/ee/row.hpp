@@ -55,12 +55,15 @@ struct Row {
 		bool allow_lock = true;
 		// TODO check for wrap-around!
 		if (txn_id.field.valid) {
-			assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
+			if (txn_id.field.mini_batch_id < last_acq.field.mini_batch_id) {
+				fprintf(stderr, "Ids: %u %u\n", txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+				assert(false && "Mini-batch ordering violated.\n");
+			}
 			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id) {
 				allow_lock = false;
 			}
 			if (is_compatible(mode)) {
-				fprintf(stderr, "local_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+				//fprintf(stderr, "local_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
 			}
 		}
 
@@ -98,12 +101,15 @@ struct Row {
 		bool allow_lock = true;
 		// TODO check for wrap-around!
 		if (txn_id.field.valid) {
-			assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
+			if (txn_id.field.mini_batch_id < last_acq.field.mini_batch_id) {
+				fprintf(stderr, "Ids: %u %u\n", txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+				assert(false && "Mini-batch ordering violated.\n");
+			}
 			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id) {
 				allow_lock = false;
 			}
 			if (is_compatible(req->mode)) {
-				fprintf(stderr, "remote_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+				// fprintf(stderr, "remote_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
 			}
 		}
 
