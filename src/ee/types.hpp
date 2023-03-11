@@ -6,43 +6,10 @@
 #include <ostream>
 #include <cassert>
 
-struct AccessMode {
-    using value_t = uint32_t;
-
-    static constexpr value_t INVALID = 0x00000000;
-    static constexpr value_t READ = 0x00000001;
-    static constexpr value_t WRITE = 0x00000002;
-
-    value_t value;
-
-    constexpr AccessMode() : value(AccessMode::INVALID) {}
-
-    constexpr AccessMode(value_t value) : value(value) {}
-
-    operator value_t() const {
-        return get_clean();
-    }
-
-    bool operator==(const value_t& rhs) const {
-        return value == rhs;
-    }
-
-    // bool operator==(const AccessMode& rhs) const {
-    //     return value == rhs.value;
-    // }
-
-    value_t get_clean() const {
-        return value & 0x000000ff;
-    }
-
-    bool by_switch() const {
-        return (value >> 8) & 0xff;
-    }
-
-    void set_switch_index(uint16_t idx) {
-        value |= static_cast<uint32_t>(__builtin_bswap16(idx)) << 16;
-        value |= 0x0000aa00;
-    }
+enum class AccessMode : uint8_t {
+	INVALID = 0,
+	READ = 1,
+	WRITE = 2,
 };
 
 struct TxnId {

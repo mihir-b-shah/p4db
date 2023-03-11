@@ -1,52 +1,71 @@
 #include "switch.hpp"
 
-void SwitchInfo::make_txn(const MultiOp& arg, BufferWriter& bw) {
-    struct UniqInstrType_t {
-        uint32_t id = 0;
-        TupleLocation tl;
-        Txn::OP op; // might save some bytes if we only copy necessary fields
+#include <cstdio>
+#include <array>
+#include <cstring>
+#include <cassert>
+#include <cstdlib>
+#include <utility>
+#include <optional>
+#include <netinet/in.h>
 
-        bool operator<(const UniqInstrType_t& other) {
-            if (id == other.id) {
-                return tl.reg_array_id < other.tl.reg_array_id;
-            }
-            return id < other.id;
-        }
-    };
+#define STOP 0x80
 
-    std::array<UniqInstrType_t, DeclusteredLayout::NUM_MAX_OPS> accesses;
-    std::array<uint32_t, DeclusteredLayout::NUM_REGS> cntr{};
-    for (size_t i = 0; auto& op : arg.ops.hot_ops) {
-        auto tl = declustered_layout->get_location(op.id);
-        uint32_t id = cntr[tl.reg_array_id]++;
-        accesses[i++] = UniqInstrType_t{id, tl, op};
-    }
-    std::sort(accesses.begin(), accesses.end());
+struct __attribute__((packed)) reg_instr_t {
+	uint8_t type__be;
+	uint8_t op__be;
+	uint16_t idx__be;
+	uint32_t data__be;
+};
 
-    auto info = bw.write(info_t{});
+struct __attribute__((packed)) packet_t {
+	uint32_t locks_check__nb;
+	uint32_t locks_acquire__nb;
+	uint32_t locks_undo__nb;
+	uint8_t is_second_pass__nb;
+	uint8_t n_failed__nb;
+	// TODO doesn't mesh well with NUM_OPS
+	reg_instr_t reg_instrs[1+DeclusteredLayout::NUM_MAX_OPS];
+};
 
-    uint32_t nb_conflict = 0;
-    for (int8_t last = -1; auto& access : accesses) {
-        auto& tl = access.tl;
-        auto& op = access.op;
-        bool is_conflict = tl.reg_array_id <= last;
-
-        auto reg = InstrType_t::REG(tl.reg_array_id).set_stop(is_conflict);
-        auto opcode = (op.mode == AccessMode::WRITE) ? OPCode_t::WRITE : OPCode_t::READ;
-        bw.write(instr_t{reg, opcode, tl.reg_array_idx, op.value});
-        nb_conflict += is_conflict;
-        last = tl.reg_array_id;
-    }
-
-    bw.write(InstrType_t::STOP());
-    info->multipass = (nb_conflict > 0);
+static void fill_reg_instr(const std::pair<Txn::OP, TupleLocation>& pr, reg_instr_t* instr) {
+	instr->type__be = pr.second.reg_array_id;
+	instr->op__be = static_cast<uint8_t>(pr.first.mode);
+	instr->idx__be = htons(pr.second.reg_array_idx);
+	instr->data__be = htonl(pr.first.value);
 }
 
-SwitchInfo::MultiOpOut SwitchInfo::parse_txn(const MultiOp& arg [[maybe_unused]], BufferReader& br) {
+size_t SwitchInfo::make_txn(const Txn& txn, uint8_t* buf) {
+	assert(txn.do_accel);
+	packet_t* pkt = reinterpret_cast<packet_t*>(buf);	
+
+	size_t hot1_p = 0, hot2_p = 0;
+	while (hot1_p < NUM_OPS && txn.hot_ops_pass1[hot1_p].first.mode == AccessMode::INVALID) {
+		fill_reg_instr(txn.hot_ops_pass1[hot1_p], &pkt->reg_instrs[hot1_p]);
+		hot1_p += 1;
+	}
+	while (hot2_p < NUM_OPS && txn.hot_ops_pass2[hot2_p].first.mode == AccessMode::INVALID) {
+		fill_reg_instr(txn.hot_ops_pass1[hot2_p], &pkt->reg_instrs[hot2_p]);
+		hot2_p += 1;
+	}
+	pkt->reg_instrs[hot1_p].type__be |= STOP;
+	pkt->reg_instrs[hot2_p].type__be |= STOP;
+	
+	pkt->locks_check__nb = htonl(txn.locks_check.to_ulong());
+	pkt->locks_acquire__nb = htonl(txn.locks_acquire.to_ulong());
+	pkt->locks_undo__nb = 0;
+	pkt->is_second_pass__nb = 0;
+	pkt->n_failed__nb = 0;
+	return sizeof(packet_t);
+}
+
+SwitchInfo::MultiOpOut SwitchInfo::parse_txn(BufferReader& br) {
     MultiOpOut out;
+	/* TODO replace with real logic
     for (int i = 0; i < NUM_OPS; ++i) {
         auto instr = br.read<instr_t>();
         out.values[i] = *instr->data;
     }
+	*/
     return out;
 }

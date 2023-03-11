@@ -30,6 +30,18 @@ struct Row {
 
     using Future_t = TupleFuture<Tuple_t>;
 
+	inline bool mb_allow_lock(TxnId txn_id) {
+		if (txn_id.field.valid) {
+			// TODO check for wrap-around!
+			assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
+			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id &&
+				(!USE_FLOW_ORDER || txn_id.field.node_id != last_acq.field.node_id)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
     ErrorCode local_lock(const AccessMode mode, timestamp_t, Future_t* future) {
         if (!is_compatible(mode)) { // early abort test
             switch (mode) {
@@ -52,21 +64,7 @@ struct Row {
 
 		// TODO last_acq is a bad name, maybe use a union in the future?
 		TxnId txn_id = future->last_acq;
-		bool allow_lock = true;
-		// TODO check for wrap-around!
-		if (txn_id.field.valid) {
-			if (txn_id.field.mini_batch_id < last_acq.field.mini_batch_id) {
-				fprintf(stderr, "Ids: %u %u\n", txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
-				assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
-			}
-			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id) {
-				allow_lock = false;
-			}
-			if (is_compatible(mode)) {
-				//fprintf(stderr, "local_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
-			}
-		}
-
+		bool allow_lock = mb_allow_lock(txn_id);
         if (!is_compatible(mode) || !allow_lock) {
             switch (mode) {
                 case AccessMode::READ:
@@ -97,18 +95,7 @@ struct Row {
         // lock.acquire(mutex);
 
 		TxnId txn_id(req->me_pack);
-		bool allow_lock = true;
-		// TODO check for wrap-around!
-		if (txn_id.field.valid) {
-			assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
-			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id) {
-				allow_lock = false;
-			}
-			if (is_compatible(req->mode)) {
-				// fprintf(stderr, "remote_lock | allow_lock: %d, my_mini_batch: %u, acq_mini_batch: %u\n", allow_lock, txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
-			}
-		}
-
+		bool allow_lock = mb_allow_lock(txn_id);
         if (!is_compatible(req->mode) || !allow_lock) {
             auto res = req->convert<msg::TupleGetRes>();
             res->mode = AccessMode::INVALID;
@@ -148,7 +135,7 @@ struct Row {
 		// fprintf(stderr, "id: (%u,%u,%u)\n", id.field.valid, id.field.node_id, id.field.mini_batch_id);
 		last_acq = id;
         if (lock_type != mode) [[unlikely]] {
-            std::cout << "lock_type=" << lock_type << " mode=" << mode << '\n';
+            std::cout << "lock_type=" << static_cast<uint8_t>(lock_type) << " mode=" << static_cast<uint8_t>(mode) << '\n';
             return ErrorCode::INVALID_ACCESS_MODE;
         }
 

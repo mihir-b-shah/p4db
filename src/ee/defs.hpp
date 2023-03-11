@@ -35,6 +35,7 @@ constexpr auto STATS_PERIODIC_SAMPLE_TIME = 500ms;
 constexpr auto PERIODIC_CSV_FILENAME = "periodic.csv";
 constexpr auto SINGLE_NUMA = false;
 constexpr bool DYNAMIC_IPS = false;
+constexpr bool USE_FLOW_ORDER = true;
 
 namespace error {
 
@@ -48,4 +49,6 @@ constexpr bool DUMP_SWITCH_PKTS = false;
 constexpr int NUM_OPS = 8;
 constexpr size_t BATCH_SIZE_THR_TGT = 100000;
 constexpr size_t MINI_BATCH_SIZE_THR_TGT = 500; // TODO: workload-dependent
+constexpr size_t MAX_PASSES_ACCEL = 1;
+constexpr size_t MAX_OPS_PASS2_ACCEL = 2;
 

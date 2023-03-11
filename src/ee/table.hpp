@@ -171,7 +171,7 @@ struct StructTable final : public Table {
 
         if constexpr (error::LOG_TABLE) {
             std::stringstream ss;
-            ss << "local_put to " << name << " index=" << index << " local_index=" << local_index << " mode=" << mode << '\n';
+            ss << "local_put to " << name << " index=" << index << " local_index=" << local_index << " mode=" << static_cast<uint8_t>(mode) << '\n';
             std::cout << ss.str();
         }
 
@@ -201,7 +201,7 @@ struct StructTable final : public Table {
 
         if constexpr (error::LOG_TABLE) {
             std::stringstream ss;
-            ss << "remote_put to " << name << " index=" << req->rid << " local_index=" << local_index << " mode=" << req->mode << '\n';
+            ss << "remote_put to " << name << " index=" << req->rid << " local_index=" << local_index << " mode=" << static_cast<uint8_t>(req->mode) << '\n';
             std::cout << ss.str();
         }
 

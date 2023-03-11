@@ -1,5 +1,6 @@
 #pragma once
 
+#include "comm/comm.hpp"
 #include "comm/msg.hpp"
 #include "comm/msg_handler.hpp"
 #include "utils/buffers.hpp"
@@ -79,6 +80,8 @@ struct TxnExecutor {
 	int sched_packet_buf_len;
 	int sched_reply_len;
 
+	std::vector<Txn> non_accel_txns;
+
     TimestampFactory ts_factory;
     timestamp_t ts;
 
@@ -86,6 +89,7 @@ struct TxnExecutor {
         : db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1) {
         db.get_casted(KV::TABLE_NAME, kvs);
 		setup_txn_sched();
+		non_accel_txns.reserve(BATCH_SIZE_THR_TGT * 0.02);
 	}
 
 	void setup_txn_sched();
@@ -95,14 +99,14 @@ struct TxnExecutor {
 		free(raw_buf);
 	}
 
-	RC my_execute(Txn& arg);
+	RC my_execute(Txn& arg, Communicator::Pkt_t** packet_fill);
     RC execute(Txn& arg);
     RC commit();
     RC rollback();
     TupleFuture<KV>* read(StructTable* table, const Txn::OP& op, TxnId id);
     TupleFuture<KV>* write(StructTable* table, const Txn::OP& op, TxnId id);
     TupleFuture<KV>* insert(StructTable* table);
-	SwitchFuture<SwitchInfo>* atomic(SwitchInfo& p4_switch, const SwitchInfo::MultiOp& arg);
 };
 
+void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout);
 void txn_executor(Database& db, std::vector<Txn>& txns);

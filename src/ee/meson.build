@@ -18,6 +18,7 @@ project_headers += files(
 project_sources += files (
     'undolog.cpp',
 	'switch.cpp',
+	'hot_cold.cpp',
     'executor.cpp',
 	'sched_intf.cpp',
 	'txn_iterator.cpp',

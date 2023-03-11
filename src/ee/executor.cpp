@@ -1,4 +1,5 @@
 
+#include <comm/comm.hpp>
 #include <ee/executor.hpp>
 
 #include <utility>
@@ -9,7 +10,7 @@
 #include <limits>
 #include <optional>
 	
-RC TxnExecutor::my_execute(Txn& arg) {
+RC TxnExecutor::my_execute(Txn& arg, Communicator::Pkt_t** packet_fill) {
 	arg.id.field.valid = true;
 	assert(arg.id.field.mini_batch_id == mini_batch_num);
 	// acquire all locks first, ex and shared. Can rollback within loop
@@ -34,6 +35,7 @@ RC TxnExecutor::my_execute(Txn& arg) {
 	for (size_t i = 0; auto& op : arg.cold_ops) {
 		if (op.mode == AccessMode::WRITE) {
 			auto x = ops[i]->get();
+			fprintf(stderr, "Before x_p: %p, local: %d\n", (void*) x, op.loc_info.is_local);
 			if (!x) {
 				return rollback();
 			}
@@ -53,6 +55,11 @@ RC TxnExecutor::my_execute(Txn& arg) {
 		++i;
 	}
 
+	Communicator::Pkt_t** ptr_slot = db.hot_send_q.alloc_slot(mini_batch_num);
+	Communicator::Pkt_t* new_pkt_buf = db.comm->make_pkt();
+	*ptr_slot = new_pkt_buf;
+	*packet_fill = new_pkt_buf;
+
 	// locks automatically released
 	return commit();
 }
@@ -71,10 +78,11 @@ RC TxnExecutor::execute(Txn& arg) {
 	WorkerContext::get().cycl.reset(stats::Cycles::switch_txn_latency);
 
 	WorkerContext::get().cycl.start(stats::Cycles::commit_latency);
+	/*
 	if (false) { // TODO: arg.on_switch) {
 		WorkerContext::get().cycl.reset(stats::Cycles::switch_txn_latency);
 		WorkerContext::get().cycl.start(stats::Cycles::switch_txn_latency);
-		SwitchFuture<SwitchInfo>* multi_f = atomic(p4_switch, SwitchInfo::MultiOp{arg});
+		SwitchFuture<SwitchInfo>* multi_f = atomic(p4_switch, arg);
 		const auto values = multi_f->get().values;
 		do_not_optimize(values);
 
@@ -82,6 +90,7 @@ RC TxnExecutor::execute(Txn& arg) {
 		WorkerContext::get().cycl.save(stats::Cycles::switch_txn_latency);
 		return commit();
 	}
+	*/
 
 	// acquire all locks first, ex and shared. Can rollback within loop
 	TupleFuture<KV>* ops[NUM_OPS];
@@ -278,7 +287,8 @@ TupleFuture<KV>* TxnExecutor::insert(StructTable* table) {
 	return future;
 }
 
-SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const SwitchInfo::MultiOp& arg) {
+/*
+SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& arg) {
 	auto& comm = db.comm;
 
 	auto pkt = comm->make_pkt();
@@ -300,50 +310,7 @@ SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Switc
 
 	return future;
 }
-
-static void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
-	// Keep track of the hottest local/global value.
-	db_key_t cold1_lk, cold1_gk;
-	size_t cold1_lv = 0, cold1_gv = 0;
-	size_t hot_p = 0, cold_p = 0;
-	
-	bool cold_all_local = true;
-	size_t i = 0;
-	while (i < NUM_OPS && txn.cold_ops[i].mode != AccessMode::INVALID) {
-		txn.cold_ops[i].loc_info = table->part_info.location(txn.cold_ops[i].id);
-		std::pair<bool, size_t> hot_info = layout->is_hot(txn.cold_ops[i].id);
-		if (hot_info.first) {
-			txn.hot_ops[hot_p++] = txn.cold_ops[i];
-		} else {
-			if (txn.cold_ops[i].loc_info.is_local) {
-				if (hot_info.second > cold1_lv) {
-					cold1_lk = txn.cold_ops[i].id;
-					cold1_lv = hot_info.second;
-				}
-			} else {
-				cold_all_local = false;
-			}
-			if (hot_info.second > cold1_gv) {
-				cold1_gk = txn.cold_ops[i].id;
-				cold1_gv = hot_info.second;
-			}
-			txn.cold_ops[cold_p++] = txn.cold_ops[i];
-		}
-		i += 1;
-	}
-	if (cold_p < NUM_OPS) {
-		txn.cold_ops[cold_p].mode = AccessMode::INVALID;
-	}
-	txn.cold_all_local = cold_all_local;
-	if (cold1_lv > 0) {
-		txn.hottest_local_cold_k = cold1_lk;
-	}
-	if (cold1_gv > 0) {
-		txn.hottest_any_cold_k = cold1_gk;
-	}
-	assert(cold_p + hot_p == NUM_OPS);
-	txn.init_done = true;
-}
+*/
 
 void txn_executor(Database& db, std::vector<Txn>& txns) {
 	auto& config = Config::instance();
@@ -408,15 +375,27 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 					if (!txn.init_done) {
 						extract_hot_cold(tb.kvs, txn, layout);
 					}
-					RC res = tb.my_execute(txn);
-					if (res == ROLLBACK) {
-						// fprintf(stderr, "Rollback.\n");
-						txn_iter.retry_txn(e.value());
+					if (txn.do_accel) {
+						//	TODO note this buffer is malloc-ed, seems excessive.
+						Communicator::Pkt_t* pkt;
+						fprintf(stderr, "Running txn.\n");
+						RC res = tb.my_execute(txn, &pkt);
+						if (res == ROLLBACK) {
+							// fprintf(stderr, "Rollback.\n");
+							txn_iter.retry_txn(e.value());
+						} else {
+							committed += 1;
+							// now, time to fill out the packet buffer.
+							auto txn_pkt = pkt->ctor<msg::SwitchTxn>();
+							txn_pkt->sender = db.comm->node_id;
+							size_t txn_size = tb.p4_switch.make_txn(txn, txn_pkt->data);
+							pkt->resize(msg::SwitchTxn::size(txn_size));
+						}
 					} else {
-						committed += 1;
+						tb.non_accel_txns.push_back(txn);
 					}
 				} else {
-					// TODO do I need sequential consistency here, is relaxed sufficient?
+					//	TODO do I need sequential consistency here, is relaxed sufficient?
 					__atomic_add_fetch(&db.thr_batch_done_ct, 1, __ATOMIC_SEQ_CST);
 					done_batch = true;
 				}

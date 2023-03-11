@@ -66,7 +66,6 @@ private:
                 }
                 tuple = reinterpret_cast<Tuple_t*>(res->tuple);
 				last_acq = TxnId(res->last_acq_pack);
-
                 return tuple;
             }
 
@@ -84,16 +83,16 @@ private:
 template <typename P4Switch>
 struct SwitchFuture final : public AbstractFuture {
 	P4Switch& p4_switch;
-	const P4Switch::MultiOp& arg;
+	const Txn& arg;
 
-    SwitchFuture(P4Switch& p4_switch, const P4Switch::MultiOp& arg)
+    SwitchFuture(P4Switch& p4_switch, const Txn& arg)
         : AbstractFuture{}, p4_switch(p4_switch), arg(arg) {}
 
     const auto get() { // can be only called once
         auto pkt = get_pkt();
 		auto txn = pkt->as<msg::SwitchTxn>();
 		BufferReader br{txn->data};
-		auto ret = p4_switch.parse_txn(arg, br);
+		auto ret = p4_switch.parse_txn(br);
         pkt->free();
         return ret;
     }

@@ -29,24 +29,21 @@ void load_txns(Config& config) {
         std::istringstream ss(buf);
         config.trace_txns.emplace_back();
 		Txn& txn = config.trace_txns.back();
-		size_t i = 0;
-        while (std::getline(ss, access, ',')) {
-			if (txn.cold_ops[NUM_OPS-1].mode != AccessMode::INVALID) {
-				assert(false && "Txn is already full- error.");
-			}
+		
+		for (size_t i = 0; i<NUM_OPS; ++i) {
+			assert(std::getline(ss, access, ','));
 			Txn::OP op;	
-			/*	We decide the mode based on rw percentage, from the config.
-				The value is just a txn number, so we can do easy serializability
-				checking */
 			op.id = std::stoull(access);
-
 			if ((rand() % 100) < config.write_prob) {
 				op.mode = AccessMode::WRITE;
 			} else {
 				op.mode = AccessMode::READ;
 			}
 			op.value = rand() % 100000;
-			txn.cold_ops[i++] = op;
+			/*	We decide the mode based on rw percentage, from the config.
+				The value is just a txn number, so we can do easy serializability
+				checking */
+			txn.cold_ops[i] = op;
         }
     }
 

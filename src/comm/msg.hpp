@@ -105,7 +105,7 @@ struct TupleGetRes : public Base<TupleGetRes, Type::TUPLE_GET_RES>, public Tuple
 	uint32_t last_acq_pack;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-    uint8_t tuple[0];
+    uint8_t tuple[0] __attribute__((aligned (sizeof(void*))));
 #pragma GCC diagnostic pop
 
     TupleGetRes(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode, TxnId last_acq)
@@ -121,7 +121,7 @@ struct TuplePutReq : public Base<TuplePutReq, Type::TUPLE_PUT_REQ>, public Tuple
 	uint32_t last_acq_pack;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-    uint8_t tuple[0];
+    uint8_t tuple[0] __attribute__((aligned (sizeof(void*))));
 #pragma GCC diagnostic pop
 
     TuplePutReq(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode, TxnId last_acq)
@@ -145,7 +145,7 @@ struct SwitchTxn : public Base<SwitchTxn, Type::SWITCH_TXN> {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-    uint8_t data[0];
+    uint8_t data[0] __attribute__((aligned (sizeof(void*))));
 #pragma GCC diagnostic pop
 
     static constexpr auto size(size_t data_size) {
