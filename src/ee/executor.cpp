@@ -35,7 +35,6 @@ RC TxnExecutor::my_execute(Txn& arg, Communicator::Pkt_t** packet_fill) {
 	for (size_t i = 0; auto& op : arg.cold_ops) {
 		if (op.mode == AccessMode::WRITE) {
 			auto x = ops[i]->get();
-			fprintf(stderr, "Before x_p: %p, local: %d\n", (void*) x, op.loc_info.is_local);
 			if (!x) {
 				return rollback();
 			}
@@ -378,7 +377,6 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 					if (txn.do_accel) {
 						//	TODO note this buffer is malloc-ed, seems excessive.
 						Communicator::Pkt_t* pkt;
-						fprintf(stderr, "Running txn.\n");
 						RC res = tb.my_execute(txn, &pkt);
 						if (res == ROLLBACK) {
 							// fprintf(stderr, "Rollback.\n");

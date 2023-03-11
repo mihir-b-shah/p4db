@@ -44,12 +44,15 @@ size_t SwitchInfo::make_txn(const Txn& txn, uint8_t* buf) {
 		fill_reg_instr(txn.hot_ops_pass1[hot1_p], &pkt->reg_instrs[hot1_p]);
 		hot1_p += 1;
 	}
-	while (hot2_p < NUM_OPS && txn.hot_ops_pass2[hot2_p].first.mode == AccessMode::INVALID) {
-		fill_reg_instr(txn.hot_ops_pass1[hot2_p], &pkt->reg_instrs[hot2_p]);
-		hot2_p += 1;
+	if (MAX_PASSES_ACCEL > 1) {
+		while (hot2_p < MAX_OPS_PASS2_ACCEL && 
+				txn.hot_ops_pass2[hot2_p].first.mode == AccessMode::INVALID) {
+			fill_reg_instr(txn.hot_ops_pass1[hot2_p], &pkt->reg_instrs[hot2_p]);
+			hot2_p += 1;
+		}
+		pkt->reg_instrs[hot2_p].type__be |= STOP;
 	}
 	pkt->reg_instrs[hot1_p].type__be |= STOP;
-	pkt->reg_instrs[hot2_p].type__be |= STOP;
 	
 	pkt->locks_check__nb = htonl(txn.locks_check.to_ulong());
 	pkt->locks_acquire__nb = htonl(txn.locks_acquire.to_ulong());
