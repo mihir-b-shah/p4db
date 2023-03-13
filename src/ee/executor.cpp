@@ -403,8 +403,6 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
 			assert(tb.mini_batch_num < (1ULL << TxnId::MINI_BATCH_ID_WIDTH));
 		}
-		// fprintf(stderr, "Before hard barrier.\n");
 		db.msg_handler->barrier.wait_workers_hard(&tb.mini_batch_num, &db.thr_batch_done_ct);
-		// fprintf(stderr, "After hard barrier.\n");
 	}
 }

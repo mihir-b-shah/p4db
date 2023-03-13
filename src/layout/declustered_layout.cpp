@@ -27,6 +27,7 @@ DeclusteredLayout::DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>& i
 				r_low = r;
 			}
 		}
+		// TODO note this is a trace-wide frequency, is that problematic?
 		weight[r_low] += pr.second;
 
         TupleLocation loc = {static_cast<uint8_t>(r_low), 
