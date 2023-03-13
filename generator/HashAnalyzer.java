@@ -15,7 +15,7 @@ public class HashAnalyzer {
 	static final int MINI_BATCH_N_CONSIDER = 5000;
 	static final int MAX_ALLOW_ABORT_CT = 1;
 
-	static final boolean DO_SCHED = false;
+	static final boolean DO_SCHED = true;
 
 	static class Txn {
 		int abortCt;

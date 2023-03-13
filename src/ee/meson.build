@@ -8,6 +8,7 @@ project_headers += files(
 	'table.hpp',
     'executor.hpp',
 	'row.hpp',
+	'sched.hpp',
     'types.hpp',
 	'partition.hpp',
     'undolog.hpp',
@@ -20,6 +21,6 @@ project_sources += files (
 	'switch.cpp',
 	'hot_cold.cpp',
     'executor.cpp',
-	'sched_intf.cpp',
+	'old_sched_intf.cpp',
 	'txn_iterator.cpp',
 )

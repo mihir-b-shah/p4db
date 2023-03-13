@@ -8,8 +8,7 @@
 #include <tuple>
 #include <utility>
 
-// hashed.
-// TODO, impl this? how does it know...
+// range of [0,5000000) is on node 0 for example, in a 2-node system of 10M keys.
 struct PartitionInfo {
     const uint64_t total_size;
     uint64_t partition_size;
