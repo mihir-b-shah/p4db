@@ -312,6 +312,10 @@ SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& 
 }
 */
 
+static void reset_db_batch(Database* db) {
+	__atomic_store_n(&db->thr_batch_done_ct, 0, __ATOMIC_SEQ_CST);
+}
+
 void txn_executor(Database& db, std::vector<Txn>& txns) {
 	auto& config = Config::instance();
     TxnExecutor tb{db};
@@ -359,6 +363,8 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 					}
 				}
 
+				fprintf(stderr, "mini_batch_num: %u, q.size(): %lu, thr_batch_done_ct: %u\n", tb.mini_batch_num, sched.mb_queues[tb.mini_batch_num % sched.n_queues].size(), db.thr_batch_done_ct);
+
 				// TODO do I need sequential consistency here, is relaxed sufficient?
 				if (__atomic_load_n(&db.thr_batch_done_ct, __ATOMIC_SEQ_CST) == n_threads) {
 					fprintf(stderr, "Done with batch.\n");
@@ -369,7 +375,6 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 				db.msg_handler->barrier.wait_workers_soft();
 				committed = 0;
 				txn_num = 0;
-				printf("mini_batch_num: %u, q.size(): %lu\n", tb.mini_batch_num, sched.mb_queues[tb.mini_batch_num % sched.n_queues].size());
 				tb.mini_batch_num += 1;
 			}
 
@@ -417,6 +422,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
 			assert(tb.mini_batch_num < (1ULL << TxnId::MINI_BATCH_ID_WIDTH));
 		}
-		db.msg_handler->barrier.wait_workers_hard(&tb.mini_batch_num, &db.thr_batch_done_ct);
+		db.msg_handler->barrier.wait_workers_hard(&tb.mini_batch_num, reset_db_batch, &db);
+		// call db.hot_send_q.done_sending()- needs to happen from one thread.
 	}
 }

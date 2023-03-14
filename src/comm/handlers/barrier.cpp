@@ -17,15 +17,13 @@ static void* critical_wait(void* arg) {
 	bar_arg->handler->my_wait(bar_arg);
 	if (bar_arg->is_hard) {
 		//	TODO is sequentially consistent store necessary here?
-		if (!bar_arg->dont_store) {
-			__atomic_store_n(&bar_arg->thr_batch_done_ct, 0, __ATOMIC_SEQ_CST);
+		if (bar_arg->reset_fn != nullptr) {
+			bar_arg->reset_fn(bar_arg->db);
 		}
 		__atomic_store_n(&bar_arg->handler->hard_received, 0, __ATOMIC_SEQ_CST);
 	}
-	if (!bar_arg->dont_store) {
-		//	TODO same here- subtract instead of store.
-		__atomic_store_n(&bar_arg->handler->soft_received, 0, __ATOMIC_SEQ_CST);
-	}
+	//	TODO not necessary in all code-paths?
+	__atomic_store_n(&bar_arg->handler->soft_received, 0, __ATOMIC_SEQ_CST);
 	return arg;
 }
 
@@ -101,19 +99,18 @@ void BarrierHandler::my_wait(barrier_handler_arg_t* bar_arg) {
 void BarrierHandler::wait_workers_soft() {
 	barrier_handler_arg_t arg;
 	arg.handler = this;
-	arg.dont_store = false;
 	arg.is_hard = false;
-	arg.thr_batch_done_ct = NULL;
+	arg.reset_fn = nullptr;
 	arg.mini_batch_num = 0;
 	local_barrier.wait(&arg);
 }
 
-void BarrierHandler::wait_workers_hard(uint32_t* mini_batch_num, uint32_t* thr_batch_done_ct) {
+void BarrierHandler::wait_workers_hard(uint32_t* mini_batch_num, single_fn_t fn, Database* db) {
 	barrier_handler_arg_t arg;
 	arg.handler = this;
 	arg.is_hard = true;
-	arg.dont_store = false;
-	arg.thr_batch_done_ct = thr_batch_done_ct;
+	arg.reset_fn = fn;
+	arg.db = db;
 	// safe since everyone should have same mini_batch_num in their tb.
 	arg.mini_batch_num = *mini_batch_num;
 	barrier_handler_arg_t* crit_arg = (barrier_handler_arg_t*) local_barrier.wait(&arg);
@@ -125,8 +122,7 @@ void BarrierHandler::wait_workers() {
 	barrier_handler_arg_t arg;
 	arg.handler = this;
 	arg.is_hard = true;
-	arg.dont_store = false;
-	arg.thr_batch_done_ct = NULL;
+	arg.reset_fn = nullptr;
 	// safe since everyone should have same mini_batch_num in their tb.
 	arg.mini_batch_num = 0;
 	local_barrier.wait(&arg);
@@ -136,8 +132,7 @@ void BarrierHandler::wait_nodes() {
 	barrier_handler_arg_t arg;
 	arg.handler = this;
 	arg.is_hard = true;
-	arg.dont_store = true;
-	arg.thr_batch_done_ct = NULL;
+	arg.reset_fn = nullptr;
 	arg.mini_batch_num = 0;
 	critical_wait(&arg);
 }

@@ -9,13 +9,16 @@
 #include <pthread.h>
 
 struct BarrierHandler;
+class Database;
+
+typedef void (*single_fn_t)(Database* db);
 
 struct barrier_handler_arg_t {
 	BarrierHandler* handler;
 	bool is_hard;
-	bool dont_store;
 	uint32_t mini_batch_num;
-	uint32_t* thr_batch_done_ct;
+	single_fn_t reset_fn;
+	Database* db;
 };
 
 struct queued_msg_t {
@@ -47,10 +50,8 @@ struct BarrierHandler {
 
     void handle(msg::Barrier* msg);
     void wait_workers_soft();
-    void wait_workers_hard(uint32_t* mini_batch_id, uint32_t* thr_batch_done_ct);
+    void wait_workers_hard(uint32_t* mini_batch_id, single_fn_t fn, Database* arg);
     void wait_workers();
     void wait_nodes();
     void my_wait(barrier_handler_arg_t* arg);
-
-private:
 };
