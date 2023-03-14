@@ -2,6 +2,7 @@
 #include <comm/comm.hpp>
 #include <ee/executor.hpp>
 
+#include <bitset>
 #include <utility>
 #include <algorithm>
 #include <mutex>
@@ -320,67 +321,78 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 	const size_t n_threads = config.num_txn_workers;
 	const size_t mini_batch_tgt = MINI_BATCH_SIZE_THR_TGT;
 	const size_t batch_tgt = BATCH_SIZE_THR_TGT;
-	size_t txn_num = 0;
 	std::vector<Txn> aborted;
 	assert(txns.size() % batch_tgt == 0);
 	tb.mini_batch_num = 1;
 
+	scheduler_t sched(&tb);
+
 	// input of scheduler, maybe?
 	for (size_t i = 0; i<txns.size(); i+=batch_tgt) {
 		size_t batch_num = i/batch_tgt;
-		for (size_t j = 0; j<batch_tgt; ++j) {
-			in_sched_entry_t& entry = ((in_sched_entry_t*) tb.raw_buf)[j];
-			entry.thr_id = thread_id;
-			entry.idx = i+j;
-		}
-		((in_sched_entry_t*) tb.raw_buf)[batch_tgt].idx = TxnExecutor::TxnIterator::SENTINEL_POS;
+		sched.sched_batch(txns, i, i+batch_tgt);
 
 		// execute a batch, break into mini-batches as we see fit.
-		// XXX: measure from here.
-		TxnExecutor::TxnIterator txn_iter(tb);
 		size_t txn_num = 0;
 		size_t committed = 0;
-		bool done_batch = false;
+		std::bitset<64> q_mask;
+		std::bitset<64> all_q_mask = (1ULL << sched.n_queues)-1;
+		assert(sched.n_queues < 64);
+		//	TODO this breaks with multiple batches, need to fix this.
 
 		while (1) {
 			// TODO: policy choice- do we consider MINI_BATCH_TGT, or commit MINI_BATCH_TGT?
 			// TODO: note, we need to keep the mini_batch_num consistent across nodes during execution.
 			if (txn_num == MINI_BATCH_SIZE_THR_TGT) {
+				auto& q = sched.mb_queues[tb.mini_batch_num % sched.n_queues];
+				if (!q_mask.test(tb.mini_batch_num % sched.n_queues) 
+					&& q.size() < MIN_MINI_BATCH_THR_SIZE) {
+					// drain the queue, to avoid coming back again.
+					while (!q.empty()) {
+						tb.non_accel_txns.push_back(sched.entry_to_txn(q.front()));
+						q.pop();
+					}
+					q_mask.set(tb.mini_batch_num % sched.n_queues);
+					if (q_mask == all_q_mask) {
+						//	TODO do I need sequential consistency here, is relaxed sufficient?
+						__atomic_add_fetch(&db.thr_batch_done_ct, 1, __ATOMIC_SEQ_CST);
+					}
+				}
+
 				// TODO do I need sequential consistency here, is relaxed sufficient?
 				if (__atomic_load_n(&db.thr_batch_done_ct, __ATOMIC_SEQ_CST) == n_threads) {
-					// fprintf(stderr, "Done with batch.\n");
+					fprintf(stderr, "Done with batch.\n");
 					break;
 				}
+				
 				// guaranteed that all local threads call this.
-				// fprintf(stderr, "Before soft barrier, mb_num: %u.\n", tb.mini_batch_num);
 				db.msg_handler->barrier.wait_workers_soft();
-				// fprintf(stderr, "After soft barrier.\n");
-				// fprintf(stderr, "Committed: %lu\n", committed);
 				committed = 0;
 				txn_num = 0;
-				/*	TODO: what happens when different nodes end up with different amts of txns
-					due to aborts- we need a way to handle this with minimum sync. */
+				printf("mini_batch_num: %u, q.size(): %lu\n", tb.mini_batch_num, sched.mb_queues[tb.mini_batch_num % sched.n_queues].size());
 				tb.mini_batch_num += 1;
 			}
 
-			if (!done_batch) {
-				std::optional<in_sched_entry_t> e = txn_iter.next_entry();
-				if (e.has_value()) {
-					// fprintf(stderr, "Running txn %u from thread %u's queue.\n", e.value().idx, e.value().thr_id);
-					Txn& txn = txn_iter.entry_to_txn(e.value());
+			if (q_mask != all_q_mask) {
+				auto& q = sched.mb_queues[tb.mini_batch_num % sched.n_queues];
+				if (!q.empty()) {
+					in_sched_entry_t e = q.front();
+					Txn& txn = sched.entry_to_txn(e);
+					q.pop();
+
 					txn.id = TxnId(true, node_id, tb.mini_batch_num);
 					assert(txn.id.field.valid == true && txn.id.field.node_id == node_id && txn.id.field.mini_batch_id == tb.mini_batch_num);
-					// Make sure extract_hot_cold is run only once.
-					if (!txn.init_done) {
-						extract_hot_cold(tb.kvs, txn, layout);
-					}
 					if (txn.do_accel) {
 						//	TODO note this buffer is malloc-ed, seems excessive.
 						Communicator::Pkt_t* pkt;
 						RC res = tb.my_execute(txn, &pkt);
 						if (res == ROLLBACK) {
-							// fprintf(stderr, "Rollback.\n");
-							txn_iter.retry_txn(e.value());
+							txn.n_aborts += 1;
+							if (txn.n_aborts <= MAX_TIMES_ACCEL_ABORT) {
+								q.push(e);
+							} else {
+								tb.non_accel_txns.push_back(txn);
+							}
 						} else {
 							committed += 1;
 							// now, time to fill out the packet buffer.
@@ -392,10 +404,12 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 					} else {
 						tb.non_accel_txns.push_back(txn);
 					}
-				} else {
-					//	TODO do I need sequential consistency here, is relaxed sufficient?
-					__atomic_add_fetch(&db.thr_batch_done_ct, 1, __ATOMIC_SEQ_CST);
-					done_batch = true;
+				} else if (!q_mask.test(tb.mini_batch_num % sched.n_queues)) {
+					q_mask.set(tb.mini_batch_num % sched.n_queues);
+					if (q_mask == all_q_mask) {
+						//	TODO do I need sequential consistency here, is relaxed sufficient?
+						__atomic_add_fetch(&db.thr_batch_done_ct, 1, __ATOMIC_SEQ_CST);
+					}
 				}
 			}
 			// we use this as a dummy to maintain same # of mini-batches across all threads.

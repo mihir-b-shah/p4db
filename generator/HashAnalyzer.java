@@ -95,7 +95,7 @@ public class HashAnalyzer {
 						if (sched1 != null) {
 							for (int s = 0; s<SCHED_LEN; ++s) {
 								if (sched0.get(s) == node && sched1.get(s) == node && (sBest == -1 ||
-										scheduledTxns.get(node).get(sBest).size() > scheduledTxns.get(node).get(s).size())) {
+									scheduledTxns.get(node).get(sBest).size() > scheduledTxns.get(node).get(s).size())) {
 									sBest = s;
 								}
 							}
@@ -104,7 +104,7 @@ public class HashAnalyzer {
 							// now only satisfy top key constraint.
 							for (int s = 0; s<SCHED_LEN; ++s) {
 								if (sched0.get(s) == node && (sBest == -1 ||
-										scheduledTxns.get(node).get(sBest).size() > scheduledTxns.get(node).get(s).size())) {
+									scheduledTxns.get(node).get(sBest).size() > scheduledTxns.get(node).get(s).size())) {
 									sBest = s;
 								}
 							}
@@ -121,13 +121,18 @@ public class HashAnalyzer {
 			assert(!sc.hasNextInt());
 			sc.close();
 		}
-		System.err.printf("Removed %d all-hot txns.\n", allHotCt);
+		System.out.printf("Removed %d all-hot txns.\n", allHotCt);
 
 		int miniBatchNum = 0;
 		int txnNum = 0;
 		Set<Integer> nodesDone = new HashSet<>();
 		Map<Integer, Integer> locks = new HashMap<>();
 		int commitCt = 0;
+		int abortCt = 0;
+		Map<Integer, Integer> txnAbortCts = new HashMap<>();
+		for (int i = 0; i<=MAX_ALLOW_ABORT_CT; ++i) {
+			txnAbortCts.put(i, 0);
+		}
 
 		timeLoop:
 		while (true) {
@@ -164,10 +169,10 @@ public class HashAnalyzer {
 					for (int k : txn.ops) {
 						locks.put(k, n);
 					}
-					System.out.printf("Commit %d\n", txn.abortCt);
+					txnAbortCts.put(txn.abortCt, txnAbortCts.get(txn.abortCt)+1);
 					commitCt += 1;
 				} else {
-					System.out.println("Rollback");
+					abortCt += 1;
 					txn.abortCt += 1;
 					if (txn.abortCt <= MAX_ALLOW_ABORT_CT) {
 						nodeTxns.offer(txn);
@@ -178,11 +183,23 @@ public class HashAnalyzer {
 			}
 			txnNum += 1;
 			if (txnNum % MINI_BATCH_N_CONSIDER == 0) {
+				for (int n = 0; n<scheduledTxns.size(); ++n) {
+					Map<Integer, Queue<Txn>> m = scheduledTxns.get(n);
+					System.out.printf("Node %d, discard_ct %d | ", n, discardTxnCt);
+					for (Map.Entry<Integer, Queue<Txn>> e : m.entrySet()) {
+						System.out.printf("(p=%d, qsize=%d) ", e.getKey(), e.getValue().size());
+					}
+					System.out.println();
+				}
+				System.out.println();
 				miniBatchNum += 1;
 				locks.clear();
 			}
 		}
-		System.err.printf("Commits per timestep: %.4f\n", ((double) commitCt)/txnNum);
-		System.err.printf("Discarded txns ct: %d\n", discardTxnCt);
+		System.out.printf("Timesteps: %d\n", txnNum);
+		System.out.printf("Discarded txns ct: %d\n", discardTxnCt);
+		System.out.printf("Commit ct: %d\n", commitCt);
+		System.out.printf("Abort ct: %d\n", abortCt);
+		System.out.printf("Txn abort cts: %s\n", txnAbortCts.toString());
 	}
 }

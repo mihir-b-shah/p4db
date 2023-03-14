@@ -45,10 +45,13 @@ constexpr bool DUMP_SWITCH_PKTS = false;
 
 } // namespace error
 
-// constexpr uint64_t NUM_KVS = 10'000'000;
+// all workload-dependent.
 constexpr int NUM_OPS = 8;
-constexpr size_t BATCH_SIZE_THR_TGT = 100000;
-constexpr size_t MINI_BATCH_SIZE_THR_TGT = 500; // TODO: workload-dependent
+constexpr size_t MAX_TIMES_ACCEL_ABORT = 1;
+constexpr size_t REMOTE_FRAC = 10;
+constexpr size_t BATCH_SIZE_THR_TGT = 100000; // TODO need to be scaled as we change thread cts.
+constexpr size_t MINI_BATCH_SIZE_THR_TGT = 5000;
+constexpr size_t MIN_MINI_BATCH_THR_SIZE = 200;
 constexpr size_t MAX_PASSES_ACCEL = 1;
 constexpr size_t MAX_OPS_PASS2_ACCEL = 2;
 

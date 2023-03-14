@@ -9,9 +9,11 @@
 void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 	static_assert(MAX_PASSES_ACCEL == 1 || MAX_PASSES_ACCEL == 2);
 
-	// Keep track of the hottest local/global value.
-	db_key_t cold1_lk, cold1_gk;
-	size_t cold1_lv = 0, cold1_gv = 0;
+	/*	Keep track of the hottest 2 values.
+		Kind of sketchy, since how do we know the frequency of every key? Just say in a real system,
+		we would know for some fraction of keys, and for the others I don't care. */
+	size_t cold1_i, cold2_i;
+	size_t cold1_v = 0, cold2_v = 0;
 	size_t hot_p1 = 0, hot_p2 = 0, cold_p = 0;
 	
 	bool cold_all_local = true;
@@ -61,17 +63,12 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 				txn.hot_ops_pass1[hot_p1++] = {txn.cold_ops[i], hot_info.second};
 			}
 		} else {
-			if (txn.cold_ops[i].loc_info.is_local) {
-				if (hot_info.second.dist_freq > cold1_lv) {
-					cold1_lk = txn.cold_ops[i].id;
-					cold1_lv = hot_info.second.dist_freq;
-				}
-			} else {
-				cold_all_local = false;
-			}
-			if (hot_info.second.dist_freq > cold1_gv) {
-				cold1_gk = txn.cold_ops[i].id;
-				cold1_gv = hot_info.second.dist_freq;
+			if (hot_info.second.dist_freq > cold1_v) {
+				cold1_i = cold_p;
+				cold1_v = hot_info.second.dist_freq;
+			} else if (hot_info.second.dist_freq > cold2_v) {
+				cold2_i = cold_p;
+				cold2_v = hot_info.second.dist_freq;
 			}
 			txn.cold_ops[cold_p++] = txn.cold_ops[i];
 		}
@@ -99,13 +96,11 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 		if (MAX_PASSES_ACCEL == 2 && hot_p2 < MAX_OPS_PASS2_ACCEL) {
 			txn.hot_ops_pass2[hot_p2].first.mode = AccessMode::INVALID;
 		}
-
-		txn.cold_all_local = cold_all_local;
-		if (cold1_lv > 0) {
-			txn.hottest_local_cold_k = cold1_lk;
+		if (cold1_v > 0) {
+			txn.hottest_cold_i1 = cold1_i;
 		}
-		if (cold1_gv > 0) {
-			txn.hottest_any_cold_k = cold1_gk;
+		if (cold2_v > 0) {
+			txn.hottest_cold_i2 = cold2_i;
 		}
 		assert(cold_p + hot_p1 + hot_p2 == NUM_OPS);
 	}

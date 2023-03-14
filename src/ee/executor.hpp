@@ -49,23 +49,26 @@ struct __attribute__((packed)) in_sched_entry_t {
 	uint8_t thr_id : 8;
 };
 
+struct TxnExecutor;
+struct scheduler_t {
+	size_t node_id;
+	TxnExecutor* exec;
+	DeclusteredLayout* layout;
+	std::vector<std::vector<std::vector<size_t>>> schedules;
+	size_t n_schedules;
+	size_t n_queues;
+	size_t schedule_len;
+	//	TODO: is this efficient enough? Replace with a vector+pointer.
+	std::queue<in_sched_entry_t>* mb_queues;
+
+	scheduler_t(TxnExecutor* exec);
+	~scheduler_t(){ delete[] mb_queues; }
+	void sched_batch(std::vector<Txn>& txns, size_t s, size_t e);
+	Txn& entry_to_txn(in_sched_entry_t entry);
+	void print_schedules(size_t node);
+};
+
 struct TxnExecutor {
-	class TxnIterator {
-	public:
-		static constexpr txn_pos_t SENTINEL_POS = 0xffffffU;
-
-		TxnIterator(TxnExecutor& txn_exec);
-		std::optional<in_sched_entry_t> next_entry();
-		Txn& entry_to_txn(in_sched_entry_t entry);
-		void retry_txn(in_sched_entry_t entry);
-
-	private:
-		TxnExecutor& exec;
-		in_sched_entry_t* orig_sched;
-		size_t read_p;
-		size_t write_p;
-	};
-
     StructTable* kvs;
     SwitchInfo p4_switch;
     Database& db;
@@ -74,11 +77,13 @@ struct TxnExecutor {
     uint32_t tid;
 	uint32_t mini_batch_num;
 
+	/*
 	char* raw_buf;
 	out_sched_entry_t* sched_packet_buf;
 	int txn_sched_sockfd;
 	int sched_packet_buf_len;
 	int sched_reply_len;
+	*/
 
 	std::vector<Txn> non_accel_txns;
 
@@ -88,15 +93,15 @@ struct TxnExecutor {
     TxnExecutor(Database& db)
         : db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1) {
         db.get_casted(KV::TABLE_NAME, kvs);
-		setup_txn_sched();
+		// setup_txn_sched();
 		non_accel_txns.reserve(BATCH_SIZE_THR_TGT * 0.02);
 	}
 
-	void setup_txn_sched();
-	void send_get_txn_sched();
+	// void setup_txn_sched();
+	// void send_get_txn_sched();
 
 	~TxnExecutor() {
-		free(raw_buf);
+		// free(raw_buf);
 	}
 
 	RC my_execute(Txn& arg, Communicator::Pkt_t** packet_fill);
