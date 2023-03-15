@@ -18,8 +18,8 @@ struct Txn {
 		uint32_t value;
 	};
 	// start off with everything in cold, opportunistically move to hot.
-	std::array<OP, NUM_OPS> cold_ops;
-	std::array<std::pair<OP, TupleLocation>, NUM_OPS> hot_ops_pass1;
+	std::array<OP, N_OPS> cold_ops;
+	std::array<std::pair<OP, TupleLocation>, N_OPS> hot_ops_pass1;
 	std::array<std::pair<OP, TupleLocation>, MAX_OPS_PASS2_ACCEL> hot_ops_pass2;
 	bool init_done;
 	bool do_accel;

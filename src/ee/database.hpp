@@ -60,7 +60,7 @@ public:
 	hot_send_q_t hot_send_q;
 
 public:
-    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), txn_sched_bar(n_threads), hot_send_q(BATCH_SIZE_THR_TGT * n_threads) {
+    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), txn_sched_bar(n_threads), hot_send_q(BATCH_SIZE_TGT * n_threads) {
         comm = std::make_unique<Communicator>();
         msg_handler = std::make_unique<MessageHandler>(*this, comm.get());
         msg_handler->init.wait();

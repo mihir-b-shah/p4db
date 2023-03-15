@@ -65,7 +65,9 @@ int main(int argc, char** argv) {
         workers.emplace_back(std::thread([&, i]() {
             const WorkerContext::guard worker_ctx;
 			// TODO: change in production- right now, running on single machine.
-            pin_worker(i + 2*config.node_id);
+            uint32_t core = i + (1+config.num_txn_workers)*config.node_id;
+            printf("Pinning worker %u on core %u\n", i, core);
+            pin_worker(core);
 			db.msg_handler->barrier.wait_workers();
 			txn_executor(db, per_core_txns[i]);
         }));

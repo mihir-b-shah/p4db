@@ -39,7 +39,7 @@ public:
 	static constexpr uint8_t NO_LOCK = std::numeric_limits<uint8_t>::max();
 	static constexpr uint8_t NUM_SW_LOCKS = 32;
 
-	static constexpr size_t NUM_REGS = 20;
+	static constexpr size_t NUM_REGS = 36;
 	static constexpr size_t NUM_MAX_OPS = 8;
 
 	// same constants from 01_control_plane, watch out

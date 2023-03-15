@@ -94,7 +94,6 @@ struct TxnExecutor {
         : db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1) {
         db.get_casted(KV::TABLE_NAME, kvs);
 		// setup_txn_sched();
-		non_accel_txns.reserve(BATCH_SIZE_THR_TGT * 0.02);
 	}
 
 	// void setup_txn_sched();

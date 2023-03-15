@@ -85,7 +85,7 @@ constexpr bool contains(std::string_view const what, std::string_view const wher
 }
 
 
-void pin_worker(uint32_t core, pthread_t pid = pthread_self());
+void pin_worker(uint32_t core);
 
 // #include <csetjmp>
 // inline thread_local jmp_buf env;

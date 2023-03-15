@@ -24,6 +24,8 @@ static void* critical_wait(void* arg) {
 	}
 	//	TODO not necessary in all code-paths?
 	__atomic_store_n(&bar_arg->handler->soft_received, 0, __ATOMIC_SEQ_CST);
+
+    // fprintf(stderr, "RET crit_arg->mb_num: %u\n", bar_arg->mini_batch_num);
 	return arg;
 }
 
@@ -80,7 +82,7 @@ void BarrierHandler::my_wait(barrier_handler_arg_t* bar_arg) {
 		for (size_t i = 0; i<num_nodes; ++i) {
 			highest_id = std::max(highest_id, mini_batch_ids[i]);
 		}
-		bar_arg->mini_batch_num = 1+highest_id;
+		__atomic_store_n(&bar_arg->mini_batch_num, 1+highest_id, __ATOMIC_SEQ_CST);
 	} else {
 		for (uint32_t i = 0; i < num_nodes; ++i) {
 			auto pkt = comm->make_pkt();
@@ -103,8 +105,10 @@ void BarrierHandler::wait_workers_soft() {
 	arg.reset_fn = nullptr;
 	arg.mini_batch_num = 0;
 	local_barrier.wait(&arg);
+    // fprintf(stderr, "Finished soft barrier.\n");
 }
 
+//  TODO THIS DOES NOT WORK, HAS WEIRD UN-INITIALIZED BEHAVIOR.
 void BarrierHandler::wait_workers_hard(uint32_t* mini_batch_num, single_fn_t fn, Database* db) {
 	barrier_handler_arg_t arg;
 	arg.handler = this;
@@ -113,9 +117,14 @@ void BarrierHandler::wait_workers_hard(uint32_t* mini_batch_num, single_fn_t fn,
 	arg.db = db;
 	// safe since everyone should have same mini_batch_num in their tb.
 	arg.mini_batch_num = *mini_batch_num;
+    __sync_synchronize();
+
 	barrier_handler_arg_t* crit_arg = (barrier_handler_arg_t*) local_barrier.wait(&arg);
+
 	//	TODO I think this is safe, since locally all threads are sequentially consistent?
-	*mini_batch_num = crit_arg->mini_batch_num;
+    uint32_t* p_mb_num = &crit_arg->mini_batch_num;
+    // fprintf(stderr, "crit_mb_num: %p, crit_arg->mb_num: %u\n", p_mb_num, crit_arg->mini_batch_num);
+	*mini_batch_num = __atomic_load_n(&crit_arg->mini_batch_num, __ATOMIC_SEQ_CST);
 }
 
 void BarrierHandler::wait_workers() {

@@ -13,7 +13,7 @@ struct SwitchInfo {
     DeclusteredLayout* declustered_layout;
 
     struct MultiOpOut {
-        std::array<uint32_t, NUM_OPS> values;
+        std::array<uint32_t, N_OPS> values;
     };
 
 	SwitchInfo() {

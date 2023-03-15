@@ -30,7 +30,7 @@ void load_txns(Config& config) {
         config.trace_txns.emplace_back();
 		Txn& txn = config.trace_txns.back();
 		
-		for (size_t i = 0; i<NUM_OPS; ++i) {
+		for (size_t i = 0; i<N_OPS; ++i) {
 			assert(std::getline(ss, access, ','));
 			Txn::OP op;	
 			op.id = std::stoull(access);

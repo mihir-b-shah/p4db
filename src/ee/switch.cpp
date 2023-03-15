@@ -24,7 +24,7 @@ struct __attribute__((packed)) packet_t {
 	uint32_t locks_undo__nb;
 	uint8_t is_second_pass__nb;
 	uint8_t n_failed__nb;
-	// TODO doesn't mesh well with NUM_OPS
+	// TODO doesn't mesh well with N_OPS
 	reg_instr_t reg_instrs[1+DeclusteredLayout::NUM_MAX_OPS];
 };
 
@@ -40,7 +40,7 @@ size_t SwitchInfo::make_txn(const Txn& txn, uint8_t* buf) {
 	packet_t* pkt = reinterpret_cast<packet_t*>(buf);	
 
 	size_t hot1_p = 0, hot2_p = 0;
-	while (hot1_p < NUM_OPS && txn.hot_ops_pass1[hot1_p].first.mode == AccessMode::INVALID) {
+	while (hot1_p < N_OPS && txn.hot_ops_pass1[hot1_p].first.mode == AccessMode::INVALID) {
 		fill_reg_instr(txn.hot_ops_pass1[hot1_p], &pkt->reg_instrs[hot1_p]);
 		hot1_p += 1;
 	}
@@ -65,7 +65,7 @@ size_t SwitchInfo::make_txn(const Txn& txn, uint8_t* buf) {
 SwitchInfo::MultiOpOut SwitchInfo::parse_txn(BufferReader& br) {
     MultiOpOut out;
 	/* TODO replace with real logic
-    for (int i = 0; i < NUM_OPS; ++i) {
+    for (int i = 0; i < N_OPS; ++i) {
         auto instr = br.read<instr_t>();
         out.values[i] = *instr->data;
     }

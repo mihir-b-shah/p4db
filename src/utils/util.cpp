@@ -5,64 +5,17 @@
 #include <numeric>
 #include <main/config.hpp>
 
-
-void pin_worker(uint32_t core, pthread_t pid /*= pthread_self()*/) {
-	printf("pin_worker %u\n", core);
+/*  Run only on a single numa socket, cores 0-n_cores-1. No hyperthreads */
+void pin_worker(uint32_t core) {
 	// TODO: remove when we run on multiple machines, for real.
     WorkerContext::get().tid = core % Config::instance().num_txn_workers;
-    
-	// TODO: fix this.
-    constexpr auto NUM_SOCKETS = 1;
-    constexpr auto NUM_HYPERTHREADS = 2;
-    static const auto cpu_map = []() {
-        std::vector<int> map;
-
-        // socket 0: real-cores , hyper threads, then socket 1:
-        auto threads = std::thread::hardware_concurrency();
-        if (threads == 0) {
-            throw std::runtime_error("std::thread::hardware_concurrency() failed.");
-        }
-        map.reserve(threads);
-
-        auto per_socket = threads / NUM_SOCKETS;
-        auto real_cores = per_socket / NUM_HYPERTHREADS;
-        for (auto socket = 0; socket < NUM_SOCKETS; ++socket) {
-            for (auto i = socket * real_cores; i < (socket + 1) * real_cores; ++i) {
-                map.emplace_back(i);
-            }
-            for (auto i = (NUM_SOCKETS + socket) * real_cores; i < (NUM_SOCKETS + socket + 1) * real_cores; ++i) {
-                map.emplace_back(i);
-            }
-        }
-
-        if constexpr (SINGLE_NUMA) {
-            map.resize(map.size() / 2);
-        }
-
-        std::stringstream ss;
-        ss << "CPU MAP:\n";
-        for (auto& c : map) {
-            ss << c << ' ';
-        }
-        ss << '\n';
-        std::cout << ss.str();
-
-        return map;
-    }();
 
     cpu_set_t mask;
     CPU_ZERO(&mask);
-	printf("setting: %lu\n", cpu_map[core % cpu_map.size()]);
-    CPU_SET(cpu_map.at(core % cpu_map.size()), &mask);
-
-    if (core >= cpu_map.size()) {
-        std::cout << "WARNING more than one pinned thread per core!\n";
-    }
-
-    // (void) pid;
-    if (pthread_setaffinity_np(pid, sizeof(cpu_set_t), &mask) != 0) {
-        std::perror("pthread_setaffinity_np");
-    }
+    CPU_SET(core, &mask);
+    
+    pthread_t pid = pthread_self();
+    assert(pthread_setaffinity_np(pid, sizeof(cpu_set_t), &mask) == 0);
 }
 
 

@@ -10,6 +10,8 @@
 #include "handlers/init.hpp"
 #include "handlers/tuple_put_res.hpp"
 
+#include <tbb/concurrent_hash_map.h>
+
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -30,13 +32,15 @@ struct MessageHandler {
     Communicator* comm;
     uint32_t tid;
 
-
     InitHandler init;
     BarrierHandler barrier;
     TuplePutResHandler putresponses;
 
     std::atomic<msg::id_t> next_id{0};
-	std::unordered_map<msg::id_t, AbstractFuture*> open_futures;
+    /*  TODO only the structure of the map needs to be protected, the keys themselves are guaranteed
+        never to be accessed concurrently- is the concurrent map a bottleneck? */
+    typedef tbb::concurrent_hash_map<msg::id_t, AbstractFuture*> future_map_t;
+    future_map_t open_futures;
 
     MessageHandler(Database& db, Communicator* comm);
     MessageHandler(MessageHandler&&) = default;

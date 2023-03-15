@@ -27,7 +27,7 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 	size_t n_pass2_ops = 0;
 	txn.do_accel = true;
 
-	while (i < NUM_OPS && txn.cold_ops[i].mode != AccessMode::INVALID) {
+	while (i < N_OPS && txn.cold_ops[i].mode != AccessMode::INVALID) {
 		txn.cold_ops[i].loc_info = table->part_info.location(txn.cold_ops[i].id);
 		std::pair<bool, TupleLocation> hot_info = layout->get_location(txn.cold_ops[i].id);
 		if (hot_info.first) {
@@ -43,8 +43,10 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 			} else if (MAX_PASSES_ACCEL == 2 && !reg_usage_2.test(hot_info.second.reg_array_id) && n_pass2_ops < MAX_OPS_PASS2_ACCEL) {
 				reg_usage_2.set(hot_info.second.reg_array_id);
 				n_pass2_ops += 1;
+
 				// does it make sense to swap the keys?
 				size_t swap_idx = hot_reorder_buf[hot_info.second.reg_array_id];
+
 				if (TupleLocation::total_order_gt(
 						txn.hot_ops_pass1[swap_idx].second.dist_freq, txn.hot_ops_pass1[swap_idx].first.id,
 						hot_info.second.dist_freq, txn.cold_ops[i].id)) {
@@ -87,10 +89,10 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 		txn.hot_ops_pass2[0].first.mode = AccessMode::INVALID;
 	} else {
 		// null-terminate all the op-lists.
-		if (cold_p < NUM_OPS) {
+		if (cold_p < N_OPS) {
 			txn.cold_ops[cold_p].mode = AccessMode::INVALID;
 		}
-		if (hot_p1 < NUM_OPS) {
+		if (hot_p1 < N_OPS) {
 			txn.hot_ops_pass1[hot_p1].first.mode = AccessMode::INVALID;
 		}
 		if (MAX_PASSES_ACCEL == 2 && hot_p2 < MAX_OPS_PASS2_ACCEL) {
@@ -102,7 +104,7 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 		if (cold2_v > 0) {
 			txn.hottest_cold_i2 = cold2_i;
 		}
-		assert(cold_p + hot_p1 + hot_p2 == NUM_OPS);
+		assert(cold_p + hot_p1 + hot_p2 == N_OPS);
 	}
 	txn.init_done = true;
 }

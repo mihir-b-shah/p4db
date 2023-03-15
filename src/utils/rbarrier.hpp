@@ -16,7 +16,7 @@ static void* empty_serial_func(void* arg) {
 
 class reusable_barrier_t {
 public:
-	reusable_barrier_t(size_t n_threads, serial_func sf) : sf(sf) {
+	reusable_barrier_t(size_t n_threads, serial_func sf) : sf(sf), res(NULL) {
 		pthread_barrier_init(&bar1, NULL, n_threads);
 		pthread_barrier_init(&bar2, NULL, n_threads);
 	}
@@ -33,7 +33,7 @@ public:
 		int rc2 = pthread_barrier_wait(&bar2);
 		assert(rc2 == PTHREAD_BARRIER_SERIAL_THREAD || rc2 == 0);
 		// everyone should read the new value...
-		return res;
+		return __atomic_load_n(&res, __ATOMIC_SEQ_CST);
 	}
 
 private:

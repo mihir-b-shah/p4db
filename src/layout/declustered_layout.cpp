@@ -5,7 +5,7 @@
 
 DeclusteredLayout::DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>& id_freq)
 	// : avail_blocks(0) { TODO impl the scheduler, then change this hard-coded value.
-	   : avail_blocks(6) {
+	   : avail_blocks(4) {
 
 	/*	allow us to not lock record 0 in the register (and not assume anything about the ordering
 		of id_freq. std::sort expects a less than function, so we invert this order. */
@@ -49,6 +49,7 @@ DeclusteredLayout::DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>& i
 	for (size_t i = 0; i<NUM_BLOCKS; ++i) {
 		virt_block_map[i] = i;
 	}
+    printf("Accelerating %lu keys, going down to freq %lu\n", avail_blocks*NUM_KEYS_PER_BLOCK, id_freq[avail_blocks*NUM_KEYS_PER_BLOCK].second);
 }
 
 std::pair<bool, TupleLocation> DeclusteredLayout::get_location(db_key_t k) {

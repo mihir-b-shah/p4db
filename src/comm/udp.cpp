@@ -48,7 +48,9 @@ void UDPCommunicator::set_handler(MessageHandler* handler) {
     thread = std::jthread([&, handler](std::stop_token token) {
         const WorkerContext::guard worker_ctx;
 		// TODO: change in production, right now running on single machine.
-        pin_worker(config.num_txn_workers + 2*config.node_id);
+        uint32_t core = config.num_txn_workers + (1+config.num_txn_workers)*config.node_id;
+        printf("Pinning udp core on %u\n", core);
+        pin_worker(core);
         while (!token.stop_requested()) {
             auto pkt = receive();
             if (!pkt) {

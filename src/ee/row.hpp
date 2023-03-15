@@ -33,6 +33,9 @@ struct Row {
 	inline bool mb_allow_lock(TxnId txn_id) {
 		if (txn_id.field.valid) {
 			// TODO check for wrap-around!
+			if (txn_id.field.mini_batch_id < last_acq.field.mini_batch_id) {
+                fprintf(stderr, "Ids: %u %u\n", txn_id.field.mini_batch_id, last_acq.field.mini_batch_id);
+            }
 			assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
 			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id &&
 				(!USE_FLOW_ORDER || txn_id.field.node_id != last_acq.field.node_id)) {

@@ -3,23 +3,21 @@
 #include "main/config.hpp"
 #include "ee/database.hpp"
 
-
 MessageHandler::MessageHandler(Database& db, Communicator* comm)
-    : db(db), comm(comm), tid(comm->mh_tid), init(comm), barrier(comm) {
+    : db(db), comm(comm), tid(comm->mh_tid), init(comm), barrier(comm), open_futures(NUM_FUTURES) {
     comm->set_handler(this);
-	open_futures.reserve(NUM_FUTURES);
 }
-
 
 msg::id_t MessageHandler::set_new_id(msg::Header* msg) {
     return msg->msg_id = msg::id_t{next_id.fetch_add(1)};
 }
 
 void MessageHandler::add_future(msg::id_t msg_id, AbstractFuture* future) {
-	// TODO: does open_futures need to be atomic?
-    open_futures.insert({msg_id, future});
+    future_map_t::accessor acc;
+    bool success = open_futures.insert(acc, msg_id);
+    assert(success);
+    acc->second = future;
 }
-
 
 void MessageHandler::handle(Pkt_t* pkt) {
     using namespace msg;
@@ -73,19 +71,16 @@ void MessageHandler::handle(Pkt_t* pkt, msg::TupleGetReq* req) {
 
 void MessageHandler::handle(Pkt_t* pkt, msg::TupleGetRes* res) {
     // std::cerr << "msg::TupleGetRes tid=" << res->tid << " rid=" << res->rid << " mode=" << static_cast<int>(res->mode) << '\n';
+    msg::id_t id = res->msg_id;
+    future_map_t::accessor acc;
+    bool found = open_futures.find(acc, id);
+    assert(found);
 
-    try {
-        //printf("LINE: %d Erasing msg_id %lu\n", __LINE__, res->msg_id.value);
-		AbstractFuture* future = open_futures[res->msg_id];
-        open_futures.erase(res->msg_id);
-        future->set_pkt(pkt);
-        //printf("LINE: %d Erased msg_id %lu with val=%p\n", __LINE__, res->msg_id.value, future);
-    } catch (...) {
-        std::cerr << "Received msg_id=" << res->msg_id << " without future.\n";
-        pkt->free();
-        throw;
-    }
-    // don't cleanup message buffer, will be cleaned up in undo-log
+    AbstractFuture* future = acc->second;
+    bool success = open_futures.erase(acc);
+    assert(success);
+
+    future->set_pkt(pkt);
 }
 
 void MessageHandler::handle(Pkt_t* pkt, msg::TuplePutReq* req) {
@@ -117,15 +112,14 @@ void MessageHandler::handle(Pkt_t* pkt, msg::SwitchTxn* txn) {
         pkt->dump(std::cerr);
     }
 
-    try {
-        //printf("LINE: %d Erasing msg_id %lu\n", __LINE__, txn->msg_id.value);
-		AbstractFuture* future = open_futures[txn->msg_id];
-        open_futures.erase(txn->msg_id);
-        future->set_pkt(pkt);
-        //printf("LINE: %d Erased msg_id %lu with val=%p\n", __LINE__, txn->msg_id.value, future);
-    } catch (...) {
-        std::cerr << "Received msg_id=" << txn->msg_id << " without future.\n";
-        pkt->free();
-        throw;
-    }
+    msg::id_t id = txn->msg_id;
+    future_map_t::accessor acc;
+    bool found = open_futures.find(acc, id);
+    assert(found);
+
+    AbstractFuture* future = acc->second;
+    bool success = open_futures.erase(acc);
+    assert(success);
+
+    future->set_pkt(pkt);
 }
