@@ -1,0 +1,18 @@
+
+Have a leader thread (thread 0).
+Have a flag in the Database class indicating the number of batches completed.
+    The leader thread will increment this once it's done with everything.
+    The other worker threads will just spin (efficiently) waiting for this to be set.
+        In a real DB, they could do other work (like run ETL pipelines, re-index, etc)
+
+How to do the rest of the work
+    Before forking, get the initial allocation
+    Then at the end of cold work, if thread 0, then do a recv() on the scheduler socket to wait
+        for the ready notification.
+    Then, start initializing. Once done, do a wait_nodes() barrier.
+    Send the packets like normal to the "fake" switch, and then conclusion, using wait_nodes.
+    Then send a packet on the scheduler socket to get the next alloc/free the current one, and wait
+        for reply. This works as a barrier.
+    Reset the network send buffer head.
+    Now increment the db flag ctr.
+        - This all works if we have sequential consistency- I probably need an mfence.

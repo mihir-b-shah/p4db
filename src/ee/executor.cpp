@@ -337,6 +337,9 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 	scheduler_t sched(&tb);
 
 	for (size_t i = 0; i<txns.size(); i+=batch_tgt) {
+        uint32_t junk;
+		db.msg_handler->barrier.wait_workers_hard(&junk, reset_db_batch, &db);
+
 		size_t batch_num = i/batch_tgt;
 		sched.sched_batch(txns, i, i+batch_tgt);
 
@@ -414,8 +417,6 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
         tb.mini_batch_num += 1;
 
         // now we've run all the easier stuff. But aborting everything else might be sketchy.
-        uint32_t junk;
 		// db.msg_handler->barrier.wait_workers_hard(&tb.mini_batch_num, reset_db_batch, &db);
-		db.msg_handler->barrier.wait_workers_hard(&junk, reset_db_batch, &db);
 	}
 }

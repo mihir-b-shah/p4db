@@ -29,20 +29,6 @@ enum RC {
 	ROLLBACK,
 };
 
-int setup_txn_sched_sock();
-void sendall(int sockfd, char* buf, int len);
-void recvall(int sockfd, char* buf, int len);
-
-struct sched_pkt_hdr_t {
-	size_t node_id;
-	size_t thread_id;
-};
-
-struct __attribute__((packed)) out_sched_entry_t {
-	uint64_t k : 40;
-	uint32_t idx : 24;
-};
-
 typedef uint32_t txn_pos_t;
 struct __attribute__((packed)) in_sched_entry_t {
 	txn_pos_t idx : 24;
@@ -77,14 +63,6 @@ struct TxnExecutor {
     uint32_t tid;
 	uint32_t mini_batch_num;
 
-	/*
-	char* raw_buf;
-	out_sched_entry_t* sched_packet_buf;
-	int txn_sched_sockfd;
-	int sched_packet_buf_len;
-	int sched_reply_len;
-	*/
-
 	std::vector<Txn> non_accel_txns;
 
     TimestampFactory ts_factory;
@@ -93,14 +71,6 @@ struct TxnExecutor {
     TxnExecutor(Database& db)
         : db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1) {
         db.get_casted(KV::TABLE_NAME, kvs);
-		// setup_txn_sched();
-	}
-
-	// void setup_txn_sched();
-	// void send_get_txn_sched();
-
-	~TxnExecutor() {
-		// free(raw_buf);
 	}
 
 	RC my_execute(Txn& arg, Communicator::Pkt_t** packet_fill);
