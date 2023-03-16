@@ -97,13 +97,15 @@ int main() {
         int nfds = epoll_wait(epfd, &event, 1, -1);
         assert(nfds == 1);
         fprintf(stderr, "Received something!\n");
+        int ready_fd = event.data.fd;
 
-        // this way, ignore other events like hang-up?
-        if (event.events != EPOLLIN) {
+        if (event.events & (EPOLLHUP | EPOLLERR)) {
+            int ec_rc = epoll_ctl(epfd, EPOLL_CTL_DEL, ready_fd, NULL);
+            assert(ec_rc == 0);
             continue;
         }
+        assert(event.events == EPOLLIN);
         
-        int ready_fd = event.data.fd;
         // should not break apart a couple of bytes, hopefully.
 		int received = recv(ready_fd, buf, sizeof(alloc_req_t), 0);
         printf("received: %d\n", received);
