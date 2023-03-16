@@ -314,7 +314,35 @@ SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& 
 
 static void reset_db_batch(Database* db) {
 	// __atomic_store_n(&db->thr_batch_done_ct, 0, __ATOMIC_SEQ_CST);
-    db->hot_send_q.done_sending();
+    // db->hot_send_q.done_sending();
+}
+
+void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in_sched_entry_t>& q) {
+    in_sched_entry_t e = q.front();
+    Txn& txn = sched.entry_to_txn(e);
+    q.pop();
+
+    assert(mini_batch_num > 0);
+    txn.id = TxnId(true, sched.node_id, mini_batch_num);
+    assert(txn.id.field.valid == true && txn.id.field.node_id == sched.node_id && txn.id.field.mini_batch_id == mini_batch_num);
+    assert(txn.init_done);
+    if (txn.do_accel) {
+        //	TODO note this buffer is malloc-ed, seems excessive.
+        Communicator::Pkt_t* pkt;
+        RC res = my_execute(txn, &pkt);
+        if (res == ROLLBACK) {
+            txn.n_aborts += 1;
+            if (enqueue_aborts && txn.n_aborts <= MAX_TIMES_ACCEL_ABORT) {
+                q.push(e);
+            } else {
+                non_accel_txns.push_back(txn);
+            }
+        } else {
+            p4_switch.make_txn(txn, pkt);
+        }
+    } else {
+        non_accel_txns.push_back(txn);
+    }
 }
 
 void txn_executor(Database& db, std::vector<Txn>& txns) {
@@ -337,9 +365,6 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 	scheduler_t sched(&tb);
 
 	for (size_t i = 0; i<txns.size(); i+=batch_tgt) {
-        uint32_t junk;
-		db.msg_handler->barrier.wait_workers_hard(&junk, reset_db_batch, &db);
-
 		size_t batch_num = i/batch_tgt;
 		sched.sched_batch(txns, i, i+batch_tgt);
 
@@ -349,36 +374,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
             auto& q = sched.mb_queues[(tb.mini_batch_num-1) % sched.n_queues];
             size_t txn_num = 0;
             while (txn_num < mini_batch_tgt && !q.empty()) {
-                in_sched_entry_t e = q.front();
-                Txn& txn = sched.entry_to_txn(e);
-                q.pop();
-
-                assert(tb.mini_batch_num > 0);
-                txn.id = TxnId(true, node_id, tb.mini_batch_num);
-                assert(txn.id.field.valid == true && txn.id.field.node_id == node_id && txn.id.field.mini_batch_id == tb.mini_batch_num);
-                assert(txn.init_done);
-                if (txn.do_accel) {
-                    //	TODO note this buffer is malloc-ed, seems excessive.
-                    Communicator::Pkt_t* pkt;
-                    RC res = tb.my_execute(txn, &pkt);
-                    if (res == ROLLBACK) {
-                        txn.n_aborts += 1;
-                        if (txn.n_aborts <= MAX_TIMES_ACCEL_ABORT) {
-                            q.push(e);
-                        } else {
-                            tb.non_accel_txns.push_back(txn);
-                        }
-                    } else {
-                        // now, time to fill out the packet buffer.
-                        auto txn_pkt = pkt->ctor<msg::SwitchTxn>();
-                        txn_pkt->sender = db.comm->node_id;
-                        size_t txn_size = tb.p4_switch.make_txn(txn, txn_pkt->data);
-                        pkt->resize(msg::SwitchTxn::size(txn_size));
-                    }
-                } else {
-                    tb.non_accel_txns.push_back(txn);
-                }
-
+                tb.run_txn(sched, true, q);
                 txn_num += 1;
             }
             tb.mini_batch_num += 1;
@@ -386,37 +382,37 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
         }
 
         // drain the remaining queues over a SINGLE mini-batch. don't accelerate the rest.
+        // does this allow aborting too many things?
         for (size_t qn = 0; qn<sched.n_queues; ++qn) {
             auto& q = sched.mb_queues[qn];
             while (!q.empty()) {
-                in_sched_entry_t e = q.front();
-                Txn& txn = sched.entry_to_txn(e);
-                q.pop();
-
-                assert(tb.mini_batch_num > 0);
-                txn.id = TxnId(true, node_id, tb.mini_batch_num);
-                assert(txn.id.field.valid == true && txn.id.field.node_id == node_id && txn.id.field.mini_batch_id == tb.mini_batch_num);
-                if (txn.do_accel) {
-                    //	TODO note this buffer is malloc-ed, seems excessive.
-                    Communicator::Pkt_t* pkt;
-                    RC res = tb.my_execute(txn, &pkt);
-                    if (res == ROLLBACK) {
-                        tb.non_accel_txns.push_back(txn);
-                    } else {
-                        // now, time to fill out the packet buffer.
-                        auto txn_pkt = pkt->ctor<msg::SwitchTxn>();
-                        txn_pkt->sender = db.comm->node_id;
-                        size_t txn_size = tb.p4_switch.make_txn(txn, txn_pkt->data);
-                        pkt->resize(msg::SwitchTxn::size(txn_size));
-                    }
-                } else {
-                    tb.non_accel_txns.push_back(txn);
-                }
+                tb.run_txn(sched, false, q);
             }
         }
         tb.mini_batch_num += 1;
 
-        // now we've run all the easier stuff. But aborting everything else might be sketchy.
-		// db.msg_handler->barrier.wait_workers_hard(&tb.mini_batch_num, reset_db_batch, &db);
+        // thread 0 is the leader thread.
+        if (thread_id == 0) {
+            // create initializations, use decl_layout->id_freq to get the accelerated keys.
+            // build a bypass mechanism to read row value without locks.
+            /*
+            // TODO fill in
+            Communicator::Pkt_t* pkt = db.comm->make_pkt();
+
+            db.wait_sched_ready();
+            // initialize switch state
+            db.msg_handler->barrier.wait_nodes();
+            // send stuff to switch (use wait_nodes throughout)
+            db.msg_handler->barrier.wait_nodes();
+            // pull state off switch
+            db.msg_handler->barrier.wait_nodes();
+            db.update_alloc();
+            // fence!
+            */
+            db.hot_send_q.done_sending();
+            db.n_hot_batch_completed += 1;
+        } else {
+            while (db.n_hot_batch_completed < 1+batch_num);
+        }
 	}
 }

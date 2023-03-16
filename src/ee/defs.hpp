@@ -56,3 +56,6 @@ constexpr size_t MIN_MINI_BATCH_THR_SIZE = 50;
 constexpr size_t MAX_PASSES_ACCEL = 1;
 constexpr size_t MAX_OPS_PASS2_ACCEL = 2;
 
+// measure and modify (right now around 1 ms each)
+constexpr uint64_t COLD_BATCH_DUR_EST_NS = 1000000ULL; 
+constexpr uint64_t HOT_BATCH_DUR_EST_NS = 1000000ULL;

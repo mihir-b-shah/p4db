@@ -47,8 +47,12 @@ int main(int argc, char** argv) {
 		auto& tuple = table->insert(index);
 		tuple.id = i;
 	}
-
     db.msg_handler->barrier.wait_nodes();
+
+    // get my initial allocation.
+    fprintf(stderr, "Before update_alloc.\n");
+    db.update_alloc();
+    fprintf(stderr, "After update_alloc.\n");
 
     std::vector<std::thread> workers;
     workers.reserve(config.num_txn_workers);

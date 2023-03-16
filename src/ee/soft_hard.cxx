@@ -86,3 +86,4 @@
 
         assert(tb.mini_batch_num < (1ULL << TxnId::MINI_BATCH_ID_WIDTH));
     }
+		// db.msg_handler->barrier.wait_workers_hard(&tb.mini_batch_num, reset_db_batch, &db);

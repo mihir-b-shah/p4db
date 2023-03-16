@@ -3,9 +3,10 @@
 
 #include <cassert>
 
-DeclusteredLayout::DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>& id_freq)
-	// : avail_blocks(0) { TODO impl the scheduler, then change this hard-coded value.
-	   : avail_blocks(4) {
+static constexpr uint32_t NO_BLOCK = UINT32_MAX;
+
+DeclusteredLayout::DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>&& id_freq) 
+    : block_num(NO_BLOCK), id_freq(id_freq) {
 
 	/*	allow us to not lock record 0 in the register (and not assume anything about the ordering
 		of id_freq. std::sort expects a less than function, so we invert this order. */
@@ -45,29 +46,14 @@ DeclusteredLayout::DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>& i
         virt_map.emplace(k, loc);
     }
 
-	/*	TODO, remove this. We need to get an allocation once the scheduler works. */
-	for (size_t i = 0; i<NUM_BLOCKS; ++i) {
-		virt_block_map[i] = i;
-	}
-    printf("Accelerating %lu keys, going down to freq %lu\n", avail_blocks*NUM_KEYS_PER_BLOCK, id_freq[avail_blocks*NUM_KEYS_PER_BLOCK].second);
+    printf("Accelerating %lu keys, going down to freq %lu\n", N_ACCEL_KEYS, id_freq[N_ACCEL_KEYS].second);
 }
 
 std::pair<bool, TupleLocation> DeclusteredLayout::get_location(db_key_t k) {
 	std::pair<bool, TupleLocation> info;
 	TupleLocation& tl = virt_map[k];
-	size_t old_block = tl.reg_array_idx / NUM_KEYS_PER_BLOCK;
-	size_t offset = tl.reg_array_idx % NUM_KEYS_PER_BLOCK;
-	size_t new_block = old_block < NUM_BLOCKS ? virt_block_map[old_block] : old_block;
-	info.second = tl;
-	info.second.reg_array_idx = new_block * NUM_KEYS_PER_BLOCK + offset;
-	info.first = tl.reg_array_idx < avail_blocks*NUM_KEYS_PER_BLOCK;
+	info.first = tl.reg_array_idx < N_ACCEL_KEYS;
+    info.second = tl;
+    info.second.reg_array_idx = (N_ACCEL_KEYS * this->block_num) + tl.reg_array_idx;
 	return info;
-}
-
-void DeclusteredLayout::update_virt_offsets(const std::vector<size_t>& blocks) {
-	assert(blocks.size() == NUM_BLOCKS);
-	for (size_t i = 0; i<blocks.size(); ++i) {
-		virt_block_map[i] = blocks[i];
-	}
-	avail_blocks = blocks.size();
 }

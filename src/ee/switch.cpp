@@ -35,9 +35,12 @@ static void fill_reg_instr(const std::pair<Txn::OP, TupleLocation>& pr, reg_inst
 	instr->data__be = htonl(pr.first.value);
 }
 
-size_t SwitchInfo::make_txn(const Txn& txn, uint8_t* buf) {
+void SwitchInfo::make_txn(const Txn& txn, Communicator::Pkt_t* comm_pkt) {
 	assert(txn.do_accel);
-	packet_t* pkt = reinterpret_cast<packet_t*>(buf);	
+
+    auto txn_pkt = comm_pkt->ctor<msg::SwitchTxn>();
+    txn_pkt->sender = node_id;
+	packet_t* pkt = reinterpret_cast<packet_t*>(txn_pkt->data);	
 
 	size_t hot1_p = 0, hot2_p = 0;
 	while (hot1_p < N_OPS && txn.hot_ops_pass1[hot1_p].first.mode == AccessMode::INVALID) {
@@ -59,7 +62,8 @@ size_t SwitchInfo::make_txn(const Txn& txn, uint8_t* buf) {
 	pkt->locks_undo__nb = 0;
 	pkt->is_second_pass__nb = 0;
 	pkt->n_failed__nb = 0;
-	return sizeof(packet_t);
+
+	comm_pkt->resize(msg::SwitchTxn::size(sizeof(packet_t)));
 }
 
 SwitchInfo::MultiOpOut SwitchInfo::parse_txn(BufferReader& br) {

@@ -69,10 +69,11 @@ struct TxnExecutor {
     timestamp_t ts;
 
     TxnExecutor(Database& db)
-        : db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1) {
+        : p4_switch(db.comm->node_id), db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1) {
         db.get_casted(KV::TABLE_NAME, kvs);
 	}
 
+    void run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in_sched_entry_t>& q);
 	RC my_execute(Txn& arg, Communicator::Pkt_t** packet_fill);
     RC execute(Txn& arg);
     RC commit();

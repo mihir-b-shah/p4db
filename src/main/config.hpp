@@ -27,6 +27,7 @@ public:
     uint32_t num_nodes;
     uint32_t num_txn_workers;
     msg::node_t switch_id;
+    size_t tenant_id;
 
     uint64_t num_txns;
     bool use_switch;

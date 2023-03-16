@@ -21,7 +21,7 @@
 #include <queue>
 #include <vector>
 
-static constexpr size_t N_NODES = 4;
+static constexpr size_t N_NODES = 2;
 static constexpr uint32_t NO_BLOCK = UINT32_MAX;
 
 struct __attribute__((packed)) alloc_req_t {

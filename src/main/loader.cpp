@@ -64,5 +64,5 @@ void load_txns(Config& config) {
 		id_freq.emplace_back(k, freq);
     }
 
-	config.decl_layout = new DeclusteredLayout(id_freq);
+	config.decl_layout = new DeclusteredLayout(std::move(id_freq));
 }

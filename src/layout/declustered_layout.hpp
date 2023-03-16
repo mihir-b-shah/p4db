@@ -34,8 +34,7 @@ struct TupleLocation {
 	}
 };
 
-class DeclusteredLayout {
-public:
+struct DeclusteredLayout {
 	static constexpr uint8_t NO_LOCK = std::numeric_limits<uint8_t>::max();
 	static constexpr uint8_t NUM_SW_LOCKS = 32;
 
@@ -43,18 +42,15 @@ public:
 	static constexpr size_t NUM_MAX_OPS = 8;
 
 	// same constants from 01_control_plane, watch out
-	static constexpr size_t NUM_BLOCKS = 256;
-	static constexpr size_t NUM_KEYS_PER_BLOCK = 128;
+    // we should only request from one arena, we are getting from arena-512.
+    // for now let's assume we use all key slots in the block.
+	static constexpr size_t N_ACCEL_KEYS = 512;
 
-	DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>& id_freq);
+	DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>&& id_freq);
     std::pair<bool, TupleLocation> get_location(db_key_t k);
 
-	// TODO: for now, guarantee this never happens in parallel with lookups. Is this true?
-	void update_virt_offsets(const std::vector<size_t>& blocks);
-
-private:
+	size_t block_num;
 	// TODO: std::unordered_map is p slow, profile and see.
 	std::unordered_map<db_key_t, TupleLocation> virt_map;
-	size_t virt_block_map[NUM_BLOCKS];
-	size_t avail_blocks;
+	std::vector<std::pair<uint64_t, size_t>> id_freq;
 };

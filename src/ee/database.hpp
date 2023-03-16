@@ -58,13 +58,20 @@ public:
 	reusable_barrier_t txn_sched_bar;
 	std::vector<Txn>** per_core_txns;
 	hot_send_q_t hot_send_q;
+    int sched_sockfd;
+    uint32_t n_hot_batch_completed;
+
+    void setup_sched_sock();
+    void update_alloc();
+    void wait_sched_ready();
 
 public:
-    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), txn_sched_bar(n_threads), hot_send_q(BATCH_SIZE_TGT * n_threads) {
+    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), txn_sched_bar(n_threads), hot_send_q(BATCH_SIZE_TGT * n_threads), n_hot_batch_completed(0) {
         comm = std::make_unique<Communicator>();
         msg_handler = std::make_unique<MessageHandler>(*this, comm.get());
         msg_handler->init.wait();
 		per_core_txns = (std::vector<Txn>**) malloc(sizeof(per_core_txns[0])*n_threads);
+        setup_sched_sock();
     }
 
     Database(Database&&) = default;

@@ -21,5 +21,5 @@ project_sources += files (
 	'hot_cold.cpp',
     'executor.cpp',
 	'sched.cpp',
-	#'old_sched_intf.cpp',
+	'sched_intf.cpp',
 )

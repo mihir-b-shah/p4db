@@ -43,6 +43,7 @@ void Config::parse_cli(int argc, char** argv) {
     // clang-format off
     options.add_options()
         ("node_id", "Server identifier, 0 indexed < num_servers", cxxopts::value<uint32_t>())
+        ("tenant_id", "Tenant identifier, 0 indexed", cxxopts::value<size_t>())
         ("num_nodes", "Number of servers to use", cxxopts::value<uint32_t>())
         ("num_txn_workers", "", cxxopts::value<uint32_t>())
         ("csv_file_cycles", "", cxxopts::value<std::string>())
@@ -66,6 +67,7 @@ void Config::parse_cli(int argc, char** argv) {
     }
 
     node_id = result.as<uint32_t>("node_id");
+    tenant_id = result.as<size_t>("tenant_id");
     num_nodes = result.as<uint32_t>("num_nodes");
     num_txn_workers = result.as<uint32_t>("num_txn_workers");
 

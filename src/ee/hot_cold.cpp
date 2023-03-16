@@ -16,9 +16,6 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 	size_t cold1_v = 0, cold2_v = 0;
 	size_t hot_p1 = 0, hot_p2 = 0, cold_p = 0;
 	
-	bool cold_all_local = true;
-	size_t i = 0;
-
 	std::bitset<DeclusteredLayout::NUM_REGS> reg_usage;
 	std::bitset<DeclusteredLayout::NUM_REGS> reg_usage_2;
 	/*	useful since we want to make sure the least hot conflicts are on the second pass, 
@@ -27,6 +24,7 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 	size_t n_pass2_ops = 0;
 	txn.do_accel = true;
 
+	size_t i = 0;
 	while (i < N_OPS && txn.cold_ops[i].mode != AccessMode::INVALID) {
 		txn.cold_ops[i].loc_info = table->part_info.location(txn.cold_ops[i].id);
 		std::pair<bool, TupleLocation> hot_info = layout->get_location(txn.cold_ops[i].id);
