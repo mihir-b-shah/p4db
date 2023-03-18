@@ -13,18 +13,26 @@
 #include <mutex>
 #include <cstdio>
 
+#include <sys/uio.h>
+
+static constexpr size_t HOT_TXN_BYTES = 86;
+
+void setup_switch_sock();
+
 struct hot_send_q_t {
 	struct hot_txn_entry_t {
 		uint32_t mini_batch_num;
-		Communicator::Pkt_t* buf;
+        // just a pointer + length.
+        struct iovec iov;
 	};
 
 	//	TODO false sharing on this cache line?
 	uint32_t send_q_tail;
 	const size_t send_q_capacity;
 	hot_txn_entry_t* send_q;
+    LockedStackPool buf_pool;
 
-	hot_send_q_t(size_t cap) : send_q_tail(0), send_q_capacity(cap) {
+	hot_send_q_t(size_t cap) : send_q_tail(0), send_q_capacity(cap), buf_pool(cap*HOT_TXN_BYTES) {
 		send_q = new hot_txn_entry_t[send_q_capacity];
 	}
 
@@ -32,15 +40,19 @@ struct hot_send_q_t {
 		delete[] send_q;
 	}
 
-	Communicator::Pkt_t** alloc_slot(uint32_t mb_num) {
+    void* alloc_slot(uint32_t mb_num) {
 		//	TODO almost certain this can be relaxed mem order
-		uint32_t slot_loc = __atomic_fetch_add(&send_q_tail, 1, __ATOMIC_SEQ_CST);
-		send_q[slot_loc].mini_batch_num = mb_num;
-		return &send_q[slot_loc].buf;
+        void* buf = buf_pool.allocate(HOT_TXN_BYTES);
+		hot_txn_entry_t& entry = send_q[__atomic_fetch_add(&send_q_tail, 1, __ATOMIC_SEQ_CST)];
+		entry.mini_batch_num = mb_num;
+        entry.iov.iov_base = buf;
+        entry.iov.iov_len = HOT_TXN_BYTES;
+		return buf;
 	}
 
 	void done_sending() {
 		// TODO	does this need to be sequentially consistent? or atomic at all?
+        buf_pool.clear();
 		__atomic_store_n(&send_q_tail, 0, __ATOMIC_SEQ_CST);
 	}
 };
@@ -72,6 +84,7 @@ public:
         msg_handler->init.wait();
 		per_core_txns = (std::vector<Txn>**) malloc(sizeof(per_core_txns[0])*n_threads);
         setup_sched_sock();
+        setup_switch_sock();
     }
 
     Database(Database&&) = default;

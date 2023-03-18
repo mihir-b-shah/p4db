@@ -22,6 +22,6 @@ struct SwitchInfo {
 		declustered_layout = Config::instance().decl_layout;
 	}
     
-    void make_txn(const Txn& txn, Communicator::Pkt_t* pkt);
+    void make_txn(const Txn& txn, void* pkt);
     MultiOpOut parse_txn(BufferReader& br);
 };

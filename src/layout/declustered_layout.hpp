@@ -52,5 +52,5 @@ struct DeclusteredLayout {
 	size_t block_num;
 	// TODO: std::unordered_map is p slow, profile and see.
 	std::unordered_map<db_key_t, TupleLocation> virt_map;
-	std::vector<std::pair<uint64_t, size_t>> id_freq;
+	std::vector<std::pair<db_key_t, size_t>> id_freq;
 };

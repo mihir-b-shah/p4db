@@ -74,7 +74,7 @@ struct TxnExecutor {
 	}
 
     void run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in_sched_entry_t>& q);
-	RC my_execute(Txn& arg, Communicator::Pkt_t** packet_fill);
+	RC my_execute(Txn& arg, void** packet_fill);
     RC execute(Txn& arg);
     RC commit();
     RC rollback();
@@ -82,6 +82,8 @@ struct TxnExecutor {
     TupleFuture<KV>* write(StructTable* table, const Txn::OP& op, TxnId id);
     TupleFuture<KV>* insert(StructTable* table);
 };
+
+void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout);
 
 void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout);
 void txn_executor(Database& db, std::vector<Txn>& txns);

@@ -11,7 +11,7 @@
 #include <limits>
 #include <optional>
 	
-RC TxnExecutor::my_execute(Txn& arg, Communicator::Pkt_t** packet_fill) {
+RC TxnExecutor::my_execute(Txn& arg, void** packet_fill) {
 	arg.id.field.valid = true;
 	assert(arg.id.field.mini_batch_id == mini_batch_num);
 	// acquire all locks first, ex and shared. Can rollback within loop
@@ -55,11 +55,7 @@ RC TxnExecutor::my_execute(Txn& arg, Communicator::Pkt_t** packet_fill) {
 		++i;
 	}
 
-	Communicator::Pkt_t** ptr_slot = db.hot_send_q.alloc_slot(mini_batch_num);
-	Communicator::Pkt_t* new_pkt_buf = db.comm->make_pkt();
-	*ptr_slot = new_pkt_buf;
-	*packet_fill = new_pkt_buf;
-
+	*packet_fill = db.hot_send_q.alloc_slot(mini_batch_num);
 	// locks automatically released
 	return commit();
 }
@@ -328,8 +324,8 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in
     assert(txn.init_done);
     if (txn.do_accel) {
         //	TODO note this buffer is malloc-ed, seems excessive.
-        Communicator::Pkt_t* pkt;
-        RC res = my_execute(txn, &pkt);
+        void* pkt_buf;
+        RC res = my_execute(txn, &pkt_buf);
         if (res == ROLLBACK) {
             txn.n_aborts += 1;
             if (enqueue_aborts && txn.n_aborts <= MAX_TIMES_ACCEL_ABORT) {
@@ -338,7 +334,7 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in
                 non_accel_txns.push_back(txn);
             }
         } else {
-            p4_switch.make_txn(txn, pkt);
+            p4_switch.make_txn(txn, pkt_buf);
         }
     } else {
         non_accel_txns.push_back(txn);
@@ -393,22 +389,9 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
         // thread 0 is the leader thread.
         if (thread_id == 0) {
-            // create initializations, use decl_layout->id_freq to get the accelerated keys.
-            // build a bypass mechanism to read row value without locks.
-            /*
-            // TODO fill in
-            Communicator::Pkt_t* pkt = db.comm->make_pkt();
-
             db.wait_sched_ready();
-            // initialize switch state
-            db.msg_handler->barrier.wait_nodes();
-            // send stuff to switch (use wait_nodes throughout)
-            db.msg_handler->barrier.wait_nodes();
-            // pull state off switch
-            db.msg_handler->barrier.wait_nodes();
+            run_hot_period(tb, layout);
             db.update_alloc();
-            // fence!
-            */
             db.hot_send_q.done_sending();
             db.n_hot_batch_completed += 1;
         } else {

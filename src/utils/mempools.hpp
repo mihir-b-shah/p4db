@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 
-
 template <std::size_t max_size>
 struct StackPool {
     size_t size = 0;
@@ -27,11 +26,46 @@ struct StackPool {
         return ptr;
     }
 
+    void* allocate(size_t want) {
+        if ((size + want) > max_size) {
+            throw std::runtime_error("StackPool overflow");
+        }
+        void* ptr = buffer+size;
+        size += want;
+        return ptr;
+    }
+
     void clear() {
         size = 0;
     }
 };
 
+// assume threads do not overflow the pool size.
+struct LockedStackPool {
+    const size_t capacity;
+    size_t size;
+    uint8_t* buffer;
+
+    LockedStackPool(size_t capacity) : capacity(capacity), size(0) {
+        buffer = (uint8_t*) malloc(capacity);
+    }
+    ~LockedStackPool() {
+        free(buffer);
+    }
+
+    void* allocate(size_t want) {
+        // TODO doesn't need to be sequentially consistent.
+        size_t cur_size = __atomic_fetch_add(&size, want, __ATOMIC_SEQ_CST);
+        void* ret = buffer+cur_size;
+        assert(cur_size + want < capacity);
+        return ret;
+    }
+
+    void clear() {
+        //  TODO does this need to be atomic at all?
+        __atomic_store_n(&size, 0, __ATOMIC_SEQ_CST);
+    }
+};
 
 constexpr auto CACHE_SIZE = 64;
 

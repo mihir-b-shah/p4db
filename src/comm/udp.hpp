@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include "comm/buffer.hpp"
 #include "comm/msg.hpp"
 #include "ee/defs.hpp"
 #include "ee/errors.hpp"
@@ -20,67 +20,7 @@
 #include <thread>
 #include <unistd.h>
 
-
 struct MessageHandler;
-
-
-struct UDPPacketBuffer {
-    UDPPacketBuffer() = delete;
-    ~UDPPacketBuffer() = delete;
-
-    UDPPacketBuffer(const UDPPacketBuffer& other) = delete;
-    UDPPacketBuffer(UDPPacketBuffer&& other) = delete;
-
-    UDPPacketBuffer& operator=(const UDPPacketBuffer& other) = delete;
-    UDPPacketBuffer& operator=(UDPPacketBuffer&& other) = delete;
-
-
-    static constexpr std::size_t BUF_SIZE = 1500;
-
-    uint8_t buffer[BUF_SIZE]; // size stored at end
-    int len = 0;
-
-    static auto alloc() {
-        void* data = std::malloc(BUF_SIZE + sizeof(int)); // MTU for now
-        return static_cast<UDPPacketBuffer*>(data);
-    }
-
-    template <typename T, typename... Args>
-    auto ctor(Args&&... args) {
-        len = sizeof(T);
-        return new (this) T{std::forward<Args>(args)...};
-    }
-
-    template <typename T>
-    auto as() {
-        return reinterpret_cast<T*>(this);
-    }
-
-    void resize(const std::size_t len) {
-        if (len > BUF_SIZE) {
-            throw error::PacketBufferTooSmall();
-        }
-        this->len = len;
-    }
-
-    auto size() {
-        return len;
-    }
-
-    operator uint8_t*() {
-        return reinterpret_cast<uint8_t*>(this);
-    }
-
-    void free() {
-        std::free(this);
-    }
-
-    void dump(std::ostream& os) {
-        auto bytes = as<uint8_t>();
-        hex_dump(os, bytes, size());
-    }
-};
-
 
 class UDPCommunicator {
     // using lock_t = std::mutex;
@@ -89,10 +29,10 @@ class UDPCommunicator {
     lock_t mutex;
 
     int sock;
-    UDPPacketBuffer* recv_buffer = nullptr;
+    PacketBuffer* recv_buffer = nullptr;
 
 public:
-    using Pkt_t = UDPPacketBuffer;
+    using Pkt_t = PacketBuffer;
 
     std::vector<struct sockaddr_in> addresses;
     msg::node_t node_id;
@@ -116,13 +56,13 @@ public:
 
     void set_handler(MessageHandler* handler);
 
-    void send(msg::node_t target, UDPPacketBuffer*& pkt);
+    void send(msg::node_t target, PacketBuffer*& pkt);
     void send(msg::node_t target, Pkt_t*& pkt, uint32_t);
 
 
-    UDPPacketBuffer* make_pkt();
+    PacketBuffer* make_pkt();
 
 private:
-    UDPPacketBuffer* receive();
+    PacketBuffer* receive();
     void setup(uint16_t port);
 };

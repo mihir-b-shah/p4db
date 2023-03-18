@@ -152,6 +152,15 @@ struct StructTable final : public Table {
         return true;
     }
 
+    KV& lockless_access(const db_key_t index) {
+        auto local_index = part_info.translate(index);
+        if (local_index >= size) {
+            assert(false && "Out of bounds access.");
+        }
+        auto& row = data[local_index];
+        return row.tuple;
+    }
+
     ErrorCode get(const db_key_t index, const AccessMode mode, Future_t* future, const timestamp_t ts) {
         auto local_index = part_info.translate(index);
         if (local_index >= size) {

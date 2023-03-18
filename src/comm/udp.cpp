@@ -88,7 +88,7 @@ void UDPCommunicator::send(msg::node_t target, Pkt_t*& pkt) {
 
 
 UDPCommunicator::Pkt_t* UDPCommunicator::make_pkt() {
-    return UDPPacketBuffer::alloc();
+    return PacketBuffer::alloc();
 }
 
 
