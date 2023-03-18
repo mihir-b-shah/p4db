@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
     // get my initial allocation.
     fprintf(stderr, "Before update_alloc.\n");
-    db.update_alloc();
+    db.update_alloc(0);
     fprintf(stderr, "After update_alloc.\n");
 
     std::vector<std::thread> workers;

@@ -74,7 +74,7 @@ public:
     uint32_t n_hot_batch_completed;
 
     void setup_sched_sock();
-    void update_alloc();
+    void update_alloc(uint32_t batch_num);
     void wait_sched_ready();
 
 public:
