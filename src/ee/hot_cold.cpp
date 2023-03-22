@@ -59,9 +59,15 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 					txn.locks_acquire.set(hot_info.second.lock_pos);
 				}
 			} else {
-				txn.do_accel = false;
-				// going to restore anyway, this path is very rare.
-				txn.hot_ops_pass1[hot_p1++] = {txn.cold_ops[i], hot_info.second};
+                /*  TODO is this worth changing? Right now in original p4db emulation mode,
+                    we truncate txns' 3+ passes. So even 3 pass txns would only take max of
+                    2 passes. Just for code simplicity, 3 pass txns are *very* rare. Maybe
+                    if I want to be more accurate, I can emulate extra delays? */
+                if (!ORIG_MODE) {
+                    txn.do_accel = false;
+                    // going to restore anyway, this path is very rare.
+                    txn.hot_ops_pass1[hot_p1++] = {txn.cold_ops[i], hot_info.second};
+                }
 			}
 		} else {
 			if (hot_info.second.dist_freq > cold1_v) {
@@ -103,7 +109,7 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 		if (cold2_v > 0) {
 			txn.hottest_cold_i2 = cold2_i;
 		}
-		assert(cold_p + hot_p1 + hot_p2 == N_OPS);
+		assert(ORIG_MODE || (cold_p + hot_p1 + hot_p2 == N_OPS));
 	}
 	txn.init_done = true;
     assert(txn.init_done == true);

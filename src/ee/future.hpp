@@ -83,14 +83,15 @@ template <typename P4Switch>
 struct SwitchFuture final : public AbstractFuture {
 	P4Switch& p4_switch;
 	const Txn& arg;
+    void* orig_pkt;
 
-    SwitchFuture(P4Switch& p4_switch, const Txn& arg)
-        : AbstractFuture{}, p4_switch(p4_switch), arg(arg) {}
+    SwitchFuture(P4Switch& p4_switch, const Txn& arg, void* orig_pkt)
+        : AbstractFuture{}, p4_switch(p4_switch), arg(arg), orig_pkt(orig_pkt) {}
 
     const auto get() { // can be only called once
         auto pkt = get_pkt();
 		auto txn = pkt->as<msg::SwitchTxn>();
-		auto ret = p4_switch.parse_txn(txn->data);
+		auto ret = p4_switch.parse_txn(orig_pkt, txn->data);
         pkt->free();
         return ret;
     }

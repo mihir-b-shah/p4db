@@ -36,6 +36,9 @@ constexpr auto PERIODIC_CSV_FILENAME = "periodic.csv";
 constexpr bool DYNAMIC_IPS = false;
 constexpr bool USE_FLOW_ORDER = true;
 
+// if this is on, make sure to set MAX_PASSES_ACCEL=2, MAX_OPS_PASS2 high.
+constexpr bool ORIG_MODE = false;
+
 constexpr size_t N_CORES = 8;
 
 namespace error {

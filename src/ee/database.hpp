@@ -83,8 +83,11 @@ public:
         msg_handler = std::make_unique<MessageHandler>(*this, comm.get());
         msg_handler->init.wait();
 		per_core_txns = (std::vector<Txn>**) malloc(sizeof(per_core_txns[0])*n_threads);
-        setup_sched_sock();
-        setup_switch_sock();
+
+        if (!ORIG_MODE) {
+            setup_sched_sock();
+            setup_switch_sock();
+        }
     }
 
     Database(Database&&) = default;

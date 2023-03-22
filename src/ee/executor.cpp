@@ -72,21 +72,7 @@ RC TxnExecutor::execute(Txn& arg) {
 	WorkerContext::get().cycl.reset(stats::Cycles::remote_latency);
 	WorkerContext::get().cycl.reset(stats::Cycles::local_latency);
 	WorkerContext::get().cycl.reset(stats::Cycles::switch_txn_latency);
-
 	WorkerContext::get().cycl.start(stats::Cycles::commit_latency);
-	/*
-	if (false) { // TODO: arg.on_switch) {
-		WorkerContext::get().cycl.reset(stats::Cycles::switch_txn_latency);
-		WorkerContext::get().cycl.start(stats::Cycles::switch_txn_latency);
-		SwitchFuture<SwitchInfo>* multi_f = atomic(p4_switch, arg);
-		const auto values = multi_f->get().values;
-		do_not_optimize(values);
-
-		WorkerContext::get().cycl.stop(stats::Cycles::switch_txn_latency);
-		WorkerContext::get().cycl.save(stats::Cycles::switch_txn_latency);
-		return commit();
-	}
-	*/
 
 	// acquire all locks first, ex and shared. Can rollback within loop
 	TupleFuture<KV>* ops[N_OPS];
@@ -96,8 +82,8 @@ RC TxnExecutor::execute(Txn& arg) {
 		} else if (op.mode == AccessMode::READ) {
 			ops[i] = read(kvs, op, arg.id);
 		} else {
-			assert(op.mode == AccessMode::INVALID);
-			ops[i] = nullptr;
+			assert(ORIG_MODE && op.mode == AccessMode::INVALID);
+			break;
 		}
 
 		if (!ops[i]) {
@@ -125,6 +111,20 @@ RC TxnExecutor::execute(Txn& arg) {
 			break;
 		}
 		++i;
+	}
+
+    if (arg.do_accel) {
+		WorkerContext::get().cycl.reset(stats::Cycles::switch_txn_latency);
+		WorkerContext::get().cycl.start(stats::Cycles::switch_txn_latency);
+        /*  TODO remember we are truncating 3+ pass txns, maybe emulate some additional
+            latency here? (as well as contention on-switch, but I think 2-pass txns will
+            do that trick for me. */
+		SwitchFuture<SwitchInfo>* multi_f = atomic(p4_switch, arg);
+		const size_t n_results = multi_f->get().n_results;
+		do_not_optimize(n_results);
+
+		WorkerContext::get().cycl.stop(stats::Cycles::switch_txn_latency);
+		WorkerContext::get().cycl.save(stats::Cycles::switch_txn_latency);
 	}
 
 	// locks automatically released
@@ -163,6 +163,7 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op, TxnId 
 	// fprintf(stderr, "Running read.\n");
 	using Future_t = TupleFuture<KV>;
 	auto loc_info = op.loc_info;
+    bool my_execute = id.field.valid;
 
 	if constexpr (error::LOG_TABLE) {
 		std::stringstream ss;
@@ -177,7 +178,7 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op, TxnId 
 		// XXX a hack, just to pass my id in.
 		future->last_acq = id;
 		// fprintf(stderr, "id: (%u,%u,%u) future->last_acq: %u\n", id.field.valid, id.field.node_id, id.field.mini_batch_id, future->last_acq.get_packed());
-		assert(future->last_acq.field.mini_batch_id == mini_batch_num);
+		assert(!my_execute || future->last_acq.field.mini_batch_id == mini_batch_num);
 		if (!table->get(op.id, AccessMode::READ, future, ts)) [[unlikely]] {
 			return nullptr;
 		}
@@ -216,6 +217,7 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op, TxnId
 	using Future_t = TupleFuture<KV>;
 
 	auto loc_info = op.loc_info;
+    bool my_execute = id.field.valid;
 
 	if constexpr (error::LOG_TABLE) {
 		std::stringstream ss;
@@ -232,7 +234,7 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op, TxnId
 		future->last_acq = id;
 		future->tuple = nullptr;
 		// fprintf(stderr, "id: (%u,%u,%u) future->last_acq: %u\n", id.field.valid, id.field.node_id, id.field.mini_batch_id, future->last_acq.get_packed());
-		assert(future->last_acq.field.mini_batch_id == mini_batch_num);
+		assert(!my_execute || future->last_acq.field.mini_batch_id == mini_batch_num);
 		if (!table->get(op.id, AccessMode::WRITE, future, ts)) [[unlikely]] {
 			return nullptr;
 		}
@@ -283,30 +285,25 @@ TupleFuture<KV>* TxnExecutor::insert(StructTable* table) {
 	return future;
 }
 
-/*
 SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& arg) {
 	auto& comm = db.comm;
 
 	auto pkt = comm->make_pkt();
 	auto txn = pkt->ctor<msg::SwitchTxn>();
 	txn->sender = comm->node_id;
+	p4_switch.make_txn(arg, txn->data);
 
-	BufferWriter bw{txn->data};
-	p4_switch.make_txn(arg, bw);
-
-	auto size = msg::SwitchTxn::size(bw.size);
+	auto size = msg::SwitchTxn::size(HOT_TXN_BYTES);
 	pkt->resize(size);
 
 	using Future_t = SwitchFuture<SwitchInfo>;
-	auto future = mempool.allocate<Future_t>(p4_switch, arg);
+	auto future = mempool.allocate<Future_t>(p4_switch, arg, txn->data);
 	auto msg_id = comm->handler->set_new_id(txn);
 	//printf("LINE:%d Inserting for msg_id=%lu, future=%p\n", __LINE__, msg_id.value, future);
 	comm->handler->add_future(msg_id, future);
 	comm->send(comm->switch_id, pkt, tid);
-
 	return future;
 }
-*/
 
 static void reset_db_batch(Database* db) {
 	// __atomic_store_n(&db->thr_batch_done_ct, 0, __ATOMIC_SEQ_CST);
@@ -316,7 +313,7 @@ static void reset_db_batch(Database* db) {
 void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in_sched_entry_t>& q) {
     assert(q.empty() == false);
     in_sched_entry_t e = q.front();
-    Txn& txn = sched.entry_to_txn(e);
+    Txn& txn = entry_to_txn(sched.exec, e);
     assert(txn.init_done == true);
     q.pop();
 
@@ -333,13 +330,42 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in
             if (enqueue_aborts && txn.n_aborts <= MAX_TIMES_ACCEL_ABORT) {
                 q.push(e);
             } else {
-                non_accel_txns.push_back(txn);
+                //  convert hot into cold ops again.
+                /*  we are guaranteed this will be called for non-truncated txns, so it is safe
+                    to append to the end of cold_ops- there will be no gaps when I'm done. */
+                size_t cold_p = N_OPS-1;
+                for (size_t p = 0; p<N_OPS && 
+                        txn.hot_ops_pass1[p].first.mode != AccessMode::INVALID; ++p) {
+                    txn.cold_ops[cold_p--] = txn.hot_ops_pass1[p].first;
+                }
+                for (size_t p = 0; p<MAX_OPS_PASS2_ACCEL && 
+                        txn.hot_ops_pass2[p].first.mode != AccessMode::INVALID; ++p) {
+                    txn.cold_ops[cold_p--] = txn.hot_ops_pass1[p].first;
+                }
+                // everything should be back.
+                assert(txn.cold_ops[cold_p].mode != AccessMode::INVALID);
+                txn.do_accel = false;
+                leftover_txns.push(e);
             }
         } else {
             p4_switch.make_txn(txn, pkt_buf);
         }
     } else {
-        non_accel_txns.push_back(txn);
+        leftover_txns.push(e);
+    }
+}
+
+void TxnExecutor::run_leftover_txns() {
+    /*  TODO potential livelock problems, what if two txns on different nodes keep aborting each
+        other, and the leftover queues on both are very small, so they have no chance to separate? */
+    while (!leftover_txns.empty()) {
+        in_sched_entry_t e = leftover_txns.front();
+        Txn& txn = entry_to_txn(this, e);
+        RC result = execute(txn);
+        if (result == ROLLBACK) {
+            leftover_txns.push(e);
+        }
+        leftover_txns.pop();
     }
 }
 
@@ -398,14 +424,40 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
             run_hot_period(tb, layout);
             db.update_alloc(1+batch_num);
 
+            tb.run_leftover_txns();
             __sync_synchronize();
 
             db.hot_send_q.done_sending();
             db.n_hot_batch_completed += 1;
         } else {
+            tb.run_leftover_txns();
             while (db.n_hot_batch_completed < 1+batch_num) {
                 _mm_pause();
             }
         }
 	}
+}
+
+void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
+	auto& config = Config::instance();
+    TxnExecutor tb{db};
+
+    // not necessary to make it aligned, but for compatability, to execute same # of txns.
+	const size_t n_threads = config.num_txn_workers;
+	const size_t batch_tgt = BATCH_SIZE_TGT/n_threads;
+	size_t thread_id = WorkerContext::get().tid;
+
+    txns.resize((txns.size() / batch_tgt) * batch_tgt);
+	assert(txns.size() % batch_tgt == 0);
+
+    for (size_t i = 0; i<txns.size(); ++i) {
+        extract_hot_cold(tb.kvs, txns[i], config.decl_layout);
+        assert(txns[i].init_done);
+        RC result = tb.execute(txns[i]);
+        if (result == ROLLBACK) {
+            in_sched_entry_t e = {i, thread_id};
+            tb.leftover_txns.push(e);
+        }
+    }
+    tb.run_leftover_txns();
 }

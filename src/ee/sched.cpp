@@ -91,7 +91,7 @@ void scheduler_t::sched_batch(std::vector<Txn>& txns, size_t s, size_t e) {
     */
 }
 
-Txn& scheduler_t::entry_to_txn(in_sched_entry_t entry) {
+Txn& entry_to_txn(TxnExecutor* exec, in_sched_entry_t entry) {
 	std::vector<Txn>& txns = *(exec->db.per_core_txns[entry.thr_id]);
     assert(entry.thr_id < exec->db.n_threads && entry.idx < txns.size());
     return txns[entry.idx];
