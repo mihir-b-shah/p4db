@@ -314,14 +314,16 @@ static void reset_db_batch(Database* db) {
 }
 
 void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in_sched_entry_t>& q) {
+    assert(q.empty() == false);
     in_sched_entry_t e = q.front();
     Txn& txn = sched.entry_to_txn(e);
+    assert(txn.init_done == true);
     q.pop();
 
     assert(mini_batch_num > 0);
     txn.id = TxnId(true, sched.node_id, mini_batch_num);
     assert(txn.id.field.valid == true && txn.id.field.node_id == sched.node_id && txn.id.field.mini_batch_id == mini_batch_num);
-    assert(txn.init_done);
+    assert(txn.init_done == true);
     if (txn.do_accel) {
         //	TODO note this buffer is malloc-ed, seems excessive.
         void* pkt_buf;
@@ -388,16 +390,22 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
         tb.mini_batch_num += 1;
 
         // thread 0 is the leader thread.
+        // printf("Hot-batch-completed. %u. Batch_num: %lu\n", db.n_hot_batch_completed, batch_num);
         if (thread_id == 0) {
             // printf("Before wait_sched_ready.\n");
             db.wait_sched_ready();
             // printf("After wait_sched_ready.\n");
             run_hot_period(tb, layout);
             db.update_alloc(1+batch_num);
+
+            __sync_synchronize();
+
             db.hot_send_q.done_sending();
             db.n_hot_batch_completed += 1;
         } else {
-            while (db.n_hot_batch_completed < 1+batch_num);
+            while (db.n_hot_batch_completed < 1+batch_num) {
+                _mm_pause();
+            }
         }
 	}
 }

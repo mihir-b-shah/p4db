@@ -118,7 +118,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         socklen_t unused_len;
         assert(recvfrom(switch_sockfd, (char*) buf, HOT_TXN_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_BYTES);
     }
-    printf("Sent %lu packets.\n", start_fill.size());
+    // printf("Sent %lu packets.\n", start_fill.size());
 
     exec.db.msg_handler->barrier.wait_nodes();
 
@@ -127,6 +127,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     size_t q_size = exec.db.hot_send_q.send_q_tail;
     hot_send_q_t::hot_txn_entry_t* q = exec.db.hot_send_q.send_q;
     size_t q_p = 0;
+    size_t start_mb_i = 0;
     struct mmsghdr mmsghdrs[MAX_IN_FLIGHT];
 
     while (q_p < q_size) {
@@ -137,13 +138,15 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
             q_p += 1;
         }
 
-        fprintf(stderr, "Sending [%lu,%lu)\n", window_start, q_p);
+        // fprintf(stderr, "Sending [%lu,%lu)\n", window_start, q_p);
         ssize_t sent = sendmmsg(switch_sockfd, &mmsghdrs[0], q_p-window_start, 0);
         assert(sent == q_p-window_start);
         ssize_t received = recvmmsg(switch_sockfd, &mmsghdrs[0], q_p-window_start, 0, NULL);
         assert(received == q_p-window_start);
         
         if (q[window_start].mini_batch_num + 1 == q[q_p].mini_batch_num || q_p == q_size) {
+            // fprintf(stderr, "mb %u: [%lu,%lu)\n", q[q_p].mini_batch_num, start_mb_i, q_p);
+            start_mb_i = q_p;
             exec.db.msg_handler->barrier.wait_nodes();
         }
     }

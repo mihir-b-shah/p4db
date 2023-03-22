@@ -1,5 +1,6 @@
 
 #include <ee/executor.hpp>
+#include "stats/stats.hpp"
 
 #include <utility>
 #include <algorithm>
@@ -105,4 +106,5 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 		assert(cold_p + hot_p1 + hot_p2 == N_OPS);
 	}
 	txn.init_done = true;
+    assert(txn.init_done == true);
 }

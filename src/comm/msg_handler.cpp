@@ -15,7 +15,7 @@ msg::id_t MessageHandler::set_new_id(msg::Header* msg) {
 void MessageHandler::add_future(msg::id_t msg_id, AbstractFuture* future) {
     future_map_t::accessor acc;
     bool success = open_futures.insert(acc, msg_id);
-    assert(success);
+    assert(success == true);
     acc->second = future;
 }
 
@@ -74,11 +74,11 @@ void MessageHandler::handle(Pkt_t* pkt, msg::TupleGetRes* res) {
     msg::id_t id = res->msg_id;
     future_map_t::accessor acc;
     bool found = open_futures.find(acc, id);
-    assert(found);
+    assert(found == true);
 
     AbstractFuture* future = acc->second;
     bool success = open_futures.erase(acc);
-    assert(success);
+    assert(success == true);
 
     future->set_pkt(pkt);
 }
@@ -115,11 +115,11 @@ void MessageHandler::handle(Pkt_t* pkt, msg::SwitchTxn* txn) {
     msg::id_t id = txn->msg_id;
     future_map_t::accessor acc;
     bool found = open_futures.find(acc, id);
-    assert(found);
+    assert(found == true);
 
     AbstractFuture* future = acc->second;
     bool success = open_futures.erase(acc);
-    assert(success);
+    assert(success == true);
 
     future->set_pkt(pkt);
 }

@@ -42,14 +42,15 @@ scheduler_t::scheduler_t(TxnExecutor* exec) : exec(exec) {
 
 void scheduler_t::sched_batch(std::vector<Txn>& txns, size_t s, size_t e) {
 	for (size_t i = 0; i<n_queues; ++i) {
-		assert(mb_queues[i].empty());
+		assert(mb_queues[i].empty() == true);
 	}
 
 	size_t zero_spray_idx = 0;
 	for (size_t i = s; i<e; ++i) {
 		Txn& txn = txns[i];
-		assert(!txn.init_done);
+		assert(txn.init_done == false);
 		extract_hot_cold(exec->kvs, txn, layout);
+        assert(txn.init_done == true);
 
 		if (txn.hottest_cold_i1.has_value()) {
 			const Txn::OP& op1 = txn.cold_ops[txn.hottest_cold_i1.value()];
@@ -82,14 +83,18 @@ void scheduler_t::sched_batch(std::vector<Txn>& txns, size_t s, size_t e) {
 			mb_queues[zero_spray_idx++ % n_queues].emplace(i, exec->tid);
 		}
 	}
+    /*
 	printf("Queues:\n");
 	for (size_t i = 0; i<n_queues; ++i) {
 		printf("\tqueue %lu | size %lu\n", i, mb_queues[i].size());
 	}
+    */
 }
 
 Txn& scheduler_t::entry_to_txn(in_sched_entry_t entry) {
-	return (*(exec->db.per_core_txns[entry.thr_id]))[entry.idx];
+	std::vector<Txn>& txns = *(exec->db.per_core_txns[entry.thr_id]);
+    assert(entry.thr_id < exec->db.n_threads && entry.idx < txns.size());
+    return txns[entry.idx];
 }
 
 void scheduler_t::print_schedules(size_t node) {

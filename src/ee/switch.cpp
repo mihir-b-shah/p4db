@@ -39,7 +39,7 @@ static void fill_reg_instr(const std::pair<Txn::OP, TupleLocation>& pr, reg_inst
 
 void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
     static_assert(sizeof(packet_t) == HOT_TXN_BYTES);
-	assert(txn.do_accel);
+	assert(txn.do_accel == true);
 
 	packet_t* pkt = reinterpret_cast<packet_t*>(comm_pkt);	
 

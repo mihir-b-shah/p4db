@@ -29,6 +29,7 @@ struct Txn {
 	std::bitset<DeclusteredLayout::NUM_SW_LOCKS> locks_check;
 	std::bitset<DeclusteredLayout::NUM_SW_LOCKS> locks_acquire;
 	TxnId id;
+    size_t loader_id;
 
 	Txn() : init_done(false), n_aborts(0) {}
 };

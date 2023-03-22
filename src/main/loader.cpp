@@ -15,9 +15,10 @@ void load_txns(Config& config) {
 	// read txns in from trace.	
 	std::cout << "Fname: " << config.trace_fname << '\n';
     std::ifstream fin(config.trace_fname);
-	assert(fin.is_open());
+	assert(fin.is_open() == true);
     std::string buf;
 
+    static size_t loader_id = 0;
 	size_t ctr = 0;
     while (1) {
         std::getline(fin, buf);
@@ -29,6 +30,7 @@ void load_txns(Config& config) {
         std::istringstream ss(buf);
         config.trace_txns.emplace_back();
 		Txn& txn = config.trace_txns.back();
+        txn.loader_id = loader_id++;
 		
 		for (size_t i = 0; i<N_OPS; ++i) {
 			assert(std::getline(ss, access, ','));
@@ -48,7 +50,7 @@ void load_txns(Config& config) {
     }
 
     std::ifstream fdist(config.dist_fname);
-	assert(fdist.is_open());
+	assert(fdist.is_open() == true);
     buf = "";
 	std::vector<std::pair<uint64_t, size_t>> id_freq;
 
