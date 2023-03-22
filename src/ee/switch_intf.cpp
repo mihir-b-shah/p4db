@@ -145,8 +145,8 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         assert(received == q_p-window_start);
         
         if (q[window_start].mini_batch_num + 1 == q[q_p].mini_batch_num || q_p == q_size) {
-            // fprintf(stderr, "mb %u: [%lu,%lu)\n", q[q_p].mini_batch_num, start_mb_i, q_p);
-            start_mb_i = q_p;
+            /*  fprintf(stderr, "mb %u: [%lu,%lu)\n", q[window_start].mini_batch_num, start_mb_i, q_p);
+                start_mb_i = q_p; */
             exec.db.msg_handler->barrier.wait_nodes();
         }
     }

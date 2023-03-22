@@ -15,7 +15,7 @@
 
 #include <sys/uio.h>
 
-static constexpr size_t HOT_TXN_BYTES = 86;
+static constexpr size_t HOT_TXN_BYTES = 102;
 
 void setup_switch_sock();
 

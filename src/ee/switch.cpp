@@ -11,7 +11,9 @@
 
 #include <ee/database.hpp>
 
-#define STOP 0x80
+static constexpr uint8_t STOP = 0x80;
+// just a randomly generated 128-bit integer.
+static constexpr uint8_t UID_HDR[] = {0xBE, 0x87, 0xEF, 0x7E, 0x61, 0x3C, 0x4B, 0x33, 0x82, 0xEB, 0x90, 0x66, 0x3A, 0x40, 0x3D, 0xAE};
 
 struct __attribute__((packed)) reg_instr_t {
 	uint8_t type__be;
@@ -21,6 +23,7 @@ struct __attribute__((packed)) reg_instr_t {
 };
 
 struct __attribute__((packed)) packet_t {
+    uint8_t uid[sizeof(UID_HDR)];
 	uint32_t locks_check__nb;
 	uint32_t locks_acquire__nb;
 	uint32_t locks_undo__nb;
@@ -63,6 +66,8 @@ void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
 	pkt->locks_undo__nb = 0;
 	pkt->is_second_pass__nb = 0;
 	pkt->n_failed__nb = 0;
+
+    memcpy(&pkt->uid[0], UID_HDR, sizeof(UID_HDR));
 }
 
 SwitchInfo::SwResult SwitchInfo::parse_txn(void* out_pkt_raw, void* in_pkt_raw) {
