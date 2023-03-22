@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <signal.h>
+
 #include <unistd.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
@@ -11,6 +13,12 @@
 #include <arpa/inet.h>
 
 static constexpr size_t BUF_SIZE = 200;
+
+static FILE* packet_log_f = NULL;
+void sig_int_handler() {
+    assert(packet_log_f != NULL);
+    fclose(packet_log_f);
+}
 
 int main() {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -28,13 +36,18 @@ int main() {
 
     struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
+    
+    packet_log_f = fopen("packet_trace.raw", "w");
 
     char buf[BUF_SIZE];
-    int recv_ct = 0;
+    int prev_msg_size = -1;
     while (1) {
         int nr = recvfrom(sockfd, buf, BUF_SIZE, 0, (struct sockaddr*) &client_addr, &client_len);
-        assert(nr > 0);
-        int ns = sendto(sockfd, buf, BUF_SIZE, 0, (struct sockaddr*) &client_addr, client_len);
+        assert(nr > 0 && (prev_msg_size == -1 || nr == prev_msg_size));
+        prev_msg_size = nr;
+        assert(fwrite(buf, 1, (size_t) nr, packet_log_f) == (size_t) nr);
+
+        int ns = sendto(sockfd, buf, nr, 0, (struct sockaddr*) &client_addr, client_len);
         assert(ns > 0);
     }
 }
