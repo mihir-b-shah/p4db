@@ -65,13 +65,31 @@ void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
 	pkt->n_failed__nb = 0;
 }
 
-SwitchInfo::MultiOpOut SwitchInfo::parse_txn(BufferReader& br) {
-    MultiOpOut out;
-	/* TODO replace with real logic
-    for (int i = 0; i < N_OPS; ++i) {
-        auto instr = br.read<instr_t>();
-        out.values[i] = *instr->data;
+SwitchInfo::SwResult SwitchInfo::parse_txn(void* out_pkt_raw, void* in_pkt_raw) {
+    SwResult out;
+	packet_t* out_pkt = reinterpret_cast<packet_t*>(out_pkt_raw);
+	packet_t* in_pkt = reinterpret_cast<packet_t*>(in_pkt_raw);
+
+    size_t i;
+    for (i = 0; i<DeclusteredLayout::NUM_MAX_OPS; ++i) {
+        reg_instr_t* out_instr = &out_pkt->reg_instrs[i];
+        reg_instr_t* in_instr = &in_pkt->reg_instrs[i];
+        
+        uint8_t reg_id = out_instr->type__be;
+        if (reg_id == STOP) {
+            break;
+        } else if (reg_id & STOP) {
+            reg_id &= ~STOP;
+        }
+        // both are in network byte order.
+        assert(out_instr->idx__be == in_instr->idx__be);
+        uint16_t reg_idx = ntohs(in_instr->idx__be);
+        uint32_t read_val = ntohl(in_instr->data__be);
+        
+        db_key_t k = declustered_layout->rev_loc_lookup(reg_id, reg_idx);
+        out.results[i] = {k, read_val};
+
     }
-	*/
+    out.n_results = i;
     return out;
 }

@@ -9,6 +9,8 @@
 #include <array>
 #include <utility>
 
+#include <errno.h>
+
 static void fill_op(std::pair<Txn::OP, TupleLocation>& op, bool is_init, db_key_t k, TxnExecutor& exec, DeclusteredLayout* layout) {
     op.first.id = k;
     op.first.mode = is_init ? AccessMode::WRITE : AccessMode::READ;
@@ -22,7 +24,7 @@ static std::array<std::pair<Txn::OP, TupleLocation>, N_OPS>& init_and_get_arr(Tx
     return txn.hot_ops_pass1;
 }
 
-static constexpr size_t MAX_STACKPOOL_SIZE = HOT_TXN_BYTES * ((DeclusteredLayout::N_ACCEL_KEYS+N_OPS-1)/N_OPS);
+static constexpr size_t MAX_STACKPOOL_SIZE = 2 * HOT_TXN_BYTES * ((DeclusteredLayout::N_ACCEL_KEYS+N_OPS-1)/N_OPS);
 typedef StackPool<MAX_STACKPOOL_SIZE> se_stackpool_t;
 static se_stackpool_t pool;
 
@@ -116,10 +118,11 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         socklen_t unused_len;
         assert(recvfrom(switch_sockfd, (char*) buf, HOT_TXN_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_BYTES);
     }
+    printf("Sent %lu packets.\n", start_fill.size());
+
     exec.db.msg_handler->barrier.wait_nodes();
 
-    constexpr size_t MAX_IN_FLIGHT = 300;
-    // now send in increments of MAX_IN_FLIGHT.
+    constexpr size_t MAX_IN_FLIGHT = 100;
 
     size_t q_size = exec.db.hot_send_q.send_q_tail;
     hot_send_q_t::hot_txn_entry_t* q = exec.db.hot_send_q.send_q;
@@ -133,11 +136,16 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
             setup_single_mmsghdr(&mmsghdrs[q_p-window_start], &q[q_p].iov);
             q_p += 1;
         }
-        // [window_start, q_p)
+
         fprintf(stderr, "Sending [%lu,%lu)\n", window_start, q_p);
-        // int sent = sendmmsg(switch_sockfd, &mmsghdrs[window_start], q_p-window_start, 0);
-        // assert(sent == q_p-window_start);
-        // TODO put the barrier for the end of mini_batch_num
+        ssize_t sent = sendmmsg(switch_sockfd, &mmsghdrs[0], q_p-window_start, 0);
+        assert(sent == q_p-window_start);
+        ssize_t received = recvmmsg(switch_sockfd, &mmsghdrs[0], q_p-window_start, 0, NULL);
+        assert(received == q_p-window_start);
+        
+        if (q[window_start].mini_batch_num + 1 == q[q_p].mini_batch_num || q_p == q_size) {
+            exec.db.msg_handler->barrier.wait_nodes();
+        }
     }
 
     for (void* buf : end_fill) {
@@ -145,8 +153,14 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     }
     for (void* buf : end_fill) {
         socklen_t unused_len;
-        assert(recvfrom(switch_sockfd, (char*) buf, HOT_TXN_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_BYTES);
-        //  TODO need to parse results from this buffer.
+        void* new_pkt = pool.allocate(HOT_TXN_BYTES);
+        assert(recvfrom(switch_sockfd, (char*) new_pkt, HOT_TXN_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_BYTES);
+
+        SwitchInfo::SwResult res = exec.p4_switch.parse_txn(buf, new_pkt);
+        for (size_t i = 0; i<res.n_results; ++i) {
+            SwitchInfo::read_info_t result = res.results[i];
+            exec.kvs->lockless_access(result.k).value = result.reg_val;
+        }
     }
     pool.clear();
     exec.db.msg_handler->barrier.wait_nodes();

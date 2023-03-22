@@ -48,9 +48,11 @@ struct DeclusteredLayout {
 
 	DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>&& id_freq);
     std::pair<bool, TupleLocation> get_location(db_key_t k);
+    db_key_t rev_loc_lookup(uint8_t reg_id, uint16_t reg_idx);
 
 	size_t block_num;
 	// TODO: std::unordered_map is p slow, profile and see.
 	std::unordered_map<db_key_t, TupleLocation> virt_map;
+    std::unordered_map<size_t, db_key_t> rev_by_reg[NUM_REGS];
 	std::vector<std::pair<db_key_t, size_t>> id_freq;
 };

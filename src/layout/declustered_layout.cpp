@@ -44,6 +44,7 @@ DeclusteredLayout::DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>&& 
 			loc.lock_pos = lk_low;
 		}
         virt_map.emplace(k, loc);
+        rev_by_reg[loc.reg_array_id].emplace(loc.reg_array_idx, k);
     }
 
     printf("Accelerating %lu keys, going down to freq %lu\n", N_ACCEL_KEYS, id_freq[N_ACCEL_KEYS].second);
@@ -56,4 +57,9 @@ std::pair<bool, TupleLocation> DeclusteredLayout::get_location(db_key_t k) {
     info.second = tl;
     info.second.reg_array_idx = (N_ACCEL_KEYS * this->block_num) + tl.reg_array_idx;
 	return info;
+}
+
+db_key_t DeclusteredLayout::rev_loc_lookup(uint8_t reg_id, uint16_t reg_idx) {
+    size_t idx = reg_idx - (N_ACCEL_KEYS * this->block_num);
+    return rev_by_reg[reg_id][idx];
 }

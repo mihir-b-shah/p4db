@@ -5,7 +5,6 @@
 #include "comm/msg.hpp"
 #include "ee/errors.hpp"
 #include "ee/args.hpp"
-#include "utils/buffers.hpp"
 
 #include <atomic>
 #include <limits>
@@ -91,8 +90,7 @@ struct SwitchFuture final : public AbstractFuture {
     const auto get() { // can be only called once
         auto pkt = get_pkt();
 		auto txn = pkt->as<msg::SwitchTxn>();
-		BufferReader br{txn->data};
-		auto ret = p4_switch.parse_txn(br);
+		auto ret = p4_switch.parse_txn(txn->data);
         pkt->free();
         return ret;
     }

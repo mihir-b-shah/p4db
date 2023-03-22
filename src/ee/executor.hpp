@@ -3,7 +3,6 @@
 #include "comm/comm.hpp"
 #include "comm/msg.hpp"
 #include "comm/msg_handler.hpp"
-#include "utils/buffers.hpp"
 #include "ee/args.hpp"
 #include "ee/database.hpp"
 #include "ee/defs.hpp"

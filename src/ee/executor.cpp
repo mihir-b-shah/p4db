@@ -392,9 +392,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
             // printf("Before wait_sched_ready.\n");
             db.wait_sched_ready();
             // printf("After wait_sched_ready.\n");
-            /*
             run_hot_period(tb, layout);
-            */
             db.update_alloc(1+batch_num);
             db.hot_send_q.done_sending();
             db.n_hot_batch_completed += 1;
