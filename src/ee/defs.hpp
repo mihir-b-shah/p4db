@@ -34,8 +34,8 @@ constexpr auto STATS_CYCLE_SAMPLE_TIME = 10ms; //100us;
 constexpr auto STATS_PERIODIC_SAMPLE_TIME = 500ms;
 constexpr auto PERIODIC_CSV_FILENAME = "periodic.csv";
 constexpr bool DYNAMIC_IPS = false;
-constexpr bool USE_FLOW_ORDER = false;
-constexpr bool ORIG_MODE = true;
+constexpr bool USE_FLOW_ORDER = true;
+constexpr bool ORIG_MODE = false;
 
 constexpr size_t N_CORES = 8;
 
@@ -54,7 +54,7 @@ constexpr size_t REMOTE_FRAC = 10;
 constexpr size_t BATCH_SIZE_TGT = 100000;
 constexpr size_t MINI_BATCH_SIZE_TGT = 5000;
 constexpr size_t MIN_MINI_BATCH_THR_SIZE = 50;
-constexpr size_t MAX_PASSES_ACCEL = 2;
+constexpr size_t MAX_PASSES_ACCEL = 1;
 constexpr size_t MAX_OPS_PASS2_ACCEL = 8;
 
 // measure and modify (right now around 1 ms each)

@@ -24,7 +24,7 @@ static std::array<std::pair<Txn::OP, TupleLocation>, N_OPS>& init_and_get_arr(Tx
     return txn.hot_ops_pass1;
 }
 
-static constexpr size_t MAX_STACKPOOL_SIZE = 2 * HOT_TXN_BYTES * ((DeclusteredLayout::N_ACCEL_KEYS+N_OPS-1)/N_OPS);
+static constexpr size_t MAX_STACKPOOL_SIZE = 2 * HOT_TXN_PKT_BYTES * ((DeclusteredLayout::N_ACCEL_KEYS+N_OPS-1)/N_OPS);
 typedef StackPool<MAX_STACKPOOL_SIZE> se_stackpool_t;
 static se_stackpool_t pool;
 
@@ -56,12 +56,12 @@ static void gen_start_end_packets(std::vector<void*>& start_fill, std::vector<vo
             arr_end[ops_added].first.mode = AccessMode::INVALID;
         }
 
-        void* pkt_start = pool.allocate(HOT_TXN_BYTES);
-        exec.p4_switch.make_txn(txn_start, pkt_start);
+        void* pkt_start = pool.allocate(HOT_TXN_PKT_BYTES);
+        exec.p4_switch.make_txn(txn_start, (void*) ((char*) pkt_start + sizeof(msg::SwitchTxn)));
         start_fill.push_back(pkt_start);
 
-        void* pkt_end = pool.allocate(HOT_TXN_BYTES);
-        exec.p4_switch.make_txn(txn_end, pkt_end);
+        void* pkt_end = pool.allocate(HOT_TXN_PKT_BYTES);
+        exec.p4_switch.make_txn(txn_end, (void*) ((char*) pkt_end + sizeof(msg::SwitchTxn)));
         end_fill.push_back(pkt_end);
     }
 }
@@ -110,13 +110,13 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     gen_start_end_packets(start_fill, end_fill, exec, layout);
 
     for (void* buf : start_fill) {
-        assert(sendto(switch_sockfd, (char*) buf, HOT_TXN_BYTES, 0, (struct sockaddr*) &server_addr, sizeof(server_addr)) == HOT_TXN_BYTES);
+        assert(sendto(switch_sockfd, (char*) buf, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, sizeof(server_addr)) == HOT_TXN_PKT_BYTES);
     }
     for (void* buf : start_fill) {
         // just overwrite the buffer, don't need it now.
         // the recv is just to make sure the packets came back.
         socklen_t unused_len;
-        assert(recvfrom(switch_sockfd, (char*) buf, HOT_TXN_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_BYTES);
+        assert(recvfrom(switch_sockfd, (char*) buf, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_PKT_BYTES);
     }
     // printf("Sent %lu packets.\n", start_fill.size());
 
@@ -152,14 +152,16 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     }
 
     for (void* buf : end_fill) {
-        assert(sendto(switch_sockfd, (char*) buf, HOT_TXN_BYTES, 0, (struct sockaddr*) &server_addr, sizeof(server_addr)) == HOT_TXN_BYTES);
+        assert(sendto(switch_sockfd, (char*) buf, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, sizeof(server_addr)) == HOT_TXN_PKT_BYTES);
     }
     for (void* buf : end_fill) {
         socklen_t unused_len;
-        void* new_pkt = pool.allocate(HOT_TXN_BYTES);
-        assert(recvfrom(switch_sockfd, (char*) new_pkt, HOT_TXN_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_BYTES);
+        void* new_pkt = pool.allocate(HOT_TXN_PKT_BYTES);
+        assert(recvfrom(switch_sockfd, (char*) new_pkt, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_PKT_BYTES);
 
-        SwitchInfo::SwResult res = exec.p4_switch.parse_txn(buf, new_pkt);
+        void* out_buf = (void*) ((char*) buf + sizeof(msg::SwitchTxn));
+        void* in_buf = (void*) ((char*) new_pkt + sizeof(msg::SwitchTxn));
+        SwitchInfo::SwResult res = exec.p4_switch.parse_txn(out_buf, in_buf);
         for (size_t i = 0; i<res.n_results; ++i) {
             SwitchInfo::read_info_t result = res.results[i];
             exec.kvs->lockless_access(result.k).value = result.reg_val;

@@ -20,6 +20,7 @@ header ethernet_t {
     mac_addr_t src_addr;
     ether_type_t ether_type;
 	bit<256> ip_udp_junk;
+	bit<128> p4db_compat_junk;
 }
 
 header uid_t {

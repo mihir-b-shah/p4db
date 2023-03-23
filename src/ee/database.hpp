@@ -1,6 +1,7 @@
 #pragma once
 
 #include "comm/comm.hpp"
+#include "comm/msg.hpp"
 #include "comm/msg_handler.hpp"
 #include "ee/table.hpp"
 #include "utils/rbarrier.hpp"
@@ -16,6 +17,7 @@
 #include <sys/uio.h>
 
 static constexpr size_t HOT_TXN_BYTES = 102;
+static constexpr size_t HOT_TXN_PKT_BYTES = sizeof(msg::SwitchTxn) + HOT_TXN_BYTES;
 
 void setup_switch_sock();
 
@@ -32,7 +34,7 @@ struct hot_send_q_t {
 	hot_txn_entry_t* send_q;
     LockedStackPool buf_pool;
 
-	hot_send_q_t(size_t cap) : send_q_tail(0), send_q_capacity(cap), buf_pool(cap*HOT_TXN_BYTES) {
+	hot_send_q_t(size_t cap) : send_q_tail(0), send_q_capacity(cap), buf_pool(cap*HOT_TXN_PKT_BYTES) {
 		send_q = new hot_txn_entry_t[send_q_capacity];
 	}
 
@@ -42,11 +44,11 @@ struct hot_send_q_t {
 
     void* alloc_slot(uint32_t mb_num) {
 		//	TODO almost certain this can be relaxed mem order
-        void* buf = buf_pool.allocate(HOT_TXN_BYTES);
+        void* buf = buf_pool.allocate(HOT_TXN_PKT_BYTES);
 		hot_txn_entry_t& entry = send_q[__atomic_fetch_add(&send_q_tail, 1, __ATOMIC_SEQ_CST)];
 		entry.mini_batch_num = mb_num;
         entry.iov.iov_base = buf;
-        entry.iov.iov_len = HOT_TXN_BYTES;
+        entry.iov.iov_len = HOT_TXN_PKT_BYTES;
 		return buf;
 	}
 

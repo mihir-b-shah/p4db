@@ -348,7 +348,7 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in
                 leftover_txns.push(e);
             }
         } else {
-            p4_switch.make_txn(txn, pkt_buf);
+            p4_switch.make_txn(txn, (void*) ((char*) pkt_buf+sizeof(msg::SwitchTxn)));
         }
     } else {
         leftover_txns.push(e);
