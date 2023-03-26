@@ -19,76 +19,76 @@ header uid_t {
 header reg_instr_map_t {
 	bit<16> offset;
 
-	bit<16> i0;
+	bit<8> i0;
 	bit<32> d0;
 
-	bit<16> i1;
+	bit<8> i1;
 	bit<32> d1;
 
-	bit<16> i2;
+	bit<8> i2;
 	bit<32> d2;
 
-	bit<16> i3;
+	bit<8> i3;
 	bit<32> d3;
 
-	bit<16> i4;
+	bit<8> i4;
 	bit<32> d4;
 
-	bit<16> i5;
+	bit<8> i5;
 	bit<32> d5;
 
-	bit<16> i6;
+	bit<8> i6;
 	bit<32> d6;
 
-	bit<16> i7;
+	bit<8> i7;
 	bit<32> d7;
 
-	bit<16> i8;
+	bit<8> i8;
 	bit<32> d8;
 
-	bit<16> i9;
+	bit<8> i9;
 	bit<32> d9;
 
-	bit<16> i10;
+	bit<8> i10;
 	bit<32> d10;
 
-	bit<16> i11;
+	bit<8> i11;
 	bit<32> d11;
 
-	bit<16> i12;
+	bit<8> i12;
 	bit<32> d12;
 
-	bit<16> i13;
+	bit<8> i13;
 	bit<32> d13;
 
-	bit<16> i14;
+	bit<8> i14;
 	bit<32> d14;
 
-	bit<16> i15;
+	bit<8> i15;
 	bit<32> d15;
 
-	bit<16> i16;
+	bit<8> i16;
 	bit<32> d16;
 
-	bit<16> i17;
+	bit<8> i17;
 	bit<32> d17;
 
-	bit<16> i18;
+	bit<8> i18;
 	bit<32> d18;
 
-	bit<16> i19;
+	bit<8> i19;
 	bit<32> d19;
 
-	bit<16> i20;
+	bit<8> i20;
 	bit<32> d20;
 
-	bit<16> i21;
+	bit<8> i21;
 	bit<32> d21;
 
-	bit<16> i22;
+	bit<8> i22;
 	bit<32> d22;
 
-	bit<16> i23;
+	bit<8> i23;
 	bit<32> d23;
 
 	bit<8> i24;
@@ -1106,7 +1106,7 @@ control SwitchIngress(
 
 	apply {
         ig_intr_md_for_tm.bypass_egress = 1;
-		bit<9> offset = (bit<9>) hdr.instrs.offset;
+		bit<9> offset = (bit<9>) (hdr.instrs.offset >> 7);
 
 		hdr.instrs.d0 = reg_0_access.execute(offset ++ hdr.instrs.i0[6:0]);
 		hdr.instrs.d1 = reg_1_access.execute(offset ++ hdr.instrs.i1[6:0]);
