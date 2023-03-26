@@ -55,7 +55,7 @@ RC TxnExecutor::my_execute(Txn& arg, void** packet_fill) {
 		++i;
 	}
 
-	*packet_fill = db.hot_send_q.alloc_slot(mini_batch_num);
+	*packet_fill = db.hot_send_q.alloc_slot(mini_batch_num, &arg);
 	// locks automatically released
 	return commit();
 }
@@ -120,8 +120,7 @@ RC TxnExecutor::execute(Txn& arg) {
             latency here? (as well as contention on-switch, but I think 2-pass txns will
             do that trick for me. */
 		SwitchFuture<SwitchInfo>* multi_f = atomic(p4_switch, arg);
-		const size_t n_results = multi_f->get().n_results;
-		do_not_optimize(n_results);
+		multi_f->get();
 
 		WorkerContext::get().cycl.stop(stats::Cycles::switch_txn_latency);
 		WorkerContext::get().cycl.save(stats::Cycles::switch_txn_latency);
@@ -293,6 +292,7 @@ SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& 
 	txn->sender = comm->node_id;
 	p4_switch.make_txn(arg, txn->data);
 
+    assert(ORIG_MODE && !USE_1PASS_PKTS);
 	auto size = msg::SwitchTxn::size(HOT_TXN_BYTES);
 	pkt->resize(size);
 
@@ -348,7 +348,9 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in
                 leftover_txns.push(e);
             }
         } else {
-            p4_switch.make_txn(txn, (void*) ((char*) pkt_buf+sizeof(msg::SwitchTxn)));
+            // fprintf(stderr, "Called make_txn from executor.\n");
+            char* pass_p = (char*) pkt_buf + (USE_1PASS_PKTS ? 0 : sizeof(msg::SwitchTxn));
+            p4_switch.make_txn(txn, (void*) pass_p);
         }
     } else {
         leftover_txns.push(e);

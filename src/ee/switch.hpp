@@ -9,24 +9,18 @@
 #include <iostream>
 #include <stdexcept>
 
+struct StructTable;
+
 struct SwitchInfo {
     size_t node_id;
     DeclusteredLayout* declustered_layout;
-
-    struct read_info_t {
-        db_key_t k;
-        uint32_t reg_val;
-    };
-
-    struct SwResult {
-        size_t n_results;
-        std::array<read_info_t, N_OPS> results;
-    };
+    // not initialized via constructor.
+    StructTable* table;
 
 	SwitchInfo(size_t node_id) : node_id(node_id) {
 		declustered_layout = Config::instance().decl_layout;
 	}
     
     void make_txn(const Txn& txn, void* pkt);
-    SwResult parse_txn(void* out_pkt, void* in_pkt);
+    void process_reply_txn(const Txn* txn, void* in_pkt, bool write);
 };

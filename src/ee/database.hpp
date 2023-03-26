@@ -16,13 +16,14 @@
 
 #include <sys/uio.h>
 
-static constexpr size_t HOT_TXN_BYTES = 102;
-static constexpr size_t HOT_TXN_PKT_BYTES = sizeof(msg::SwitchTxn) + HOT_TXN_BYTES;
+static constexpr size_t HOT_TXN_BYTES = USE_1PASS_PKTS ? 398 : 102;
+static constexpr size_t HOT_TXN_PKT_BYTES = HOT_TXN_BYTES + (USE_1PASS_PKTS ? 0 : sizeof(msg::SwitchTxn));
 
 void setup_switch_sock();
 
 struct hot_send_q_t {
 	struct hot_txn_entry_t {
+        Txn* txn;
 		uint32_t mini_batch_num;
         // just a pointer + length.
         struct iovec iov;
@@ -42,10 +43,11 @@ struct hot_send_q_t {
 		delete[] send_q;
 	}
 
-    void* alloc_slot(uint32_t mb_num) {
+    void* alloc_slot(uint32_t mb_num, Txn* txn) {
 		//	TODO almost certain this can be relaxed mem order
         void* buf = buf_pool.allocate(HOT_TXN_PKT_BYTES);
 		hot_txn_entry_t& entry = send_q[__atomic_fetch_add(&send_q_tail, 1, __ATOMIC_SEQ_CST)];
+        entry.txn = txn;
 		entry.mini_batch_num = mb_num;
         entry.iov.iov_base = buf;
         entry.iov.iov_len = HOT_TXN_PKT_BYTES;

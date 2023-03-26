@@ -42,9 +42,6 @@ void load_txns(Config& config) {
 				op.mode = AccessMode::READ;
 			}
 			op.value = rand() % 100000;
-			/*	We decide the mode based on rw percentage, from the config.
-				The value is just a txn number, so we can do easy serializability
-				checking */
 			txn.cold_ops[i] = op;
         }
     }

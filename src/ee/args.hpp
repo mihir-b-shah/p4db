@@ -26,8 +26,8 @@ struct Txn {
 	size_t n_aborts;
 	std::optional<size_t> hottest_cold_i1;
 	std::optional<size_t> hottest_cold_i2;
-	std::bitset<DeclusteredLayout::NUM_SW_LOCKS> locks_check;
-	std::bitset<DeclusteredLayout::NUM_SW_LOCKS> locks_acquire;
+	std::bitset<N_SW_LOCKS> locks_check;
+	std::bitset<N_SW_LOCKS> locks_acquire;
 	TxnId id;
     size_t loader_id;
 

@@ -35,24 +35,15 @@ struct TupleLocation {
 };
 
 struct DeclusteredLayout {
-	static constexpr uint8_t NO_LOCK = std::numeric_limits<uint8_t>::max();
-	static constexpr uint8_t NUM_SW_LOCKS = 32;
-
-	static constexpr size_t NUM_REGS = 36;
-	static constexpr size_t NUM_MAX_OPS = 8;
-
-	// same constants from 01_control_plane, watch out
     // we should only request from one arena, we are getting from arena-512.
     // for now let's assume we use all key slots in the block.
-	static constexpr size_t N_ACCEL_KEYS = 512;
+    static constexpr uint8_t NO_LOCK = std::numeric_limits<uint8_t>::max();
 
 	DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>&& id_freq);
     std::pair<bool, TupleLocation> get_location(db_key_t k);
-    db_key_t rev_loc_lookup(uint8_t reg_id, uint16_t reg_idx);
 
 	size_t block_num;
 	// TODO: std::unordered_map is p slow, profile and see.
 	std::unordered_map<db_key_t, TupleLocation> virt_map;
-    std::unordered_map<size_t, db_key_t> rev_by_reg[NUM_REGS];
 	std::vector<std::pair<db_key_t, size_t>> id_freq;
 };

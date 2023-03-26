@@ -70,6 +70,7 @@ struct TxnExecutor {
     TxnExecutor(Database& db)
         : p4_switch(db.comm->node_id), db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1) {
         db.get_casted(KV::TABLE_NAME, kvs);
+        p4_switch.table = kvs;
 	}
 
     void run_leftover_txns();

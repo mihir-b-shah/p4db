@@ -88,11 +88,10 @@ struct SwitchFuture final : public AbstractFuture {
     SwitchFuture(P4Switch& p4_switch, const Txn& arg, void* orig_pkt)
         : AbstractFuture{}, p4_switch(p4_switch), arg(arg), orig_pkt(orig_pkt) {}
 
-    const auto get() { // can be only called once
+    void get() { // can be only called once
         auto pkt = get_pkt();
 		auto txn = pkt->as<msg::SwitchTxn>();
-		auto ret = p4_switch.parse_txn(orig_pkt, txn->data);
+        p4_switch.process_reply_txn(&arg, txn->data, false);
         pkt->free();
-        return ret;
     }
 };

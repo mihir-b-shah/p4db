@@ -1,6 +1,7 @@
 
 #include <comm/comm.hpp>
 #include <ee/args.hpp>
+#include <ee/defs.hpp>
 #include <ee/database.hpp>
 #include <ee/executor.hpp>
 #include <layout/declustered_layout.hpp>
@@ -11,6 +12,9 @@
 
 #include <errno.h>
 
+/*  TODO Why does the switch process get different # of txns? Can't be drops, since
+    otherwise this would stall. I speculate it is b/c we choose not to accelerate txns
+    that don't fit in our batches- which is based on non-deterministic multithreading effects. */
 static void fill_op(std::pair<Txn::OP, TupleLocation>& op, bool is_init, db_key_t k, TxnExecutor& exec, DeclusteredLayout* layout) {
     op.first.id = k;
     op.first.mode = is_init ? AccessMode::WRITE : AccessMode::READ;
@@ -24,7 +28,7 @@ static std::array<std::pair<Txn::OP, TupleLocation>, N_OPS>& init_and_get_arr(Tx
     return txn.hot_ops_pass1;
 }
 
-static constexpr size_t MAX_STACKPOOL_SIZE = 2 * HOT_TXN_PKT_BYTES * ((DeclusteredLayout::N_ACCEL_KEYS+N_OPS-1)/N_OPS);
+static constexpr size_t MAX_STACKPOOL_SIZE = 2 * HOT_TXN_PKT_BYTES * ((N_ACCEL_KEYS+N_OPS-1)/N_OPS);
 typedef StackPool<MAX_STACKPOOL_SIZE> se_stackpool_t;
 static se_stackpool_t pool;
 
@@ -33,14 +37,14 @@ static se_stackpool_t pool;
     2) This is an extra pass, could we just generate the packet directly? */
 static void gen_start_end_packets(std::vector<void*>& start_fill, std::vector<void*>& end_fill, TxnExecutor& exec, DeclusteredLayout* layout) {
     size_t kp = 0;
-    while (kp < DeclusteredLayout::N_ACCEL_KEYS) {
+    while (kp < N_ACCEL_KEYS) {
         size_t ops_added = 0;
 
         Txn txn_start, txn_end;
         auto& arr_start = init_and_get_arr(txn_start);
         auto& arr_end = init_and_get_arr(txn_end);
 
-        while (kp < DeclusteredLayout::N_ACCEL_KEYS && ops_added < N_OPS) {
+        while (kp < N_ACCEL_KEYS && ops_added < N_OPS) {
             db_key_t k = layout->id_freq[kp].first;
             if (exec.kvs->part_info.location(k).is_local) {
                 fill_op(arr_start[ops_added], true, k, exec, layout);
@@ -56,10 +60,12 @@ static void gen_start_end_packets(std::vector<void*>& start_fill, std::vector<vo
             arr_end[ops_added].first.mode = AccessMode::INVALID;
         }
 
+        // fprintf(stderr, "Called make_txn from switch_intf START.\n");
         void* pkt_start = pool.allocate(HOT_TXN_PKT_BYTES);
         exec.p4_switch.make_txn(txn_start, (void*) ((char*) pkt_start + sizeof(msg::SwitchTxn)));
         start_fill.push_back(pkt_start);
 
+        // fprintf(stderr, "Called make_txn from switch_intf END.\n");
         void* pkt_end = pool.allocate(HOT_TXN_PKT_BYTES);
         exec.p4_switch.make_txn(txn_end, (void*) ((char*) pkt_end + sizeof(msg::SwitchTxn)));
         end_fill.push_back(pkt_end);
@@ -107,8 +113,10 @@ static void setup_single_mmsghdr(struct mmsghdr* hdr, struct iovec* ivec) {
 void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     std::vector<void*> start_fill;
     std::vector<void*> end_fill;
+    /*
     gen_start_end_packets(start_fill, end_fill, exec, layout);
 
+    TODO this is super buggy! We easily end up writing multiple registers' stuff here.
     for (void* buf : start_fill) {
         assert(sendto(switch_sockfd, (char*) buf, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, sizeof(server_addr)) == HOT_TXN_PKT_BYTES);
     }
@@ -119,10 +127,12 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         assert(recvfrom(switch_sockfd, (char*) buf, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_PKT_BYTES);
     }
     // printf("Sent %lu packets.\n", start_fill.size());
+    */
 
     exec.db.msg_handler->barrier.wait_nodes();
 
-    constexpr size_t MAX_IN_FLIGHT = 100;
+    //  TODO MAX=100 is causing packet drops??
+    constexpr size_t MAX_IN_FLIGHT = 50;
 
     size_t q_size = exec.db.hot_send_q.send_q_tail;
     hot_send_q_t::hot_txn_entry_t* q = exec.db.hot_send_q.send_q;
@@ -138,19 +148,20 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
             q_p += 1;
         }
 
-        // fprintf(stderr, "Sending [%lu,%lu)\n", window_start, q_p);
         ssize_t sent = sendmmsg(switch_sockfd, &mmsghdrs[0], q_p-window_start, 0);
         assert(sent == q_p-window_start);
         ssize_t received = recvmmsg(switch_sockfd, &mmsghdrs[0], q_p-window_start, 0, NULL);
         assert(received == q_p-window_start);
         
         if (q[window_start].mini_batch_num + 1 == q[q_p].mini_batch_num || q_p == q_size) {
-            /*  fprintf(stderr, "mb %u: [%lu,%lu)\n", q[window_start].mini_batch_num, start_mb_i, q_p);
-                start_mb_i = q_p; */
+            fprintf(stderr, "mb %u: [%lu,%lu)\n", q[window_start].mini_batch_num, start_mb_i, q_p);
+            start_mb_i = q_p;
             exec.db.msg_handler->barrier.wait_nodes();
         }
     }
 
+    /*
+    TODO same, this is buggy.
     for (void* buf : end_fill) {
         assert(sendto(switch_sockfd, (char*) buf, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, sizeof(server_addr)) == HOT_TXN_PKT_BYTES);
     }
@@ -161,12 +172,13 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
 
         void* out_buf = (void*) ((char*) buf + sizeof(msg::SwitchTxn));
         void* in_buf = (void*) ((char*) new_pkt + sizeof(msg::SwitchTxn));
-        SwitchInfo::SwResult res = exec.p4_switch.parse_txn(out_buf, in_buf);
+        SwitchInfo::SwResult res = exec.p4_switch.parse_txn(out_buf, in_buf, true);
         for (size_t i = 0; i<res.n_results; ++i) {
             SwitchInfo::read_info_t result = res.results[i];
             exec.kvs->lockless_access(result.k).value = result.reg_val;
         }
     }
+    */
     pool.clear();
     exec.db.msg_handler->barrier.wait_nodes();
 }

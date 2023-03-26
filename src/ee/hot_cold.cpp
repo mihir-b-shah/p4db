@@ -17,19 +17,21 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 	size_t cold1_v = 0, cold2_v = 0;
 	size_t hot_p1 = 0, hot_p2 = 0, cold_p = 0;
 	
-	std::bitset<DeclusteredLayout::NUM_REGS> reg_usage;
-	std::bitset<DeclusteredLayout::NUM_REGS> reg_usage_2;
+	std::bitset<N_REGS> reg_usage;
+	std::bitset<N_REGS> reg_usage_2;
 	/*	useful since we want to make sure the least hot conflicts are on the second pass, 
 		so re-order them on the fly */
-	size_t hot_reorder_buf[DeclusteredLayout::NUM_REGS];
+	size_t hot_reorder_buf[N_REGS];
 	size_t n_pass2_ops = 0;
 	txn.do_accel = true;
+    // fprintf(stderr, "Txn %lu |", txn.loader_id);
 
 	size_t i = 0;
 	while (i < N_OPS && txn.cold_ops[i].mode != AccessMode::INVALID) {
 		txn.cold_ops[i].loc_info = table->part_info.location(txn.cold_ops[i].id);
 		std::pair<bool, TupleLocation> hot_info = layout->get_location(txn.cold_ops[i].id);
 		if (hot_info.first) {
+            // fprintf(stderr, "reg_id: %lu |", (size_t) hot_info.second.reg_array_id);
 			if (!reg_usage.test(hot_info.second.reg_array_id)) {
 				reg_usage.set(hot_info.second.reg_array_id);
 				if (MAX_PASSES_ACCEL > 1) {
@@ -111,6 +113,7 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 		}
 		assert(ORIG_MODE || (cold_p + hot_p1 + hot_p2 == N_OPS));
 	}
+    // fprintf(stderr, " accel: %d\n", txn.do_accel);
 	txn.init_done = true;
     assert(txn.init_done == true);
 }

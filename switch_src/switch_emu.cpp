@@ -12,7 +12,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-static constexpr size_t BUF_SIZE = 200;
+static constexpr size_t BUF_SIZE = 1500;
 
 static FILE* packet_log_f = NULL;
 static size_t n_received = 0;
@@ -20,7 +20,7 @@ static size_t n_received = 0;
 static void sig_int_handler(int sig) {
     assert(sig == SIGINT);
     assert(packet_log_f != NULL);
-    fprintf(stderr, "Received %lu packets, closing.\n", n_received);
+    fprintf(stderr, "Received %lu packets, closing.\n", __atomic_load_n(&n_received, __ATOMIC_SEQ_CST));
     fclose(packet_log_f);
     fprintf(stderr, "Close finished.\n");
     exit(0);
@@ -52,7 +52,7 @@ int main() {
 
     while (1) {
         int nr = recvfrom(sockfd, buf, BUF_SIZE, 0, (struct sockaddr*) &client_addr, &client_len);
-        n_received += 1;
+        __atomic_add_fetch(&n_received, 1, __ATOMIC_SEQ_CST);
         if (prev_msg_size == -1) {
             printf("msg_size: %d\n", nr);
         }
