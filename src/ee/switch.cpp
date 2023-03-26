@@ -16,12 +16,14 @@ static constexpr uint8_t STOP = 0x80;
 // just a randomly generated 128-bit integer.
 static constexpr uint8_t UID_HDR[] = {0xBE, 0x87, 0xEF, 0x7E, 0x61, 0x3C, 0x4B, 0x33, 0x82, 0xEB, 0x90, 0x66, 0x3A, 0x40, 0x3D, 0xAE};
 
+static constexpr size_t N_OFFSET_BITS = 7;
+static_assert((1 << N_OFFSET_BITS) >= SLOTS_PER_SCHED_BLOCK);
+
 static constexpr size_t N_INSTRS_PADDED = 20;
-static constexpr size_t BASE_OFFSET_MASK = ~(SLOTS_PER_SCHED_BLOCK-1);
 
 struct __attribute__((packed)) pass1_normal_instr_t {
-    uint8_t is_write : 1;
-    uint8_t idx : 7;
+    static constexpr size_t PERM_BIT_POS = 7;
+    uint8_t idx_perm_mask;
     uint32_t data__be;
 };
 
@@ -77,15 +79,16 @@ void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
         /*  TODO If we allow different block idx's, we need to check indices before indexing
             into p4 register (since the supplied index might be wrong), and thus untrusting
             DB tenants might read each other's stuff. */
-        size_t base_offset = declustered_layout->block_num * SLOTS_PER_SCHED_BLOCK;
-        assert(base_offset < UINT16_MAX && ((base_offset & BASE_OFFSET_MASK) == base_offset));
+        size_t offset = declustered_layout->block_num * SLOTS_PER_SCHED_BLOCK;
+        size_t base_offset = offset & ~((1 << N_OFFSET_BITS) - 1);
+        assert(base_offset < UINT16_MAX);
         pkt->base_offset = htons(base_offset);
 
         for (size_t i = 0; i<N_INSTRS_PADDED; ++i) {
-            pkt->padded_instrs[i].reg_instr.is_write = 0;
+            pkt->padded_instrs[i].reg_instr.idx_perm_mask = 0;
         }
         for (size_t i = N_INSTRS_PADDED; i<N_REGS; ++i) {
-            pkt->normal_instrs[i].is_write = 0;
+            pkt->normal_instrs[i].idx_perm_mask = 0;
         }
 
         for (size_t p = 0; p<N_OPS && txn.hot_ops_pass1[p].first.mode != AccessMode::INVALID; ++p) {
@@ -96,14 +99,14 @@ void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
             } else {
                 instr = &pkt->normal_instrs[pr.second.reg_array_id];
             }
-            instr->is_write = pr.first.mode == AccessMode::WRITE ? 1 : 0;
             
             /*  TODO kind of pointless, since we are getting back the physical offset this way, after
                 we computed the virtual offset. */
             size_t idx = pr.second.reg_array_idx - base_offset; 
-            assert((idx & ~BASE_OFFSET_MASK) == idx);
-            
-            instr->idx = idx;
+            assert((idx & ((1 << N_OFFSET_BITS) - 1)) == idx);
+            size_t is_write_bits = pr.first.mode == AccessMode::WRITE ? 
+                (1 << pass1_normal_instr_t::PERM_BIT_POS) : 0;
+            instr->idx_perm_mask = is_write_bits | idx;
             instr->data__be = htonl(pr.first.value);
         }
     } else {
