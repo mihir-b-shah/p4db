@@ -1,6 +1,7 @@
 #pragma once
 
 #include "comm/comm.hpp"
+#include "comm/msg.hpp"
 #include "comm/msg_handler.hpp"
 #include "ee/table.hpp"
 #include "utils/rbarrier.hpp"
@@ -13,18 +14,28 @@
 #include <mutex>
 #include <cstdio>
 
+#include <sys/uio.h>
+
+static constexpr size_t HOT_TXN_BYTES = USE_1PASS_PKTS ? 398 : 102;
+static constexpr size_t HOT_TXN_PKT_BYTES = HOT_TXN_BYTES + (USE_1PASS_PKTS ? 0 : sizeof(msg::SwitchTxn));
+
+void setup_switch_sock();
+
 struct hot_send_q_t {
 	struct hot_txn_entry_t {
+        Txn* txn;
 		uint32_t mini_batch_num;
-		Communicator::Pkt_t* buf;
+        // just a pointer + length.
+        struct iovec iov;
 	};
 
 	//	TODO false sharing on this cache line?
 	uint32_t send_q_tail;
 	const size_t send_q_capacity;
 	hot_txn_entry_t* send_q;
+    LockedStackPool buf_pool;
 
-	hot_send_q_t(size_t cap) : send_q_tail(0), send_q_capacity(cap) {
+	hot_send_q_t(size_t cap) : send_q_tail(0), send_q_capacity(cap), buf_pool(cap*HOT_TXN_PKT_BYTES) {
 		send_q = new hot_txn_entry_t[send_q_capacity];
 	}
 
@@ -32,15 +43,20 @@ struct hot_send_q_t {
 		delete[] send_q;
 	}
 
-	Communicator::Pkt_t** alloc_slot(uint32_t mb_num) {
+    void* alloc_slot(uint32_t mb_num, Txn* txn) {
 		//	TODO almost certain this can be relaxed mem order
-		uint32_t slot_loc = __atomic_fetch_add(&send_q_tail, 1, __ATOMIC_SEQ_CST);
-		send_q[slot_loc].mini_batch_num = mb_num;
-		return &send_q[slot_loc].buf;
+        void* buf = buf_pool.allocate(HOT_TXN_PKT_BYTES);
+		hot_txn_entry_t& entry = send_q[__atomic_fetch_add(&send_q_tail, 1, __ATOMIC_SEQ_CST)];
+        entry.txn = txn;
+		entry.mini_batch_num = mb_num;
+        entry.iov.iov_base = buf;
+        entry.iov.iov_len = HOT_TXN_PKT_BYTES;
+		return buf;
 	}
 
 	void done_sending() {
 		// TODO	does this need to be sequentially consistent? or atomic at all?
+        buf_pool.clear();
 		__atomic_store_n(&send_q_tail, 0, __ATOMIC_SEQ_CST);
 	}
 };
@@ -62,7 +78,7 @@ public:
     uint32_t n_hot_batch_completed;
 
     void setup_sched_sock();
-    void update_alloc();
+    void update_alloc(uint32_t batch_num);
     void wait_sched_ready();
 
 public:
@@ -72,6 +88,10 @@ public:
         msg_handler->init.wait();
 		per_core_txns = (std::vector<Txn>**) malloc(sizeof(per_core_txns[0])*n_threads);
         setup_sched_sock();
+
+        if (!ORIG_MODE) {
+            setup_switch_sock();
+        }
     }
 
     Database(Database&&) = default;

@@ -96,7 +96,7 @@ int main() {
     while (1) {
         int nfds = epoll_wait(epfd, &event, 1, -1);
         assert(nfds == 1);
-        fprintf(stderr, "Received something!\n");
+        fprintf(stderr, "Received something! event.events: %d\n", event.events);
         int ready_fd = event.data.fd;
 
         if (event.events & (EPOLLHUP | EPOLLERR)) {
@@ -121,12 +121,14 @@ int main() {
         info.sock_fds.insert(ready_fd);
         info.expected_n_fds = req->tenant_num_nodes;
 
+        printf("Req->batch_num: %u\n", req->batch_num);
         if (tenant_info[req->tenant_id].cached.batch_num != req->batch_num) {
             if (req->blk_to_free != NO_BLOCK) {
                 // free req->block_to_free
                 handle_free(req->tenant_id, req->blk_to_free);
             }
             uint32_t alloced_blk = handle_alloc(req->tenant_id, req->start_delay_ns, req->duration_ns);
+            printf("Alloced blk %u to tenant %u.\n", alloced_blk, req->tenant_id);
             auto& v = tenant_info[req->tenant_id].cached;
             v.batch_num = req->batch_num;
             v.alloced_blk_id = alloced_blk;
@@ -137,11 +139,15 @@ int main() {
         tenant_info[req->tenant_id].n_cached_uses += 1;
         assert(send(ready_fd, buf, sizeof(alloc_resp_t), 0) == sizeof(alloc_resp_t));
 
+
+        printf("Line %d, Expected_fds: %lu, sock_fds.size(): %lu\n", __LINE__, tenant_info[req->tenant_id].expected_n_fds, tenant_info[req->tenant_id].sock_fds.size());
         if (tenant_info[req->tenant_id].expected_n_fds == tenant_info[req->tenant_id].sock_fds.size()) {
             std::unordered_set<tenant_id_t>& ready_tenants = get_ready();
+            printf("ready_tenants_size: %lu\n", ready_tenants.size());
             for (auto it = ready_tenants.begin(); it != ready_tenants.end();) {
                 tenant_id_t tenant = *it;
                 auto& info = tenant_info[tenant];
+                printf("Line %d, sock_fds.size(): %lu, expected_fds: %lu, n_cached_uses: %lu\n", __LINE__, info.sock_fds.size(), info.expected_n_fds, info.n_cached_uses);
                 if (info.sock_fds.size() == info.expected_n_fds 
                     && info.n_cached_uses == info.expected_n_fds) {
                     printf("Notifying tenant %lu\n", tenant);

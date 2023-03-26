@@ -1,4 +1,5 @@
 export LD_LIBRARY_PATH='/lusr/opt/gcc-11.1.0/lib64/:/u/mihirs/.local/usr/local/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH'
+LD_PRELOAD='/lusr/opt/gcc-11.1.0/lib64/libasan.so /lusr/opt/gcc-11.1.0/lib64/libubsan.so'
 set -e
 ninja -C build/
 export ASAN_OPTIONS='detect_leaks=0'

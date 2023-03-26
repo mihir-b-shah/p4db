@@ -15,15 +15,15 @@ DeclusteredLayout::DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>&& 
 	});
 
 	// this is a consistent function, so no coord necessary across nodes.
-    size_t idx_to_alloc[NUM_REGS] = {};
-	size_t weight[NUM_REGS] = {};
-	size_t lock_weight[NUM_SW_LOCKS] = {};
+    size_t idx_to_alloc[N_REGS] = {};
+	size_t weight[N_REGS] = {};
+	size_t lock_weight[N_SW_LOCKS] = {};
 
     for (const auto& pr : id_freq) {
         db_key_t k = pr.first;
 
         size_t r_low = 0;
-		for (size_t r = 0; r<NUM_REGS; ++r) {
+		for (size_t r = 0; r<N_REGS; ++r) {
 			if (weight[r_low] > weight[r]) {
 				r_low = r;
 			}
@@ -35,7 +35,7 @@ DeclusteredLayout::DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>&& 
 			static_cast<uint16_t>(idx_to_alloc[r_low]++), pr.second, NO_LOCK};
 		if (loc.reg_array_idx != 0) {
 			size_t lk_low = 0;
-			for (size_t lk = 0; lk<NUM_SW_LOCKS; ++lk) {
+			for (size_t lk = 0; lk<N_SW_LOCKS; ++lk) {
 				if (lock_weight[lk_low] > lock_weight[lk]) {
 					lk_low = lk;
 				}
@@ -52,8 +52,9 @@ DeclusteredLayout::DeclusteredLayout(std::vector<std::pair<db_key_t, size_t>>&& 
 std::pair<bool, TupleLocation> DeclusteredLayout::get_location(db_key_t k) {
 	std::pair<bool, TupleLocation> info;
 	TupleLocation& tl = virt_map[k];
-	info.first = tl.reg_array_idx < N_ACCEL_KEYS;
+    // correct since we only get a single block.
+	info.first = tl.reg_array_idx < SLOTS_PER_SCHED_BLOCK;
     info.second = tl;
-    info.second.reg_array_idx = (N_ACCEL_KEYS * this->block_num) + tl.reg_array_idx;
+    info.second.reg_array_idx = (SLOTS_PER_SCHED_BLOCK * this->block_num) + tl.reg_array_idx;
 	return info;
 }

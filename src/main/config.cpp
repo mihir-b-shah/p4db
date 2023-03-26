@@ -122,7 +122,7 @@ void Config::parse_cli(int argc, char** argv) {
     }
     // if (use_switch) {
     switch_id = servers.size();
-    servers.emplace_back(Server{"", 0, {0x1B, 0xAD, 0xC0, 0xDE, 0xBA, 0xBE}}); // switch
+    servers.emplace_back(Server{"127.0.0.1", 4001+num_nodes+1, {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}); // switch
     // }
 
     num_txns = result.as<uint64_t>("num_txns");

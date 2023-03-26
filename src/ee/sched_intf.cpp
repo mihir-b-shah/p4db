@@ -46,7 +46,7 @@ void Database::setup_sched_sock() {
 	this->sched_sockfd = server_sockfd;
 }
 
-void Database::update_alloc() {
+void Database::update_alloc(uint32_t batch_num) {
     static Config& conf = Config::instance();
 
     struct alloc_req_t req;
@@ -57,21 +57,21 @@ void Database::update_alloc() {
     // scheduler expects 1-indexed.
     req.tenant_id = 1+conf.tenant_id;
     req.tenant_num_nodes = conf.num_nodes;
-    req.batch_num = 1+this->n_hot_batch_completed;
+    req.batch_num = 1+batch_num;
 
-    fprintf(stderr, "Line %d\n", __LINE__);
+    // fprintf(stderr, "Line %d, req.batch_num: %u\n", __LINE__, req.batch_num);
 	assert(send(sched_sockfd, (char*) &req, sizeof(struct alloc_req_t), 0) == sizeof(struct alloc_req_t));
-    fprintf(stderr, "Line %d\n", __LINE__);
+    // fprintf(stderr, "Line %d\n", __LINE__);
 
     struct alloc_resp_t fill;
     assert(recv(sched_sockfd, (char*) &fill, sizeof(struct alloc_resp_t), 0) 
         == sizeof(struct alloc_resp_t));
-    fprintf(stderr, "Line %d\n", __LINE__);
+    // fprintf(stderr, "Line %d\n", __LINE__);
     assert(fill.batch_num == req.batch_num); 
 
     // no one is reading the layout while we do this.
     conf.decl_layout->block_num = fill.alloced_blk_id;
-    fprintf(stderr, "Line %d\n", __LINE__);
+    // fprintf(stderr, "Line %d\n", __LINE__);
 }
 
 void Database::wait_sched_ready() {

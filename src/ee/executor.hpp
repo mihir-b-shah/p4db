@@ -3,7 +3,6 @@
 #include "comm/comm.hpp"
 #include "comm/msg.hpp"
 #include "comm/msg_handler.hpp"
-#include "utils/buffers.hpp"
 #include "ee/args.hpp"
 #include "ee/database.hpp"
 #include "ee/defs.hpp"
@@ -21,6 +20,7 @@
 
 #include <iostream>
 #include <vector>
+#include <queue>
 #include <cassert>
 #include <pthread.h>
 
@@ -50,7 +50,6 @@ struct scheduler_t {
 	scheduler_t(TxnExecutor* exec);
 	~scheduler_t(){ delete[] mb_queues; }
 	void sched_batch(std::vector<Txn>& txns, size_t s, size_t e);
-	Txn& entry_to_txn(in_sched_entry_t entry);
 	void print_schedules(size_t node);
 };
 
@@ -63,7 +62,7 @@ struct TxnExecutor {
     uint32_t tid;
 	uint32_t mini_batch_num;
 
-	std::vector<Txn> non_accel_txns;
+	std::queue<in_sched_entry_t> leftover_txns;
 
     TimestampFactory ts_factory;
     timestamp_t ts;
@@ -71,17 +70,25 @@ struct TxnExecutor {
     TxnExecutor(Database& db)
         : p4_switch(db.comm->node_id), db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1) {
         db.get_casted(KV::TABLE_NAME, kvs);
+        p4_switch.table = kvs;
 	}
 
+    void run_leftover_txns();
     void run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in_sched_entry_t>& q);
-	RC my_execute(Txn& arg, Communicator::Pkt_t** packet_fill);
+	RC my_execute(Txn& arg, void** packet_fill);
     RC execute(Txn& arg);
     RC commit();
     RC rollback();
+    SwitchFuture<SwitchInfo>* atomic(SwitchInfo& p4_switch, const Txn& arg);
     TupleFuture<KV>* read(StructTable* table, const Txn::OP& op, TxnId id);
     TupleFuture<KV>* write(StructTable* table, const Txn::OP& op, TxnId id);
     TupleFuture<KV>* insert(StructTable* table);
 };
 
+Txn& entry_to_txn(TxnExecutor* exec, in_sched_entry_t entry);
+
+void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout);
 void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout);
+
 void txn_executor(Database& db, std::vector<Txn>& txns);
+void orig_txn_executor(Database& db, std::vector<Txn>& txns);

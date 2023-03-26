@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
     // get my initial allocation.
     fprintf(stderr, "Before update_alloc.\n");
-    db.update_alloc();
+    db.update_alloc(0);
     fprintf(stderr, "After update_alloc.\n");
 
     std::vector<std::thread> workers;
@@ -73,7 +73,12 @@ int main(int argc, char** argv) {
             printf("Pinning worker %u on core %u\n", i, core);
             pin_worker(core);
 			db.msg_handler->barrier.wait_workers();
-			txn_executor(db, per_core_txns[i]);
+
+            if (ORIG_MODE) {
+                orig_txn_executor(db, per_core_txns[i]);
+            } else {
+                txn_executor(db, per_core_txns[i]);
+            }
         }));
     }
 

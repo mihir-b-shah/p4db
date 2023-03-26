@@ -4,11 +4,8 @@ project('p4db', 'cpp',
     version: '1.0',
     meson_version : '>= 0.55.0',
     # default_options: ['warning_level=3', 'buildtype=release', 'b_lto=true', 'cpp_std=c++2a'],
-    # default_options: ['warning_level=3', 'buildtype=release', 'cpp_std=c++2a'],
     # default_options: ['warning_level=3', 'buildtype=debugoptimized', 'cpp_std=c++2a'],
-    default_options: ['warning_level=3', 'buildtype=debug', 'cpp_std=c++2a'],
-    # default_options: ['warning_level=3', 'buildtype=debug', 'b_sanitize=address', 'cpp_std=c++2a'],
-    # default_options: ['warning_level=3', 'buildtype=debug', 'b_sanitize=address,undefined', 'cpp_std=c++2a'],
+    default_options: ['warning_level=3', 'buildtype=debug', 'b_sanitize=address,undefined', 'cpp_std=c++2a'],
 )
 add_global_arguments('-march=native', language : ['cpp', 'c']) #vs add_global_link_arguments
 
