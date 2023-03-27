@@ -1,6 +1,5 @@
 subdir('utils')
 subdir('main')
-subdir('stats')
 subdir('comm')
 subdir('ee')
 subdir('layout')

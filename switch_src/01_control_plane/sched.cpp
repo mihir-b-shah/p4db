@@ -69,6 +69,7 @@ int main() {
 	struct sockaddr_in client_addrs[N_NODES];
 
 	int bind_rc = bind(sockfd, (sockaddr*) &server_addr, sizeof(server_addr));
+    printf("bind_rc: %d, err: %s\n", bind_rc, strerror(errno));
 	assert(bind_rc == 0);
 
 	// just a reasonable backlog quantity

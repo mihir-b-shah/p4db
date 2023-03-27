@@ -1,9 +1,6 @@
 #pragma once
 
-#include "counter.hpp"
-#include "cycles.hpp"
-#include "periodic.hpp"
-
+#include <cstdint>
 
 struct WorkerContext {
     inline static thread_local WorkerContext* context;
@@ -19,9 +16,5 @@ struct WorkerContext {
 
     static WorkerContext& get(); // requires constructed object in thread_local
 
-
     uint32_t tid;
-    stats::Counter cntr;
-    stats::Cycles cycl;
-    stats::Periodic pcntr;
 };

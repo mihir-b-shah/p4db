@@ -1,9 +1,9 @@
-#include "util.hpp"
 
-#include "stats/context.hpp"
+#include "util.hpp"
 
 #include <numeric>
 #include <main/config.hpp>
+#include <utils/context.hpp>
 
 /*  Run only on a single numa socket, cores 0-n_cores-1. No hyperthreads */
 void pin_worker(uint32_t core) {

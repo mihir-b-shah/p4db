@@ -106,13 +106,6 @@ void Config::parse_cli(int argc, char** argv) {
     }
     servers.resize(num_nodes);
 
-    if (result.count("csv_file_cycles")) {
-        if constexpr (!(ENABLED_STATS & StatsBitmask::CYCLES)) {
-            throw std::runtime_error("Please compile with ENABLED_STATS|=StatsBitmask::CYCLES");
-        }
-        csv_file_cycles = result.as<std::string>("csv_file_cycles");
-    }
-
 	trace_fname = result.as<std::string>("trace_fname");
 	dist_fname = result.as<std::string>("dist_fname");
 

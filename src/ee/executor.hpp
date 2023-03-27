@@ -15,7 +15,7 @@
 #include "ee/types.hpp"
 #include "ee/undolog.hpp"
 #include "utils/util.hpp"
-#include "stats/context.hpp"
+#include "utils/context.hpp"
 #include "main/config.hpp"
 
 #include <iostream>
@@ -31,10 +31,6 @@ enum RC {
 };
 
 typedef uint32_t txn_pos_t;
-struct __attribute__((packed)) in_sched_entry_t {
-	txn_pos_t idx : 24;
-	uint8_t thr_id : 8;
-};
 
 struct TxnExecutor;
 struct scheduler_t {
@@ -46,7 +42,7 @@ struct scheduler_t {
 	size_t n_queues;
 	size_t schedule_len;
 	//	TODO: is this efficient enough? Replace with a vector+pointer.
-	std::queue<in_sched_entry_t>* mb_queues;
+	std::queue<txn_pos_t>* mb_queues;
     // just for debugging.
     std::unordered_set<db_key_t> touched;
 
@@ -66,19 +62,24 @@ struct TxnExecutor {
     uint32_t tid;
 	uint32_t mini_batch_num;
 
-	std::queue<in_sched_entry_t> leftover_txns;
+    std::vector<Txn>* my_txns;
+	std::queue<txn_pos_t> leftover_txns;
 
     TimestampFactory ts_factory;
     timestamp_t ts;
 
+    // stats
+    size_t n_commits;
+    size_t n_aborts;
+
     TxnExecutor(Database& db)
-        : p4_switch(db.comm->node_id), db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1) {
+        : p4_switch(db.comm->node_id), db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1), my_txns(nullptr) {
         db.get_casted(KV::TABLE_NAME, kvs);
         p4_switch.table = kvs;
 	}
 
     void run_leftover_txns();
-    void run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in_sched_entry_t>& q);
+    void run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<txn_pos_t>& q);
 	RC my_execute(Txn& arg, void** packet_fill);
     RC execute(Txn& arg);
     RC commit();
@@ -89,7 +90,7 @@ struct TxnExecutor {
     TupleFuture<KV>* insert(StructTable* table);
 };
 
-Txn& entry_to_txn(TxnExecutor* exec, in_sched_entry_t entry);
+Txn& entry_to_txn(TxnExecutor* exec, txn_pos_t entry);
 
 void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout);
 void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout);

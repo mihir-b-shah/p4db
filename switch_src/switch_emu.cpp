@@ -7,6 +7,7 @@
 #include <signal.h>
 
 #include <unistd.h>
+#include <sched.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -27,6 +28,11 @@ static void sig_int_handler(int sig) {
 }
 
 int main() {
+    cpu_set_t mask;
+    CPU_ZERO(&mask);
+    CPU_SET(8, &mask);
+    assert(sched_setaffinity(getpid(), sizeof(cpu_set_t), &mask) == 0);
+
     signal(SIGINT, sig_int_handler);
 
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);

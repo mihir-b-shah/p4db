@@ -3,7 +3,6 @@
 #include "ee/future.hpp"
 #include "utils/spinlock.hpp"
 #include "ee/types.hpp"
-#include "stats/stats.hpp"
 
 #include <mutex>
 #include <tbb/queuing_mutex.h>
@@ -36,6 +35,7 @@ struct Row {
 			assert(txn_id.field.mini_batch_id >= last_acq.field.mini_batch_id);
 			if (txn_id.field.mini_batch_id == last_acq.field.mini_batch_id &&
 				(!USE_FLOW_ORDER || txn_id.field.node_id != last_acq.field.node_id)) {
+                // fprintf(stderr, "Txn on k=%lu (n=%u,mb=%u) failed b/c of (n=%u,mb=%u)\n", tuple.id, txn_id.field.node_id, txn_id.field.mini_batch_id, last_acq.field.node_id, last_acq.field.mini_batch_id);
 				return false;
 			}
 		}
@@ -46,21 +46,15 @@ struct Row {
         if (!is_compatible(mode)) { // early abort test
             switch (mode) {
                 case AccessMode::READ:
-                    WorkerContext::get().cntr.incr(stats::Counter::local_read_lock_failed);
                     return ErrorCode::READ_LOCK_FAILED;
                 case AccessMode::WRITE:
-                    WorkerContext::get().cntr.incr(stats::Counter::local_write_lock_failed);
                     return ErrorCode::WRITE_LOCK_FAILED;
                 default:
                     return ErrorCode::INVALID_ACCESS_MODE;
             }
         }
 
-        WorkerContext::get().cycl.start(stats::Cycles::latch_contention);
         const std::lock_guard<lock_t> lock(mutex);
-        WorkerContext::get().cycl.stop(stats::Cycles::latch_contention);
-        // lock_t::scoped_lock lock;
-        // lock.acquire(mutex);
 
 		// TODO last_acq is a bad name, maybe use a union in the future?
 		TxnId txn_id = future->last_acq;
@@ -68,10 +62,8 @@ struct Row {
         if (!is_compatible(mode) || !allow_lock) {
             switch (mode) {
                 case AccessMode::READ:
-                    WorkerContext::get().cntr.incr(stats::Counter::local_read_lock_failed);
                     return ErrorCode::READ_LOCK_FAILED;
                 case AccessMode::WRITE:
-                    WorkerContext::get().cntr.incr(stats::Counter::local_write_lock_failed);
                     return ErrorCode::WRITE_LOCK_FAILED;
                 default:
                     return ErrorCode::INVALID_ACCESS_MODE;
@@ -83,16 +75,11 @@ struct Row {
         future->tuple.store(&tuple);
 		future->last_acq = last_acq;
 
-        WorkerContext::get().cntr.incr(stats::Counter::local_lock_success);
         return ErrorCode::SUCCESS;
     }
 
     void remote_lock(Communicator& comm, Communicator::Pkt_t* pkt, msg::TupleGetReq* req) {
-        WorkerContext::get().cycl.start(stats::Cycles::latch_contention);
         const std::lock_guard<lock_t> lock(mutex);
-        WorkerContext::get().cycl.stop(stats::Cycles::latch_contention);
-        // lock_t::scoped_lock lock;
-        // lock.acquire(mutex);
 
 		TxnId txn_id(req->me_pack);
 		bool allow_lock = mb_allow_lock(txn_id);
@@ -100,7 +87,6 @@ struct Row {
             auto res = req->convert<msg::TupleGetRes>();
             res->mode = AccessMode::INVALID;
             comm.send(res->sender, pkt, comm.mh_tid); // always called from msg-handler
-            WorkerContext::get().cntr.incr(stats::Counter::remote_lock_failed);
             return;
         }
 
@@ -113,7 +99,6 @@ struct Row {
 		res->last_acq_pack = last_acq.get_packed();
         std::memcpy(res->tuple, &tuple, sizeof(tuple));
 
-        WorkerContext::get().cntr.incr(stats::Counter::remote_lock_success);
         comm.send(res->sender, pkt, comm.mh_tid); // always called from msg-handler
     }
 
@@ -126,9 +111,7 @@ struct Row {
     }
 
     ErrorCode local_unlock(const AccessMode mode, const timestamp_t, Communicator&, TxnId id) {
-        WorkerContext::get().cycl.start(stats::Cycles::latch_contention);
         const std::lock_guard<lock_t> lock(mutex);
-        WorkerContext::get().cycl.stop(stats::Cycles::latch_contention);
         // lock_t::scoped_lock lock;
         // lock.acquire(mutex);
 

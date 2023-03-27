@@ -26,9 +26,27 @@ RC TxnExecutor::my_execute(Txn& arg, void** packet_fill) {
 			assert(op.mode == AccessMode::INVALID);
 			break;
 		}
+
+        /*
+        int prio = -1;
+        if (arg.hottest_cold_i1.has_value()) {
+            if (op.id == arg.cold_ops[arg.hottest_cold_i1.value()].id) {
+                prio = 1;
+            }
+        }
+        if (arg.hottest_cold_i2.has_value()) {
+            if (op.id == arg.cold_ops[arg.hottest_cold_i2.value()].id) {
+                prio = 2;
+            }
+        }
+        */
+
 		if (!ops[i]) {
+            // fprintf(stderr, "R mb=%u thr=%u id=%lu k=%lu(%d)\n", mini_batch_num, WorkerContext::get().tid, arg.loader_id, op.id, prio);
 			return rollback();
-		}
+		} else {
+            // fprintf(stderr, "C mb=%u thr=%u id=%lu k=%lu(%d)\n", mini_batch_num, WorkerContext::get().tid, arg.loader_id, op.id, prio);
+        }
 		++i;
 	}
 
@@ -66,13 +84,6 @@ RC TxnExecutor::execute(Txn& arg) {
 	// std::stringstream ss;
 	// ss << "Starting txn tid=" << tid << " ts=" << ts << '\n';
 	// std::cout << ss.str();
-
-	WorkerContext::get().cycl.reset(stats::Cycles::commit_latency);
-	WorkerContext::get().cycl.reset(stats::Cycles::latch_contention);
-	WorkerContext::get().cycl.reset(stats::Cycles::remote_latency);
-	WorkerContext::get().cycl.reset(stats::Cycles::local_latency);
-	WorkerContext::get().cycl.reset(stats::Cycles::switch_txn_latency);
-	WorkerContext::get().cycl.start(stats::Cycles::commit_latency);
 
 	// acquire all locks first, ex and shared. Can rollback within loop
 	TupleFuture<KV>* ops[N_OPS];
@@ -114,16 +125,11 @@ RC TxnExecutor::execute(Txn& arg) {
 	}
 
     if (arg.do_accel) {
-		WorkerContext::get().cycl.reset(stats::Cycles::switch_txn_latency);
-		WorkerContext::get().cycl.start(stats::Cycles::switch_txn_latency);
         /*  TODO remember we are truncating 3+ pass txns, maybe emulate some additional
             latency here? (as well as contention on-switch, but I think 2-pass txns will
             do that trick for me. */
 		SwitchFuture<SwitchInfo>* multi_f = atomic(p4_switch, arg);
 		multi_f->get();
-
-		WorkerContext::get().cycl.stop(stats::Cycles::switch_txn_latency);
-		WorkerContext::get().cycl.save(stats::Cycles::switch_txn_latency);
 	}
 
 	// locks automatically released
@@ -135,15 +141,6 @@ RC TxnExecutor::commit() {
 	// TODO: now, the undolog has in the future both the value,last_acq fields to be written.
 	log.commit(ts);
 	mempool.clear();
-	WorkerContext::get().cycl.stop(stats::Cycles::commit_latency);
-
-	WorkerContext::get().cycl.save(stats::Cycles::commit_latency);
-	WorkerContext::get().cycl.save(stats::Cycles::latch_contention);
-	WorkerContext::get().cycl.save(stats::Cycles::remote_latency);
-	WorkerContext::get().cycl.save(stats::Cycles::local_latency);
-	WorkerContext::get().cycl.save(stats::Cycles::switch_txn_latency);
-
-	WorkerContext::get().pcntr.incr(stats::Periodic::commits);
 	return RC::COMMIT;
 }
 
@@ -172,7 +169,6 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op, TxnId 
 	}
 
 	if (loc_info.is_local) {
-		WorkerContext::get().cycl.start(stats::Cycles::local_latency);
 		auto future = mempool.allocate<Future_t>();
 		// XXX a hack, just to pass my id in.
 		future->last_acq = id;
@@ -186,12 +182,10 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op, TxnId 
 		if (!future->get()) [[unlikely]] {
 			return nullptr;
 		} // make optional for NO_WAIT
-		WorkerContext::get().cycl.stop(stats::Cycles::local_latency);
 		return future;
 	}
 
 	AccessMode mode = AccessMode::READ;
-	WorkerContext::get().cycl.start(stats::Cycles::remote_latency);
 	auto pkt = db.comm->make_pkt();
 	auto req = pkt->ctor<msg::TupleGetReq>(ts, table->id, op.id, mode, id);
 	req->sender = db.comm->node_id;
@@ -207,7 +201,6 @@ TupleFuture<KV>* TxnExecutor::read(StructTable* table, const Txn::OP& op, TxnId 
 	if (!future->get()) [[unlikely]] {
 		return nullptr;
 	}
-	WorkerContext::get().cycl.stop(stats::Cycles::remote_latency);
 	return future;
 }
 
@@ -228,7 +221,6 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op, TxnId
 	char* rv = (char*) &loc_info.is_local;
 	assert(*rv == 1 || *rv == 0);
 	if (loc_info.is_local) {
-		WorkerContext::get().cycl.start(stats::Cycles::local_latency);
 		auto future = mempool.allocate<Future_t>();
 		future->last_acq = id;
 		future->tuple = nullptr;
@@ -241,12 +233,10 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op, TxnId
 		if (!future->get()) [[unlikely]] {
 			return nullptr;
 		}
-		WorkerContext::get().cycl.stop(stats::Cycles::local_latency);
 		return future;
 	}
 
 	AccessMode mode = AccessMode::WRITE;
-	WorkerContext::get().cycl.start(stats::Cycles::remote_latency);
 	auto pkt = db.comm->make_pkt();
 	auto req = pkt->ctor<msg::TupleGetReq>(ts, table->id, op.id, mode, id);
 	req->sender = db.comm->node_id;
@@ -262,12 +252,10 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op, TxnId
 	if (!future->get()) [[unlikely]] {
 		return nullptr;
 	}
-	WorkerContext::get().cycl.stop(stats::Cycles::remote_latency);
 	return future;
 }
 
 TupleFuture<KV>* TxnExecutor::insert(StructTable* table) {
-	WorkerContext::get().cycl.start(stats::Cycles::local_latency);
 	using Future_t = TupleFuture<KV>;
 	db_key_t key;
 	table->insert(key);
@@ -280,7 +268,6 @@ TupleFuture<KV>* TxnExecutor::insert(StructTable* table) {
 	if (!future->get()) [[unlikely]] {
 		return nullptr;
 	}
-	WorkerContext::get().cycl.stop(stats::Cycles::local_latency);
 	return future;
 }
 
@@ -310,9 +297,9 @@ static void reset_db_batch(Database* db) {
     // db->hot_send_q.done_sending();
 }
 
-void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in_sched_entry_t>& q) {
+void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<txn_pos_t>& q) {
     assert(q.empty() == false);
-    in_sched_entry_t e = q.front();
+    txn_pos_t e = q.front();
     Txn& txn = entry_to_txn(sched.exec, e);
     assert(txn.init_done == true);
     q.pop();
@@ -326,6 +313,7 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in
         void* pkt_buf;
         RC res = my_execute(txn, &pkt_buf);
         if (res == ROLLBACK) {
+            this->n_aborts += 1;
             txn.n_aborts += 1;
             if (enqueue_aborts && txn.n_aborts <= MAX_TIMES_ACCEL_ABORT) {
                 q.push(e);
@@ -348,6 +336,7 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in
                 leftover_txns.push(e);
             }
         } else {
+            this->n_commits += 1;
             if (CHECK_DISJOINT_KEYS) {
                 for (size_t p = 0; p<N_OPS && txn.cold_ops[p].mode != AccessMode::INVALID; ++p) {
                     sched.touched.insert(txn.cold_ops[p].id);
@@ -367,7 +356,7 @@ void TxnExecutor::run_leftover_txns() {
     /*  TODO potential livelock problems, what if two txns on different nodes keep aborting each
         other, and the leftover queues on both are very small, so they have no chance to separate? */
     while (!leftover_txns.empty()) {
-        in_sched_entry_t e = leftover_txns.front();
+        txn_pos_t e = leftover_txns.front();
         Txn& txn = entry_to_txn(this, e);
         RC result = execute(txn);
         if (result == ROLLBACK) {
@@ -393,8 +382,12 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
     // just resize to make things simpler.
     txns.resize((txns.size() / batch_tgt) * batch_tgt);
 	assert(txns.size() % batch_tgt == 0);
+    tb.my_txns = &txns;
 
 	scheduler_t sched(&tb);
+
+    tb.n_commits = 0;
+    tb.n_aborts = 0;
 
 	for (size_t i = 0; i<txns.size(); i+=batch_tgt) {
 		size_t batch_num = i/batch_tgt;
@@ -410,6 +403,12 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
             }
 
             while (txn_num < mini_batch_tgt && !q.empty()) {
+                /*
+                txn_pos_t e = q.front();
+                Txn& txn = entry_to_txn(sched.exec, e);
+                fprintf(stderr, "Running txn=%lu from q=%lu\n", txn.loader_id, (tb.mini_batch_num-1) % sched.n_queues);
+                */
+
                 tb.run_txn(sched, true, q);
                 txn_num += 1;
             }
@@ -448,6 +447,9 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
             }
         }
 	}
+
+    printf("worker %u, n_commits: %lu\n", WorkerContext::get().tid, tb.n_commits);
+    printf("worker %u, n_aborts: %lu\n", WorkerContext::get().tid, tb.n_aborts);
 }
 
 void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
@@ -467,8 +469,7 @@ void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
         assert(txns[i].init_done);
         RC result = tb.execute(txns[i]);
         if (result == ROLLBACK) {
-            in_sched_entry_t e = {i, thread_id};
-            tb.leftover_txns.push(e);
+            tb.leftover_txns.push(i);
         }
     }
     tb.run_leftover_txns();

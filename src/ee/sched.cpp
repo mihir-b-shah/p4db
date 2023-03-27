@@ -37,16 +37,16 @@ scheduler_t::scheduler_t(TxnExecutor* exec) : exec(exec) {
 			}
 		}
 	}
-	mb_queues = new std::queue<in_sched_entry_t>[n_queues];
+	mb_queues = new std::queue<txn_pos_t>[n_queues];
 }
 
-void scheduler_t::sched_batch(std::vector<Txn>& txns, size_t s, size_t e) {
+void scheduler_t::sched_batch(std::vector<Txn>& txns, size_t start, size_t end) {
 	for (size_t i = 0; i<n_queues; ++i) {
 		assert(mb_queues[i].empty() == true);
 	}
 
 	size_t zero_spray_idx = 0;
-	for (size_t i = s; i<e; ++i) {
+	for (size_t i = start; i<end; ++i) {
 		Txn& txn = txns[i];
 		assert(txn.init_done == false);
 		extract_hot_cold(exec->kvs, txn, layout);
@@ -77,10 +77,13 @@ void scheduler_t::sched_batch(std::vector<Txn>& txns, size_t s, size_t e) {
 				}
 			}
 			assert(s_best != -1);
-			mb_queues[s_best].emplace(i, exec->tid);
+            // fprintf(stderr, "placed txn %lu into queue %lu\n", txn.loader_id, s_best);
+            assert(txn.loader_id == entry_to_txn(exec, i).loader_id);
+			mb_queues[s_best].push(i);
 		} else {
 			//	TODO is a modulo here a bad idea?
-			mb_queues[zero_spray_idx++ % n_queues].emplace(i, exec->tid);
+            // fprintf(stderr, "placed txn %lu into queue %lu\n", txn.loader_id, zero_spray_idx);
+			mb_queues[zero_spray_idx++ % n_queues].push(i);
 		}
 	}
     /*
@@ -91,10 +94,10 @@ void scheduler_t::sched_batch(std::vector<Txn>& txns, size_t s, size_t e) {
     */
 }
 
-Txn& entry_to_txn(TxnExecutor* exec, in_sched_entry_t entry) {
-	std::vector<Txn>& txns = *(exec->db.per_core_txns[entry.thr_id]);
-    assert(entry.thr_id < exec->db.n_threads && entry.idx < txns.size());
-    return txns[entry.idx];
+Txn& entry_to_txn(TxnExecutor* exec, txn_pos_t entry) {
+    std::vector<Txn>& txns = (*(exec->my_txns));
+    assert(entry < txns.size());
+    return txns[entry];
 }
 
 void scheduler_t::print_schedules(size_t node) {
