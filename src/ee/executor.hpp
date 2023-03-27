@@ -22,6 +22,7 @@
 #include <vector>
 #include <queue>
 #include <cassert>
+#include <unordered_set>
 #include <pthread.h>
 
 enum RC {
@@ -46,11 +47,14 @@ struct scheduler_t {
 	size_t schedule_len;
 	//	TODO: is this efficient enough? Replace with a vector+pointer.
 	std::queue<in_sched_entry_t>* mb_queues;
+    // just for debugging.
+    std::unordered_set<db_key_t> touched;
 
 	scheduler_t(TxnExecutor* exec);
 	~scheduler_t(){ delete[] mb_queues; }
 	void sched_batch(std::vector<Txn>& txns, size_t s, size_t e);
 	void print_schedules(size_t node);
+    void process_touched(size_t mb_num);
 };
 
 struct TxnExecutor {

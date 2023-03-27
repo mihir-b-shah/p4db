@@ -52,7 +52,7 @@ void scheduler_t::sched_batch(std::vector<Txn>& txns, size_t s, size_t e) {
 		extract_hot_cold(exec->kvs, txn, layout);
         assert(txn.init_done == true);
 
-		if (txn.hottest_cold_i1.has_value()) {
+		if (DO_SCHED && txn.hottest_cold_i1.has_value()) {
 			const Txn::OP& op1 = txn.cold_ops[txn.hottest_cold_i1.value()];
 			const std::vector<size_t>& sched1 = schedules[op1.loc_info.target][op1.id % n_schedules];
 			ssize_t s_best = -1;
@@ -105,4 +105,12 @@ void scheduler_t::print_schedules(size_t node) {
 		}
 		printf("\n");
 	}
+}
+
+void scheduler_t::process_touched(size_t mb_num) {
+    for (db_key_t k : touched) {
+        fprintf(stderr, "%lu %lu %lu\n", node_id, mb_num, k);
+    }
+    //  TODO only when debugging.
+    touched.clear();
 }

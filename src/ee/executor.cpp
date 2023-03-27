@@ -348,6 +348,12 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<in
                 leftover_txns.push(e);
             }
         } else {
+            if (CHECK_DISJOINT_KEYS) {
+                for (size_t p = 0; p<N_OPS && txn.cold_ops[p].mode != AccessMode::INVALID; ++p) {
+                    sched.touched.insert(txn.cold_ops[p].id);
+                }
+            }
+
             // fprintf(stderr, "Called make_txn from executor.\n");
             char* pass_p = (char*) pkt_buf + (USE_1PASS_PKTS ? 0 : sizeof(msg::SwitchTxn));
             p4_switch.make_txn(txn, (void*) pass_p);
@@ -399,6 +405,10 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
         while (tb.mini_batch_num - orig_mb_num < BATCH_SIZE_TGT/MINI_BATCH_SIZE_TGT) {
             auto& q = sched.mb_queues[(tb.mini_batch_num-1) % sched.n_queues];
             size_t txn_num = 0;
+            if (CHECK_DISJOINT_KEYS) {
+                sched.process_touched(tb.mini_batch_num);
+            }
+
             while (txn_num < mini_batch_tgt && !q.empty()) {
                 tb.run_txn(sched, true, q);
                 txn_num += 1;
