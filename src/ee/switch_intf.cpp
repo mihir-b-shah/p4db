@@ -125,8 +125,8 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     for (auto& pr : start_fill) {
         // just overwrite the buffer, don't need it now.
         // the recv is just to make sure the packets came back.
-        socklen_t unused_len;
-        assert(recvfrom(switch_sockfd, (char*) pr.second, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_PKT_BYTES);
+        socklen_t addr_len = sizeof(server_addr);
+        assert(recvfrom(switch_sockfd, (char*) pr.second, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, &addr_len) == HOT_TXN_PKT_BYTES);
     }
 
     exec.db.msg_handler->barrier.wait_nodes();
@@ -164,8 +164,8 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         assert(sendto(switch_sockfd, (char*) pr.second, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, sizeof(server_addr)) == HOT_TXN_PKT_BYTES);
     }
     for (auto& pr : end_fill) {
-        socklen_t unused_len;
-        assert(recvfrom(switch_sockfd, (char*) pr.second, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, &unused_len) == HOT_TXN_PKT_BYTES);
+        socklen_t addr_len = sizeof(server_addr);
+        assert(recvfrom(switch_sockfd, (char*) pr.second, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, &addr_len) == HOT_TXN_PKT_BYTES);
         exec.p4_switch.process_reply_txn(&pr.first, pr.second, true);
     }
     pool.clear();
