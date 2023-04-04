@@ -13,8 +13,7 @@ constexpr bool USE_FLOW_ORDER = true;
 constexpr bool ORIG_MODE = false;
 constexpr bool USE_1PASS_PKTS = true;
 constexpr bool DO_SCHED = true;
-
-constexpr size_t N_CORES = 8;
+constexpr bool RAW_PACKETS = false;
 
 namespace error {
 
