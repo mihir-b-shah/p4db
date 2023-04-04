@@ -1,5 +1,6 @@
 
 #include <comm/comm.hpp>
+#include <comm/switch_intf.hpp>
 #include <ee/args.hpp>
 #include <ee/defs.hpp>
 #include <ee/database.hpp>
@@ -11,6 +12,44 @@
 #include <utility>
 #include <errno.h>
 
+#include <cstdlib>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <cassert>
+
+//	IEEE 802 marks this as an ether_type reserved for experimental/private use.
+static constexpr uint16_t P4DB_ETHER_TYPE = 0x88b5;
+static constexpr size_t MAC_ADDR_SIZE = 6;
+static const char* intf_name = "XXX";
+
+// whatever interface is connected to p4 switch
+static int get_iface_id(int sock, const char* intf_name) {
+	struct ifreq ifr;
+	// its not going to overrun...
+	strcpy(ifr.ifr_name, intf_name);
+	assert(ioctl(sock, SIOCGIFINDEX, &ifr) == 0);
+	return ifr.ifr_ifindex;
+}
+
+static void set_rx_promisc(int iface_id, int sock) {
+	struct packet_mreq mreq;
+	memset(&mreq, 0, sizeof(packet_mreq));
+	mreq.mr_ifindex = iface_id;
+	mreq.mr_type = PACKET_MR_PROMISC;
+	assert(setsockopt(sock, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) == 0);
+}
+
+static void setup_sockaddr_ll(int iface_id, struct sockaddr_ll* switch_addr) {
+	uint8_t addr[MAC_ADDR_SIZE] = {};
+	memset(switch_addr, 0, sizeof(*switch_addr));
+	switch_addr->sll_family = AF_PACKET;
+	switch_addr->sll_protocol = htons(P4DB_ETHER_TYPE);
+	switch_addr->sll_ifindex = iface_id;
+	switch_addr->sll_halen = MAC_ADDR_SIZE;
+	memcpy(&switch_addr->sll_addr, &addr[0], MAC_ADDR_SIZE);
+}
+
 switch_intf_t::switch_intf_t() : sockfd(0) {
     memset(&addr, 0, sizeof(addr));
 
@@ -18,13 +57,25 @@ switch_intf_t::switch_intf_t() : sockfd(0) {
     auto& switch_server = conf.servers[conf.switch_id];
 
     if constexpr (RAW_PACKETS) {
+        if (geteuid() != 0) {
+            assert(false && "Run with root privileges.\n");
+        }
+
+	    sockfd = socket(AF_PACKET, SOCK_RAW, htons(P4DB_ETHER_TYPE));
+        assert(sockfd >= 0);
+
+        int iface_id = get_iface_id(sockfd, intf_name);
+        setup_sockaddr_ll(iface_id, &addr.mac_addr);
+        set_rx_promisc(iface_id, sockfd);
+        assert(bind(sockfd, (struct sockaddr*) &addr.mac_addr, sizeof(sockaddr_ll)) == 0);
     } else {
         sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-        addr.sin_family = AF_INET;
-        addr.sin_port = htons(switch_server.port);
-        inet_aton((const char*) switch_server.ip.c_str(), &server_addr.sin_addr);
+        assert(sockfd >= 0);
+
+        addr.ip_addr.sin_family = AF_INET;
+        addr.ip_addr.sin_port = htons(switch_server.port);
+        inet_aton((const char*) switch_server.ip.c_str(), &addr.ip_addr.sin_addr);
     }
-    assert(sockfd >= 0);
 }
 
 void switch_intf_t::prepare_msghdr(struct msghdr* msg_hdr, struct iovec* ivec) {
@@ -35,7 +86,7 @@ void switch_intf_t::prepare_msghdr(struct msghdr* msg_hdr, struct iovec* ivec) {
     msg_hdr->msg_flags = 0;
 
     if constexpr (!RAW_PACKETS) {
-        msg_hdr->msg_name = &addr;
-        msg_hdr->msg_namelen = sizeof(addr);
+        msg_hdr->msg_name = &addr.ip_addr;
+        msg_hdr->msg_namelen = sizeof(addr.ip_addr);
     }
 }
