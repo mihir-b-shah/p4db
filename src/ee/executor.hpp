@@ -72,6 +72,7 @@ struct TxnExecutor {
     // stats
     size_t n_commits;
     size_t n_aborts;
+    size_t n_cold_fallbacks;
 
     TxnExecutor(Database& db)
         : p4_switch(db.comm->node_id), db(db), log(db.comm.get()), sw_intf(Config::instance().sw_intf), tid(WorkerContext::get().tid), mini_batch_num(1), my_txns(nullptr) {

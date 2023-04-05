@@ -34,7 +34,7 @@ constexpr size_t MIN_MINI_BATCH_THR_SIZE = 50;
 constexpr size_t MAX_PASSES_ACCEL = 1;
 constexpr size_t MAX_OPS_PASS2_ACCEL = 8;
 constexpr size_t MAX_HOT_OPS = 8;
-constexpr size_t N_REGS = 72;
+constexpr size_t N_REGS = 72; // 20
 constexpr size_t N_SW_LOCKS = 32;
 
 // cross-check with sched.cpp

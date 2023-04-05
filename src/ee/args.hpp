@@ -31,5 +31,5 @@ struct Txn {
 	TxnId id;
     size_t loader_id;
 
-	Txn() : init_done(false), n_aborts(0) {}
+	Txn() : init_done(false), do_accel(false), n_aborts(0) {}
 };

@@ -325,6 +325,9 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<tx
                 // everything should be back.
                 assert(txn.cold_ops[cold_p].mode != AccessMode::INVALID);
                 txn.do_accel = false;
+                this->n_cold_fallbacks += 1;
+
+                // fprintf(stderr, "Txn %lu leftover\n", txn.loader_id);
                 leftover_txns.push(e);
             }
         } else {
@@ -335,10 +338,13 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<tx
                 }
             }
 
+            // fprintf(stderr, "Txn %lu committed\n", txn.loader_id);
             // fprintf(stderr, "Called make_txn from executor.\n");
             p4_switch.make_txn(txn, pkt_buf);
         }
     } else {
+        // fprintf(stderr, "Txn %lu leftover\n", txn.loader_id);
+        this->n_cold_fallbacks += 1;
         leftover_txns.push(e);
     }
 }
@@ -379,6 +385,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
     tb.n_commits = 0;
     tb.n_aborts = 0;
+    tb.n_cold_fallbacks = 0;
 
 	for (size_t i = 0; i<txns.size(); i+=batch_tgt) {
 		size_t batch_num = i/batch_tgt;
@@ -439,8 +446,9 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
         }
 	}
 
-    printf("worker %u, n_commits: %lu\n", WorkerContext::get().tid, tb.n_commits);
-    printf("worker %u, n_aborts: %lu\n", WorkerContext::get().tid, tb.n_aborts);
+    printf("worker %u, n_(accel)_commits: %lu\n", WorkerContext::get().tid, tb.n_commits);
+    printf("worker %u, n_(accel)_aborts: %lu\n", WorkerContext::get().tid, tb.n_aborts);
+    printf("worker %u, n_cold_fallbacks: %lu\n", WorkerContext::get().tid, tb.n_cold_fallbacks);
 }
 
 void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
@@ -454,6 +462,7 @@ void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
 
     txns.resize((txns.size() / batch_tgt) * batch_tgt);
 	assert(txns.size() % batch_tgt == 0);
+    tb.my_txns = &txns;
 
     for (size_t i = 0; i<txns.size(); ++i) {
         extract_hot_cold(tb.kvs, txns[i], config.decl_layout);
