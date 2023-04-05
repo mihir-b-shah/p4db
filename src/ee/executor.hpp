@@ -59,6 +59,7 @@ struct TxnExecutor {
     Database& db;
     Undolog log;
     StackPool<8192> mempool;
+    switch_intf_t& sw_intf;
     uint32_t tid;
 	uint32_t mini_batch_num;
 
@@ -73,7 +74,7 @@ struct TxnExecutor {
     size_t n_aborts;
 
     TxnExecutor(Database& db)
-        : p4_switch(db.comm->node_id), db(db), log(db.comm.get()), tid(WorkerContext::get().tid), mini_batch_num(1), my_txns(nullptr) {
+        : p4_switch(db.comm->node_id), db(db), log(db.comm.get()), sw_intf(Config::instance().sw_intf), tid(WorkerContext::get().tid), mini_batch_num(1), my_txns(nullptr) {
         db.get_casted(KV::TABLE_NAME, kvs);
         p4_switch.table = kvs;
 	}
@@ -84,7 +85,7 @@ struct TxnExecutor {
     RC execute(Txn& arg);
     RC commit();
     RC rollback();
-    SwitchFuture<SwitchInfo>* atomic(SwitchInfo& p4_switch, const Txn& arg);
+    void atomic(SwitchInfo& p4_switch, const Txn& arg);
     TupleFuture<KV>* read(StructTable* table, const Txn::OP& op, TxnId id);
     TupleFuture<KV>* write(StructTable* table, const Txn::OP& op, TxnId id);
     TupleFuture<KV>* insert(StructTable* table);

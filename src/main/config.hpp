@@ -2,6 +2,7 @@
 
 
 #include "comm/comm.hpp"
+#include "comm/switch_intf.hpp"
 #include "comm/msg.hpp"
 #include "comm/server.hpp"
 #include "ee/defs.hpp"
@@ -22,6 +23,7 @@ public:
 
     std::vector<Server> servers = {};
     Server sched_server;
+    switch_intf_t sw_intf;
 
     msg::node_t node_id;
     uint32_t num_nodes;

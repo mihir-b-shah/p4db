@@ -18,9 +18,14 @@
 #include <cstring>
 #include <cassert>
 
+/*  The switch sockfd right now is just to talk to the simulated switch. In the real setup,
+    I want to send to anyone connected by the switch (the switch will then send a reply...)
+
+    TODO not using MSG_ZEROCOPY here- we have very small packets, and Linux documentation
+    says the page mgmt overhead for zero-copy is only worth it for sends bigger than 10 kB
+    Unless I'm misunderstanding- maybe revisit this? */
+
 //	IEEE 802 marks this as an ether_type reserved for experimental/private use.
-static constexpr uint16_t P4DB_ETHER_TYPE = 0x88b5;
-static constexpr size_t MAC_ADDR_SIZE = 6;
 static const char* intf_name = "XXX";
 
 // whatever interface is connected to p4 switch
@@ -41,18 +46,20 @@ static void set_rx_promisc(int iface_id, int sock) {
 }
 
 static void setup_sockaddr_ll(int iface_id, struct sockaddr_ll* switch_addr) {
-	uint8_t addr[MAC_ADDR_SIZE] = {};
+	uint8_t addr[MAC_ADDR_BYTES] = {};
 	memset(switch_addr, 0, sizeof(*switch_addr));
 	switch_addr->sll_family = AF_PACKET;
 	switch_addr->sll_protocol = htons(P4DB_ETHER_TYPE);
 	switch_addr->sll_ifindex = iface_id;
-	switch_addr->sll_halen = MAC_ADDR_SIZE;
-	memcpy(&switch_addr->sll_addr, &addr[0], MAC_ADDR_SIZE);
+	switch_addr->sll_halen = MAC_ADDR_BYTES;
+	memcpy(&switch_addr->sll_addr, &addr[0], MAC_ADDR_BYTES);
 }
 
 switch_intf_t::switch_intf_t() : sockfd(0) {
     memset(&addr, 0, sizeof(addr));
+}
 
+void switch_intf_t::setup() {
     auto& conf = Config::instance();
     auto& switch_server = conf.servers[conf.switch_id];
 

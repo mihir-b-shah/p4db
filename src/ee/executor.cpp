@@ -128,8 +128,7 @@ RC TxnExecutor::execute(Txn& arg) {
         /*  TODO remember we are truncating 3+ pass txns, maybe emulate some additional
             latency here? (as well as contention on-switch, but I think 2-pass txns will
             do that trick for me. */
-		SwitchFuture<SwitchInfo>* multi_f = atomic(p4_switch, arg);
-		multi_f->get();
+		atomic(p4_switch, arg);
 	}
 
 	// locks automatically released
@@ -271,25 +270,18 @@ TupleFuture<KV>* TxnExecutor::insert(StructTable* table) {
 	return future;
 }
 
-SwitchFuture<SwitchInfo>* TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& arg) {
-	auto& comm = db.comm;
-
-	auto pkt = comm->make_pkt();
-	auto txn = pkt->ctor<msg::SwitchTxn>();
-	txn->sender = comm->node_id;
-	p4_switch.make_txn(arg, txn->data);
-
+void TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& arg) {
     assert(ORIG_MODE && !USE_1PASS_PKTS);
-	auto size = msg::SwitchTxn::size(HOT_TXN_BYTES);
-	pkt->resize(size);
 
-	using Future_t = SwitchFuture<SwitchInfo>;
-	auto future = mempool.allocate<Future_t>(p4_switch, arg, txn->data);
-	auto msg_id = comm->handler->set_new_id(txn);
-	//printf("LINE:%d Inserting for msg_id=%lu, future=%p\n", __LINE__, msg_id.value, future);
-	comm->handler->add_future(msg_id, future);
-	comm->send(comm->switch_id, pkt, tid);
-	return future;
+    char buf[HOT_TXN_PKT_BYTES];
+    p4_switch.make_txn(arg, &buf[0]);
+
+    struct iovec ivec = {&buf[0], HOT_TXN_PKT_BYTES};
+    struct msghdr msg_hdr;
+    sw_intf.prepare_msghdr(&msg_hdr, &ivec);
+
+    assert(sendmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
+    assert(recvmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
 }
 
 static void reset_db_batch(Database* db) {
@@ -344,8 +336,7 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<tx
             }
 
             // fprintf(stderr, "Called make_txn from executor.\n");
-            char* pass_p = (char*) pkt_buf + (USE_1PASS_PKTS ? 0 : sizeof(msg::SwitchTxn));
-            p4_switch.make_txn(txn, (void*) pass_p);
+            p4_switch.make_txn(txn, pkt_buf);
         }
     } else {
         leftover_txns.push(e);

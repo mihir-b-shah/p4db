@@ -10,7 +10,10 @@
 #include <optional>
 #include <netinet/in.h>
 
+#include <comm/server.hpp>
+#include <comm/switch_intf.hpp>
 #include <ee/database.hpp>
+#include <main/config.hpp>
 
 static constexpr uint8_t STOP = 0x80;
 // just a randomly generated 128-bit integer.
@@ -39,15 +42,25 @@ struct __attribute__((packed)) generic_instr_t {
 	uint32_t data__be;
 };
 
-struct __attribute__((packed)) pass1_pkt_t {
+struct __attribute__((packed)) network_hdr_t {
+    #if defined(RAW_PACKETS)
+    uint8_t dst_mac[MAC_ADDR_BYTES];
+    uint8_t src_mac[MAC_ADDR_BYTES];
+    uint16_t ether_type;
+    uint8_t ipv4_udp_unused[28];
+    #endif
     uint8_t uid[sizeof(UID_HDR)];
+};
+
+struct __attribute__((packed)) pass1_pkt_t {
+    network_hdr_t net_hdr;
     uint16_t base_offset;
     pass1_padded_instr_t padded_instrs[N_INSTRS_PADDED];
     pass1_normal_instr_t normal_instrs[N_REGS-N_INSTRS_PADDED];
 };
 
 struct __attribute__((packed)) generic_pkt_t {
-    uint8_t uid[sizeof(UID_HDR)];
+    network_hdr_t net_hdr;
 	uint32_t locks_check__nb;
 	uint32_t locks_acquire__nb;
 	uint32_t locks_undo__nb;
@@ -66,15 +79,26 @@ static void fill_reg_instr(const std::pair<Txn::OP, TupleLocation>& pr, generic_
 	instr->data__be = htonl(pr.first.value);
 }
 
+static void fill_network_hdr(network_hdr_t* hdr) {
+    #if defined(RAW_PACKETS)
+    static Config* conf = &Config::instance();
+    memcpy(&hdr->dst_mac, &conf->servers[conf->switch_id].addr_bytes, MAC_ADDR_BYTES);
+    memcpy(&hdr->src_mac, &conf->servers[conf->node_id].addr_bytes, MAC_ADDR_BYTES);
+    hdr->ether_type = htons(P4DB_ETHER_TYPE);
+    #endif
+
+    memcpy(&hdr->uid[0], UID_HDR, sizeof(UID_HDR));
+}
+
 void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
 	assert(txn.do_accel == true);
     // fprintf(stderr, "loader_id: %lu |", txn.loader_id);
 
     // TODO is comm_pkt big enough?
     if (USE_1PASS_PKTS) {
-        static_assert(!USE_1PASS_PKTS || sizeof(pass1_pkt_t) == HOT_TXN_BYTES);
+        static_assert(!USE_1PASS_PKTS || sizeof(pass1_pkt_t) == HOT_TXN_PKT_BYTES);
 	    pass1_pkt_t* pkt = reinterpret_cast<pass1_pkt_t*>(comm_pkt);
-        memcpy(&pkt->uid[0], UID_HDR, sizeof(UID_HDR));
+        fill_network_hdr(&pkt->net_hdr);
 
         /*  TODO If we allow different block idx's, we need to check indices before indexing
             into p4 register (since the supplied index might be wrong), and thus untrusting
@@ -110,9 +134,9 @@ void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
             instr->data__be = htonl(pr.first.value);
         }
     } else {
-        static_assert(USE_1PASS_PKTS || sizeof(generic_pkt_t) == HOT_TXN_BYTES);
+        static_assert(USE_1PASS_PKTS || sizeof(generic_pkt_t) == HOT_TXN_PKT_BYTES);
         generic_pkt_t* pkt = reinterpret_cast<generic_pkt_t*>(comm_pkt);
-        memcpy(&pkt->uid[0], UID_HDR, sizeof(UID_HDR));
+        fill_network_hdr(&pkt->net_hdr);
 
         size_t p;
         for (p = 0; p<N_OPS && txn.hot_ops_pass1[p].first.mode != AccessMode::INVALID; ++p) {

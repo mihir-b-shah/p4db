@@ -16,6 +16,9 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
+static constexpr uint16_t P4DB_ETHER_TYPE = 0x88b5;
+static constexpr size_t MAC_ADDR_BYTES = 6;
+
 struct switch_intf_t {
     int sockfd;
     union {
@@ -24,5 +27,6 @@ struct switch_intf_t {
     } addr;
 
     switch_intf_t();
+    void setup();
     void prepare_msghdr(struct msghdr* mh, struct iovec* ivec);
 };

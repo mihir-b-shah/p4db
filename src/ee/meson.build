@@ -22,5 +22,5 @@ project_sources += files (
     'executor.cpp',
 	'sched.cpp',
 	'sched_intf.cpp',
-    'switch_intf.cpp',
+    'hot_period.cpp',
 )

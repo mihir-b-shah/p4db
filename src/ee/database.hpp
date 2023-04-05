@@ -16,10 +16,10 @@
 
 #include <sys/uio.h>
 
-static constexpr size_t HOT_TXN_BYTES = USE_1PASS_PKTS ? 398 : 102;
-static constexpr size_t HOT_TXN_PKT_BYTES = HOT_TXN_BYTES + (USE_1PASS_PKTS ? 0 : sizeof(msg::SwitchTxn));
-
-void setup_switch_sock();
+static constexpr size_t HOT_TXN_PKT_BYTES = (USE_1PASS_PKTS && RAW_PACKETS) ? 440 :
+                                            (USE_1PASS_PKTS && !RAW_PACKETS) ? 398 :
+                                            (!USE_1PASS_PKTS && RAW_PACKETS) ? 144 :
+                                            (!USE_1PASS_PKTS && !RAW_PACKETS) ? 102 : 0;
 
 struct hot_send_q_t {
 	struct hot_txn_entry_t {
@@ -88,10 +88,6 @@ public:
         msg_handler->init.wait();
 		per_core_txns = (std::vector<Txn>**) malloc(sizeof(per_core_txns[0])*n_threads);
         setup_sched_sock();
-
-        if (!ORIG_MODE) {
-            setup_switch_sock();
-        }
     }
 
     Database(Database&&) = default;

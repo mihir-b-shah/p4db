@@ -44,11 +44,11 @@ static void gen_start_end_packets(std::vector<std::pair<Txn, void*>>& start_fill
     auto make_txn = [&](bool first){
         if (!first) {
             void* pkt_start = pool.allocate(HOT_TXN_PKT_BYTES);
-            exec.p4_switch.make_txn(txn_start, (void*) ((char*) pkt_start + sizeof(msg::SwitchTxn)));
+            exec.p4_switch.make_txn(txn_start, pkt_start);
             start_fill.emplace_back(txn_start, pkt_start);
 
             void* pkt_end = pool.allocate(HOT_TXN_PKT_BYTES);
-            exec.p4_switch.make_txn(txn_end, (void*) ((char*) pkt_end + sizeof(msg::SwitchTxn)));
+            exec.p4_switch.make_txn(txn_end, pkt_end);
             end_fill.emplace_back(txn_end, pkt_end);
         }
 
@@ -81,52 +81,26 @@ static void gen_start_end_packets(std::vector<std::pair<Txn, void*>>& start_fill
     }
 }
 
-/*  The switch sockfd right now is just to talk to the simulated switch. In the real setup,
-    I want to send to anyone connected by the switch (the switch will then send a reply...)
-
-    TODO not using MSG_ZEROCOPY here- we have very small packets, and Linux documentation
-    says the page mgmt overhead for zero-copy is only worth it for sends bigger than 10 kB
-    Unless I'm misunderstanding- maybe revisit this? */
-static int switch_sockfd;
-static struct sockaddr_in server_addr;
-
-void setup_switch_sock() {
-    switch_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    assert(switch_sockfd >= 0);
-
-    auto& conf = Config::instance();
-    auto& switch_server = conf.servers[conf.switch_id];
-
-	memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(switch_server.port);
-	inet_aton((const char*) switch_server.ip.c_str(), &server_addr.sin_addr);
-}
-
-static void setup_single_mmsghdr(struct mmsghdr* hdr, struct iovec* ivec) {
-    struct msghdr* msg_hdr = &hdr->msg_hdr;
-    msg_hdr->msg_name = &server_addr;
-    msg_hdr->msg_namelen = sizeof(server_addr);
-    msg_hdr->msg_iov = ivec;
-    msg_hdr->msg_iovlen = 1;
-    msg_hdr->msg_control = NULL; // no ancilliary data
-    msg_hdr->msg_controllen = 0;
-    msg_hdr->msg_flags = 0;
-}
-
 void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
+    switch_intf_t& sw_intf = Config::instance().sw_intf;
+
     std::vector<std::pair<Txn, void*>> start_fill;
     std::vector<std::pair<Txn, void*>> end_fill;
     gen_start_end_packets(start_fill, end_fill, exec, layout);
 
     for (auto& pr : start_fill) {
-        assert(sendto(switch_sockfd, (char*) pr.second, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, sizeof(server_addr)) == HOT_TXN_PKT_BYTES);
+        struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
+        struct msghdr msg_hdr;
+        sw_intf.prepare_msghdr(&msg_hdr, &ivec);
+        assert(sendmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
     }
     for (auto& pr : start_fill) {
         // just overwrite the buffer, don't need it now.
         // the recv is just to make sure the packets came back.
-        socklen_t addr_len = sizeof(server_addr);
-        assert(recvfrom(switch_sockfd, (char*) pr.second, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, &addr_len) == HOT_TXN_PKT_BYTES);
+        struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
+        struct msghdr msg_hdr;
+        sw_intf.prepare_msghdr(&msg_hdr, &ivec);
+        assert(recvmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
     }
 
     exec.db.msg_handler->barrier.wait_nodes();
@@ -144,13 +118,13 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         size_t window_start = q_p;
         while (q_p < q_size && q[window_start].mini_batch_num == q[q_p].mini_batch_num 
                 && q_p - window_start < MAX_IN_FLIGHT) {
-            setup_single_mmsghdr(&mmsghdrs[q_p-window_start], &q[q_p].iov);
+            sw_intf.prepare_msghdr(&mmsghdrs[q_p-window_start].msg_hdr, &q[q_p].iov);
             q_p += 1;
         }
 
-        ssize_t sent = sendmmsg(switch_sockfd, &mmsghdrs[0], q_p-window_start, 0);
+        ssize_t sent = sendmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0);
         assert(sent == q_p-window_start);
-        ssize_t received = recvmmsg(switch_sockfd, &mmsghdrs[0], q_p-window_start, 0, NULL);
+        ssize_t received = recvmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0, NULL);
         assert(received == q_p-window_start);
         
         if (q[window_start].mini_batch_num + 1 == q[q_p].mini_batch_num || q_p == q_size) {
@@ -161,13 +135,21 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     }
 
     for (auto& pr : end_fill) {
-        assert(sendto(switch_sockfd, (char*) pr.second, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, sizeof(server_addr)) == HOT_TXN_PKT_BYTES);
+        struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
+        struct msghdr msg_hdr;
+        sw_intf.prepare_msghdr(&msg_hdr, &ivec);
+        assert(sendmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
     }
     for (auto& pr : end_fill) {
-        socklen_t addr_len = sizeof(server_addr);
-        assert(recvfrom(switch_sockfd, (char*) pr.second, HOT_TXN_PKT_BYTES, 0, (struct sockaddr*) &server_addr, &addr_len) == HOT_TXN_PKT_BYTES);
+        // just overwrite the buffer, don't need it now.
+        // the recv is just to make sure the packets came back.
+        struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
+        struct msghdr msg_hdr;
+        sw_intf.prepare_msghdr(&msg_hdr, &ivec);
+        assert(recvmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
         exec.p4_switch.process_reply_txn(&pr.first, pr.second, true);
     }
+
     pool.clear();
     exec.db.msg_handler->barrier.wait_nodes();
 }
