@@ -71,7 +71,6 @@ public:
 
 	size_t n_threads;
 	uint32_t thr_batch_done_ct;
-	reusable_barrier_t txn_sched_bar;
 	std::vector<Txn>** per_core_txns;
 	hot_send_q_t hot_send_q;
     int sched_sockfd;
@@ -82,7 +81,7 @@ public:
     void wait_sched_ready();
 
 public:
-    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), txn_sched_bar(n_threads), hot_send_q(BATCH_SIZE_TGT * n_threads), n_hot_batch_completed(0) {
+    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), hot_send_q(BATCH_SIZE_TGT * n_threads), n_hot_batch_completed(0) {
         comm = std::make_unique<Communicator>();
         msg_handler = std::make_unique<MessageHandler>(*this, comm.get());
         msg_handler->init.wait();

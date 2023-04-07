@@ -76,15 +76,7 @@ struct Base : crtp<T>, public Header {
 
 struct Init : public Base<Init, Type::INIT> {};
 
-struct Barrier : public Base<Barrier, Type::BARRIER> {
-	bool is_hard;
-	uint32_t mini_batch_num;
-
-	Barrier() : is_hard(false), mini_batch_num(0) {}
-	Barrier(uint32_t num) : is_hard(true), mini_batch_num(num) {
-		assert(mini_batch_num < (1ULL << TxnId::MINI_BATCH_ID_WIDTH));
-	}
-};
+struct Barrier : public Base<Barrier, Type::BARRIER> {};
 
 // used by all 4 tuple interaction messages
 struct TupleMsgHeader {

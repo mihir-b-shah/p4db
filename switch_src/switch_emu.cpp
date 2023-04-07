@@ -27,10 +27,12 @@ static void sig_int_handler(int sig) {
     exit(0);
 }
 
-int main() {
+int main(int argc, char** argv) {
+	assert(argc == 2);
+
     cpu_set_t mask;
     CPU_ZERO(&mask);
-    CPU_SET(8, &mask);
+    CPU_SET(atoi(argv[1]), &mask);
     int rc = sched_setaffinity(getpid(), sizeof(cpu_set_t), &mask);
     assert(rc == 0);
 

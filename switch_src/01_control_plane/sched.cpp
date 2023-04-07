@@ -1,6 +1,7 @@
 
 #include "handle.hpp"
 
+#include <sched.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -49,9 +50,15 @@ struct tenant_info_t {
     std::unordered_set<int> sock_fds;
 };
 
-int main() {
+int main(int argc, char** argv) {
+	assert(argc == 2);
     handle_init();
-    int rc;
+
+    cpu_set_t mask;
+    CPU_ZERO(&mask);
+    CPU_SET(atoi(argv[1]), &mask);
+    int rc = sched_setaffinity(getpid(), sizeof(cpu_set_t), &mask);
+    assert(rc == 0);
 
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	assert(sockfd >= 0);

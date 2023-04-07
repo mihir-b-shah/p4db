@@ -413,7 +413,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
                 txn_num += 1;
             }
             tb.mini_batch_num += 1;
-		    db.msg_handler->barrier.wait_workers_soft();
+			db.msg_handler->barrier.wait_workers();
         }
 
         // drain the remaining queues over a SINGLE mini-batch. don't accelerate the rest.
@@ -436,16 +436,16 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
             db.update_alloc(1+batch_num);
 
             tb.run_leftover_txns();
+            db.hot_send_q.done_sending();
             __sync_synchronize();
 
-            db.hot_send_q.done_sending();
             db.n_hot_batch_completed += 1;
         } else {
             tb.run_leftover_txns();
             while (db.n_hot_batch_completed < 1+batch_num) {
-                _mm_pause();
             }
         }
+	    printf("thread: %lu, tail: %lu\n", WorkerContext::get().tid, db.hot_send_q.send_q_tail);
 	}
 
     printf("worker %u, n_(accel)_commits: %lu\n", WorkerContext::get().tid, tb.n_commits);
