@@ -61,6 +61,8 @@ struct hot_send_q_t {
 	}
 };
 
+extern void single_db_section(void* arg);
+
 class Database {
     std::vector<Table*> table_ids;
     std::unordered_map<std::string, Table*> table_names;
@@ -74,14 +76,14 @@ public:
 	std::vector<Txn>** per_core_txns;
 	hot_send_q_t hot_send_q;
     int sched_sockfd;
-    uint32_t n_hot_batch_completed;
+    reusable_barrier_t batch_bar;
 
     void setup_sched_sock();
     void update_alloc(uint32_t batch_num);
     void wait_sched_ready();
 
 public:
-    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), hot_send_q(BATCH_SIZE_TGT * n_threads), n_hot_batch_completed(0) {
+    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), hot_send_q(BATCH_SIZE_TGT * n_threads), batch_bar(n_threads, single_db_section, false) {
         comm = std::make_unique<Communicator>();
         msg_handler = std::make_unique<MessageHandler>(*this, comm.get());
         msg_handler->init.wait();

@@ -3,24 +3,21 @@
 
 #include <pthread.h>
 
-typedef void (*serial_func)(void*);
+typedef void (*middle_func)(void*);
 
 /*	A reusable barrier impl, https://github.com/stephentu/silo/blob/master/spinbarrier.h */
 
-static void empty_serial_func(void* arg) {}
-
 class reusable_barrier_t {
 public:
-	reusable_barrier_t(size_t n_threads, serial_func sf) : sf(sf) {
+	reusable_barrier_t(size_t n_threads, middle_func mf, bool single) : mf(mf), single(single) {
 		pthread_barrier_init(&bar1, NULL, n_threads);
 		pthread_barrier_init(&bar2, NULL, n_threads);
 	}
-	reusable_barrier_t(size_t n_threads) : reusable_barrier_t(n_threads, empty_serial_func) {}
 
 	void wait(void* arg) {
 		int rc1 = pthread_barrier_wait(&bar1);
-		if (rc1 == PTHREAD_BARRIER_SERIAL_THREAD) {
-			sf(arg);
+		if (!single || rc1 == PTHREAD_BARRIER_SERIAL_THREAD) {
+			mf(arg);
 		} else {
 			assert(rc1 == 0);
 		}
@@ -31,5 +28,6 @@ public:
 private:
 	pthread_barrier_t bar1;
 	pthread_barrier_t bar2;
-	serial_func sf;
+	middle_func mf;
+    bool single;
 };

@@ -19,7 +19,7 @@ static void critical_wait(void* arg) {
 }
 
 BarrierHandler::BarrierHandler(Communicator* comm) : comm(comm), received(0),
-	local_barrier(Config::instance().num_txn_workers, critical_wait) {
+	local_barrier(Config::instance().num_txn_workers, critical_wait, true) {
     num_nodes = comm->num_nodes;
     all_nodes_mask = (1 << comm->num_nodes) - 1;
 }

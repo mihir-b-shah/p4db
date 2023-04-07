@@ -365,6 +365,11 @@ void TxnExecutor::run_leftover_txns() {
     }
 }
 
+void single_db_section(void* arg) {
+    TxnExecutor* tb = (TxnExecutor*) arg;
+    tb->run_leftover_txns();
+}
+
 void txn_executor(Database& db, std::vector<Txn>& txns) {
 	auto& config = Config::instance();
     TxnExecutor tb{db};
@@ -427,24 +432,16 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
         tb.mini_batch_num += 1;
 
         // thread 0 is the leader thread.
-        // printf("Hot-batch-completed. %u. Batch_num: %lu\n", db.n_hot_batch_completed, batch_num);
         if (thread_id == 0) {
-            // printf("Before wait_sched_ready.\n");
             db.wait_sched_ready();
-            // printf("After wait_sched_ready.\n");
             run_hot_period(tb, layout);
             db.update_alloc(1+batch_num);
 
-            tb.run_leftover_txns();
             db.hot_send_q.done_sending();
             __sync_synchronize();
-
-            db.n_hot_batch_completed += 1;
-        } else {
-            tb.run_leftover_txns();
-            while (db.n_hot_batch_completed < 1+batch_num) {
-            }
         }
+
+        db.batch_bar.wait(&tb);
 	    printf("thread: %lu, tail: %lu\n", WorkerContext::get().tid, db.hot_send_q.send_q_tail);
 	}
 
