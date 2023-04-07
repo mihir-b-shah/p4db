@@ -87,12 +87,14 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     std::vector<std::pair<Txn, void*>> start_fill;
     std::vector<std::pair<Txn, void*>> end_fill;
     gen_start_end_packets(start_fill, end_fill, exec, layout);
+    int rc;
 
     for (auto& pr : start_fill) {
         struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
         struct msghdr msg_hdr;
         sw_intf.prepare_msghdr(&msg_hdr, &ivec);
-        assert(sendmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
+        rc = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
+        assert(rc == HOT_TXN_PKT_BYTES);
     }
     for (auto& pr : start_fill) {
         // just overwrite the buffer, don't need it now.
@@ -100,7 +102,8 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
         struct msghdr msg_hdr;
         sw_intf.prepare_msghdr(&msg_hdr, &ivec);
-        assert(recvmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
+        rc = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
+        assert(rc == HOT_TXN_PKT_BYTES);
     }
 
     exec.db.msg_handler->barrier.wait_nodes();
@@ -138,7 +141,8 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
         struct msghdr msg_hdr;
         sw_intf.prepare_msghdr(&msg_hdr, &ivec);
-        assert(sendmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
+        rc = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
+        assert(rc == HOT_TXN_PKT_BYTES);
     }
     for (auto& pr : end_fill) {
         // just overwrite the buffer, don't need it now.
@@ -146,7 +150,8 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
         struct msghdr msg_hdr;
         sw_intf.prepare_msghdr(&msg_hdr, &ivec);
-        assert(recvmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
+        rc = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
+        assert(rc == HOT_TXN_PKT_BYTES);
         exec.p4_switch.process_reply_txn(&pr.first, pr.second, true);
     }
 

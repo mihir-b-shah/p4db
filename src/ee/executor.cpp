@@ -280,8 +280,10 @@ void TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& arg) {
     struct msghdr msg_hdr;
     sw_intf.prepare_msghdr(&msg_hdr, &ivec);
 
-    assert(sendmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
-    assert(recvmsg(sw_intf.sockfd, &msg_hdr, 0) == HOT_TXN_PKT_BYTES);
+    ssize_t sent = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
+    assert(sent == HOT_TXN_PKT_BYTES);
+    ssize_t received = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
+    assert(received == HOT_TXN_PKT_BYTES);
 }
 
 static void reset_db_batch(Database* db) {

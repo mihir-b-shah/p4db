@@ -31,7 +31,8 @@ int main() {
     cpu_set_t mask;
     CPU_ZERO(&mask);
     CPU_SET(8, &mask);
-    assert(sched_setaffinity(getpid(), sizeof(cpu_set_t), &mask) == 0);
+    int rc = sched_setaffinity(getpid(), sizeof(cpu_set_t), &mask);
+    assert(rc == 0);
 
     signal(SIGINT, sig_int_handler);
 
@@ -39,14 +40,16 @@ int main() {
     assert(sockfd >= 0);
 
     int optval = 1;
-    assert(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int)) == 0);
+    rc = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
+    assert(rc == 0);
 
     struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons((unsigned short) 4004);
 
-    assert(bind(sockfd, (struct sockaddr*) &server_addr, sizeof(server_addr)) >= 0);
+    rc = bind(sockfd, (struct sockaddr*) &server_addr, sizeof(server_addr));
+    assert(rc == 0);
 
     struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
@@ -64,7 +67,8 @@ int main() {
         }
         assert(nr > 0 && (prev_msg_size == -1 || nr == prev_msg_size));
         prev_msg_size = nr;
-        assert(fwrite(buf, 1, (size_t) nr, packet_log_f) == (size_t) nr);
+        rc = fwrite(buf, 1, (size_t) nr, packet_log_f);
+        assert(rc == (size_t) nr);
 
         int ns = sendto(sockfd, buf, nr, 0, (struct sockaddr*) &client_addr, client_len);
         assert(ns > 0);

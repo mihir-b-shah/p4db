@@ -15,7 +15,8 @@ void pin_worker(uint32_t core) {
     CPU_SET(core, &mask);
     
     pthread_t pid = pthread_self();
-    assert(pthread_setaffinity_np(pid, sizeof(cpu_set_t), &mask) == 0);
+    int rc = pthread_setaffinity_np(pid, sizeof(cpu_set_t), &mask);
+    assert(rc == 0);
 }
 
 

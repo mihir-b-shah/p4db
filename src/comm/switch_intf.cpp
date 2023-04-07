@@ -33,7 +33,8 @@ static int get_iface_id(int sock, const char* intf_name) {
 	struct ifreq ifr;
 	// its not going to overrun...
 	strcpy(ifr.ifr_name, intf_name);
-	assert(ioctl(sock, SIOCGIFINDEX, &ifr) == 0);
+    int rc = ioctl(sock, SIOCGIFINDEX, &ifr);
+    assert(rc == 0);
 	return ifr.ifr_ifindex;
 }
 
@@ -42,7 +43,8 @@ static void set_rx_promisc(int iface_id, int sock) {
 	memset(&mreq, 0, sizeof(packet_mreq));
 	mreq.mr_ifindex = iface_id;
 	mreq.mr_type = PACKET_MR_PROMISC;
-	assert(setsockopt(sock, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) == 0);
+	int rc = setsockopt(sock, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
+    assert(rc == 0);
 }
 
 static void setup_sockaddr_ll(int iface_id, struct sockaddr_ll* switch_addr) {
@@ -74,7 +76,8 @@ void switch_intf_t::setup() {
         int iface_id = get_iface_id(sockfd, intf_name);
         setup_sockaddr_ll(iface_id, &addr.mac_addr);
         set_rx_promisc(iface_id, sockfd);
-        assert(bind(sockfd, (struct sockaddr*) &addr.mac_addr, sizeof(sockaddr_ll)) == 0);
+        int rc = bind(sockfd, (struct sockaddr*) &addr.mac_addr, sizeof(sockaddr_ll));
+        assert(rc == 0);
     } else {
         sockfd = socket(AF_INET, SOCK_DGRAM, 0);
         assert(sockfd >= 0);

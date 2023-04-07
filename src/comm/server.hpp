@@ -1,11 +1,11 @@
 #pragma once
 
-
-#include "eth_hdr.hpp"
-
 #include <cstdint>
 #include <string>
 
+struct eth_addr_t {
+    uint8_t addr_bytes[6];
+};
 
 struct Server {
     std::string ip;

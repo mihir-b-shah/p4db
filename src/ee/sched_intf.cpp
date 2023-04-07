@@ -29,11 +29,13 @@ struct __attribute__((packed)) alloc_ready_msg_t {
 
 void Database::setup_sched_sock() {	
 	static struct sockaddr_in server_addr; 
+    int rc;
 
 	auto& config = Config::instance();
 	int server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	int opt_val = 1;
-	assert(setsockopt(server_sockfd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof(opt_val)) == 0);
+	rc = setsockopt(server_sockfd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof(opt_val));
+    assert(rc == 0);
 
 	memset(&server_addr, 0, sizeof(server_addr));
 
@@ -42,7 +44,8 @@ void Database::setup_sched_sock() {
 	std::string& sched_ip = config.sched_server.ip;
 	inet_aton((const char*) sched_ip.c_str(), &server_addr.sin_addr);
 
-	assert(connect(server_sockfd, (struct sockaddr*) &server_addr, (socklen_t) sizeof(struct sockaddr_in)) == 0);
+	rc = connect(server_sockfd, (struct sockaddr*) &server_addr, (socklen_t) sizeof(struct sockaddr_in));
+    assert(rc == 0);
 	this->sched_sockfd = server_sockfd;
 }
 
@@ -60,12 +63,14 @@ void Database::update_alloc(uint32_t batch_num) {
     req.batch_num = 1+batch_num;
 
     // fprintf(stderr, "Line %d, req.batch_num: %u\n", __LINE__, req.batch_num);
-	assert(send(sched_sockfd, (char*) &req, sizeof(struct alloc_req_t), 0) == sizeof(struct alloc_req_t));
+    int rc;
+	rc = send(sched_sockfd, (char*) &req, sizeof(struct alloc_req_t), 0);
+    assert(rc == sizeof(struct alloc_req_t));
     // fprintf(stderr, "Line %d\n", __LINE__);
 
     struct alloc_resp_t fill;
-    assert(recv(sched_sockfd, (char*) &fill, sizeof(struct alloc_resp_t), 0) 
-        == sizeof(struct alloc_resp_t));
+    rc = recv(sched_sockfd, (char*) &fill, sizeof(struct alloc_resp_t), 0); 
+    assert(rc == sizeof(struct alloc_resp_t));
     // fprintf(stderr, "Line %d\n", __LINE__);
     assert(fill.batch_num == req.batch_num); 
 
@@ -76,5 +81,6 @@ void Database::update_alloc(uint32_t batch_num) {
 
 void Database::wait_sched_ready() {
     char buf[sizeof(struct alloc_ready_msg_t)];
-    assert(recv(sched_sockfd, &buf[0], sizeof(struct alloc_ready_msg_t), 0) == sizeof(struct alloc_ready_msg_t));
+    int rc = recv(sched_sockfd, &buf[0], sizeof(struct alloc_ready_msg_t), 0);
+    assert(rc == sizeof(struct alloc_ready_msg_t));
 }

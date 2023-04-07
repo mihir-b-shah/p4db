@@ -10,13 +10,6 @@
 #include <queue>
 #include <algorithm>
 
-#define ASSERT_ON
-#ifdef ASSERT_ON
-#define ASSERT(c) assert((c))
-#else
-#define ASSERT(c) ;
-#endif
-
 // Have arenas of blocks
 static constexpr size_t N_UNIFIED_SLOTS = 2048;
 static constexpr size_t SLOTS_PER_BLOCK = 8;
@@ -57,7 +50,8 @@ static std::unordered_set<tenant_id_t> to_notify;
 
 static ts_t get_real_ts() {
 	struct timespec ts;
-	ASSERT(clock_gettime(CLOCK_BOOTTIME, &ts) == 0);
+	int rc = clock_gettime(CLOCK_BOOTTIME, &ts);
+    assert(rc == 0);
 	return ts.tv_sec * 1000000000 + ts.tv_nsec;
 }
 
@@ -75,8 +69,8 @@ block_id_t handle_alloc(size_t tenant_id, size_t start_delay, size_t duration) {
     printf("\n");
     */
 
-	ASSERT(tenant_id != NO_TENANT);
-	ASSERT(blocks_sorted.size() == N_BLOCKS);
+	assert(tenant_id != NO_TENANT);
+	assert(blocks_sorted.size() == N_BLOCKS);
 	tenant_req[tenant_id].started = true;
 
 	ts_t usecs_ts = get_real_ts();
@@ -94,7 +88,7 @@ block_id_t handle_alloc(size_t tenant_id, size_t start_delay, size_t duration) {
     found.est_finish_ts = my_finish_ts + (found.est_finish_ts >= my_start_ts 
         ? found.est_finish_ts - my_start_ts : 0);
 
-	ASSERT(tenant_req[tenant_id].n_waiting == 0);
+	assert(tenant_req[tenant_id].n_waiting == 0);
     if (!block_queue[found.blk_id].empty()) {
         tenant_req[tenant_id].n_waiting = 1;
     } else {
@@ -106,8 +100,8 @@ block_id_t handle_alloc(size_t tenant_id, size_t start_delay, size_t duration) {
 }
 
 void handle_free(size_t tenant_id, block_id_t block) {
-	ASSERT(tenant_id != NO_TENANT);
-    ASSERT(block_queue[block].front() == tenant_id);
+	assert(tenant_id != NO_TENANT);
+    assert(block_queue[block].front() == tenant_id);
     block_queue[block].pop();
     if (block_queue[block].size() > 0) {
         tenant_id_t next = block_queue[block].front();

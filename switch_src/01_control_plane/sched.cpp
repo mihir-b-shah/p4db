@@ -51,12 +51,14 @@ struct tenant_info_t {
 
 int main() {
     handle_init();
+    int rc;
 
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	assert(sockfd >= 0);
 
 	int opt_val = 1;
-	assert(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof(opt_val)) == 0);
+    rc = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof(opt_val));
+    assert(rc == 0);
 
 	static struct sockaddr_in server_addr; 
 	memset(&server_addr, 0, sizeof(server_addr));
@@ -73,7 +75,8 @@ int main() {
 	assert(bind_rc == 0);
 
 	// just a reasonable backlog quantity
-	assert(listen(sockfd, N_NODES+5) == 0);
+	rc = listen(sockfd, N_NODES+5);
+    assert(rc == 0);
     int epfd = epoll_create(N_NODES);
     assert(epfd >= 0);
     struct epoll_event evs[N_NODES];
@@ -81,7 +84,8 @@ int main() {
     for (size_t n = 0; n<N_NODES; ++n) {
         socklen_t client_addr_len = sizeof(client_addrs[n]);
         int client_sock = accept(sockfd, (struct sockaddr*) &client_addrs[n], &client_addr_len);
-	    assert(setsockopt(client_sock, SOL_TCP, TCP_NODELAY, &opt_val, sizeof(opt_val)) == 0);
+	    int rc = setsockopt(client_sock, SOL_TCP, TCP_NODELAY, &opt_val, sizeof(opt_val));
+        assert(rc == 0);
 
         evs[n].events = EPOLLIN;
         evs[n].data.fd = client_sock;
@@ -138,8 +142,8 @@ int main() {
         // send tenant_info[req->tenant_id].
         memcpy(buf, &tenant_info[req->tenant_id].cached, sizeof(alloc_resp_t));
         tenant_info[req->tenant_id].n_cached_uses += 1;
-        assert(send(ready_fd, buf, sizeof(alloc_resp_t), 0) == sizeof(alloc_resp_t));
-
+        rc = send(ready_fd, buf, sizeof(alloc_resp_t), 0);
+        assert(rc == sizeof(alloc_resp_t));
 
         printf("Line %d, Expected_fds: %lu, sock_fds.size(): %lu\n", __LINE__, tenant_info[req->tenant_id].expected_n_fds, tenant_info[req->tenant_id].sock_fds.size());
         if (tenant_info[req->tenant_id].expected_n_fds == tenant_info[req->tenant_id].sock_fds.size()) {
@@ -153,8 +157,8 @@ int main() {
                     && info.n_cached_uses == info.expected_n_fds) {
                     printf("Notifying tenant %lu\n", tenant);
                     for (int sock_fd : info.sock_fds) {
-                        assert(send(sock_fd, buf, sizeof(alloc_ready_msg_t), 0) 
-                            == sizeof(alloc_ready_msg_t));
+                        rc = send(sock_fd, buf, sizeof(alloc_ready_msg_t), 0);
+                        assert(rc == sizeof(alloc_ready_msg_t));
                     }
                     it = ready_tenants.erase(it);
                 } else {

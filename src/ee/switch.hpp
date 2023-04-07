@@ -2,7 +2,6 @@
 
 #include "ee/args.hpp"
 #include "comm/comm.hpp"
-#include "comm/eth_hdr.hpp"
 #include "layout/declustered_layout.hpp"
 #include "main/config.hpp"
 
