@@ -368,6 +368,7 @@ void TxnExecutor::run_leftover_txns() {
 void single_db_section(void* arg) {
     TxnExecutor* tb = (TxnExecutor*) arg;
     tb->run_leftover_txns();
+    assert(tb->db.hot_send_q.send_q_tail == 0);
 }
 
 void txn_executor(Database& db, std::vector<Txn>& txns) {
@@ -442,7 +443,6 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
         }
 
         db.batch_bar.wait(&tb);
-	    printf("thread: %lu, tail: %lu\n", WorkerContext::get().tid, db.hot_send_q.send_q_tail);
 	}
 
     printf("worker %u, n_(accel)_commits: %lu\n", WorkerContext::get().tid, tb.n_commits);

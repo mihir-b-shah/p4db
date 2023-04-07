@@ -1,6 +1,5 @@
 
 #include "barrier.hpp"
-
 #include "main/config.hpp"
 
 #include <algorithm>
