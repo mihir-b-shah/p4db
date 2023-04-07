@@ -33,8 +33,7 @@ void load_txns(Config& config) {
         txn.loader_id = loader_id++;
 		
 		for (size_t i = 0; i<N_OPS; ++i) {
-			bool ok = std::getline(ss, access, ',');
-            assert(ok);
+			std::getline(ss, access, ',');
 			Txn::OP op;	
 			op.id = std::stoull(access);
 			if ((rand() % 100) < config.write_prob) {
