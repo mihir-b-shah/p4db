@@ -7,6 +7,7 @@ project_headers += files(
     'switch_intf.hpp',
     'comm.hpp',
     'udp.hpp',
+    'tcp.hpp',
 )
 
 
@@ -14,4 +15,5 @@ project_sources += files(
     'msg_handler.cpp',
     'switch_intf.cpp',
     'udp.cpp',
+    'tcp.cpp',
 )

@@ -6,20 +6,11 @@
 
 #include <cstdio>
 
-/*
-Packet drops, mistaken sends, etc make this very problematic.
-Maybe implementing an RDMA send/recv version of this might be ok?
-It can run in userspace and can allow running experiments.
-*/
-
-
 UDPCommunicator::UDPCommunicator() {
     auto& config = Config::instance();
     node_id = config.node_id;
     num_nodes = config.num_nodes;
     switch_id = config.switch_id;
-    mh_tid = config.num_txn_workers;
-
 
     setup(config.servers.at(node_id).port);
 

@@ -20,7 +20,8 @@ static void critical_wait(void* arg) {
 BarrierHandler::BarrierHandler(Communicator* comm) : comm(comm), received(0),
 	local_barrier(Config::instance().num_txn_workers, critical_wait, true) {
     num_nodes = comm->num_nodes;
-    all_nodes_mask = (1 << comm->num_nodes) - 1;
+    //  that is, all nodes except me
+    all_nodes_mask = ((1 << comm->num_nodes) - 1) & (~(1 << comm->node_id));
 }
 
 //	This function is only ever called from the single network thread.
@@ -40,10 +41,12 @@ void BarrierHandler::handle(msg::Barrier* msg) {
 
 void BarrierHandler::my_wait(barrier_handler_arg_t* bar_arg) {
 	for (uint32_t i = 0; i < num_nodes; ++i) {
-		auto pkt = comm->make_pkt();
-		auto msg = pkt->ctor<msg::Barrier>();
-		msg->sender = comm->node_id;
-		comm->send(msg::node_t{i}, pkt);
+        if (i != comm->node_id) {
+            auto pkt = comm->make_pkt();
+            auto msg = pkt->ctor<msg::Barrier>();
+            msg->sender = comm->node_id;
+            comm->send(msg::node_t{i}, pkt);
+        }
 	}
 	//	TODO: is seq cst necessary here? They used relaxed.
 	while (__atomic_load_n(&received, __ATOMIC_SEQ_CST) != all_nodes_mask) {

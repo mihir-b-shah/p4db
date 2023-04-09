@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "comm/buffer.hpp"
@@ -22,28 +23,24 @@
 
 struct MessageHandler;
 
-class UDPCommunicator {
-    // using lock_t = std::mutex;
-    using lock_t = SpinLock;
-
-    lock_t mutex;
-
-    int sock;
-    PacketBuffer* recv_buffer = nullptr;
-
+/*  No need to protect the socket with a lock-
+    https://stackoverflow.com/questions/1981372/are-parallel-calls-to-send-recv-on-the-same-socket-valid/1981439#1981439 */
+class TCPCommunicator {
 public:
     using Pkt_t = PacketBuffer;
-
-    std::vector<struct sockaddr_in> addresses;
+    
+    Pkt_t* recv_buffer;
+    std::vector<int> node_sockfds;
+    MessageHandler* handler = nullptr;
+    std::jthread thread;
     msg::node_t node_id;
     msg::node_t switch_id;
     uint32_t num_nodes;
-    MessageHandler* handler = nullptr;
-    std::jthread thread;
+    uint32_t mh_tid;
 
 public:
-    UDPCommunicator();
-    ~UDPCommunicator();
+    TCPCommunicator();
+    ~TCPCommunicator() {}
 
     void set_handler(MessageHandler* handler);
     void send(msg::node_t target, PacketBuffer*& pkt);
@@ -53,5 +50,4 @@ public:
 
 private:
     PacketBuffer* receive();
-    void setup(uint16_t port);
 };

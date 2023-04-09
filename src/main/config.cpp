@@ -94,11 +94,9 @@ void Config::parse_cli(int argc, char** argv) {
 			ip_token = strtok(NULL, " ");
 		}
 	} else {
-		sched_server = Server("127.0.0.1", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
-		for (size_t port_it = 0; port_it < num_nodes; ++port_it) {
-			servers.emplace_back("127.0.0.1", 4001+port_it+1, 
-				(eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
-		}
+		sched_server = Server("128.83.144.8", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+        servers.emplace_back("128.83.144.118", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+        servers.emplace_back("128.83.144.182", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
 	}
 
     if (servers.size() < num_nodes) {
@@ -113,10 +111,9 @@ void Config::parse_cli(int argc, char** argv) {
     if (result.count("verify")) {
         verify = result.as<bool>("verify");
     }
-    // if (use_switch) {
     switch_id = servers.size();
-    servers.emplace_back(Server{"127.0.0.1", 4001+num_nodes+1, {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}); // switch
-    // }
+    // candyland
+    servers.emplace_back(Server{"128.83.144.8", 4004, {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}); // switch
 
     num_txns = result.as<uint64_t>("num_txns");
 	table_size = result.as<uint64_t>("table_size");

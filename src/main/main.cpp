@@ -47,6 +47,8 @@ int main(int argc, char** argv) {
 		auto& tuple = table->insert(index);
 		tuple.id = i;
 	}
+
+    fprintf(stderr, "Before wait-nodes.\n");
     db.msg_handler->barrier.wait_nodes();
 
     // get my initial allocation.
@@ -68,7 +70,7 @@ int main(int argc, char** argv) {
         workers.emplace_back(std::thread([&, i]() {
             const WorkerContext::guard worker_ctx;
 			// TODO: change in production- right now, running on single machine.
-            uint32_t core = i + (1+config.num_txn_workers)*config.node_id;
+            uint32_t core = i;
             printf("Pinning worker %u on core %u\n", i, core);
             pin_worker(core);
 			db.msg_handler->barrier.wait_workers();
