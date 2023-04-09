@@ -42,8 +42,6 @@ void MessageHandler::handle(Pkt_t* pkt) {
             return handle(pkt, msg->as<msg::TuplePutReq>());
         case Type::TUPLE_PUT_RES:
             return handle(pkt, msg->as<msg::TuplePutRes>());
-        case Type::SWITCH_TXN:
-            return handle(pkt, msg->as<msg::SwitchTxn>());
     }
 }
 
@@ -103,23 +101,4 @@ void MessageHandler::handle(Pkt_t* pkt, msg::TuplePutRes* res) {
 
     putresponses.handle(res->sender);
     pkt->free();
-}
-
-void MessageHandler::handle(Pkt_t* pkt, msg::SwitchTxn* txn) {
-    // std::cerr << "msg::SwitchTxn msg_id=" << txn->msg_id << '\n';
-    if constexpr (error::DUMP_SWITCH_PKTS) {
-        std::cout << "Handling SwitchTxn len=" << pkt->size() << '\n';
-        pkt->dump(std::cerr);
-    }
-
-    msg::id_t id = txn->msg_id;
-    future_map_t::accessor acc;
-    bool found = open_futures.find(acc, id);
-    assert(found == true);
-
-    AbstractFuture* future = acc->second;
-    bool success = open_futures.erase(acc);
-    assert(success == true);
-
-    future->set_pkt(pkt);
 }

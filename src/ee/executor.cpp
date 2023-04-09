@@ -431,6 +431,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
             }
         }
         tb.mini_batch_num += 1;
+		db.msg_handler->barrier.wait_workers();
 
         // thread 0 is the leader thread.
         if (thread_id == 0) {

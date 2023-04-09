@@ -39,8 +39,6 @@ enum class Type : uint32_t {
     TUPLE_GET_RES = 0x00000002,
     TUPLE_PUT_REQ = 0x00000003,
     TUPLE_PUT_RES = 0x00000004,
-
-    SWITCH_TXN = 0x00000005,
 };
 
 struct Header {
@@ -129,20 +127,6 @@ struct TuplePutReq : public Base<TuplePutReq, Type::TUPLE_PUT_REQ>, public Tuple
 struct TuplePutRes : public Base<TuplePutRes, Type::TUPLE_PUT_RES>, public TupleMsgHeader {
     TuplePutRes(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode)
         : TupleMsgHeader{ts, tid, rid, mode} {}
-};
-
-
-struct SwitchTxn : public Base<SwitchTxn, Type::SWITCH_TXN> {
-    SwitchTxn() = default;
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-    uint8_t data[0] __attribute__((aligned (sizeof(void*))));
-#pragma GCC diagnostic pop
-
-    static constexpr auto size(size_t data_size) {
-        return sizeof(SwitchTxn) + data_size;
-    }
 };
 
 } // namespace msg

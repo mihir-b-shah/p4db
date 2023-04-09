@@ -62,6 +62,4 @@ private:
     void handle(Pkt_t* pkt, msg::TupleGetRes* res);
     void handle(Pkt_t* pkt, msg::TuplePutReq* req);
     void handle(Pkt_t* pkt, msg::TuplePutRes* res);
-
-    void handle(Pkt_t* pkt, msg::SwitchTxn* txn);
 };

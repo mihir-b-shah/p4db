@@ -39,7 +39,6 @@ void BarrierHandler::handle(msg::Barrier* msg) {
 }
 
 void BarrierHandler::my_wait(barrier_handler_arg_t* bar_arg) {
-	//	This is a local barrier, as such, everyone is soft or everyone is hard.
 	for (uint32_t i = 0; i < num_nodes; ++i) {
 		auto pkt = comm->make_pkt();
 		auto msg = pkt->ctor<msg::Barrier>();
