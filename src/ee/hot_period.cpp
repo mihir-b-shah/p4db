@@ -96,6 +96,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         rc = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
         assert(rc == HOT_TXN_PKT_BYTES);
     }
+    fprintf(stderr, "Wait for %lu\n", start_fill.size());
     for (auto& pr : start_fill) {
         // just overwrite the buffer, don't need it now.
         // the recv is just to make sure the packets came back.
@@ -103,6 +104,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         struct msghdr msg_hdr;
         sw_intf.prepare_msghdr(&msg_hdr, &ivec);
         rc = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
+        fprintf(stderr, "Received start_fill pkt.\n");
         assert(rc == HOT_TXN_PKT_BYTES);
     }
 
@@ -129,6 +131,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         assert(sent == q_p-window_start);
         ssize_t received = recvmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0, NULL);
         assert(received == q_p-window_start);
+        fprintf(stderr, "Received %ld\n", received);
         
         if (q[window_start].mini_batch_num + 1 == q[q_p].mini_batch_num || q_p == q_size) {
             // fprintf(stderr, "mb %u: %lu\n", q[window_start].mini_batch_num, q_p-start_mb_i);
@@ -144,6 +147,8 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         rc = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
         assert(rc == HOT_TXN_PKT_BYTES);
     }
+
+    fprintf(stderr, "Wait for %lu\n", end_fill.size());
     for (auto& pr : end_fill) {
         // just overwrite the buffer, don't need it now.
         // the recv is just to make sure the packets came back.
@@ -151,6 +156,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         struct msghdr msg_hdr;
         sw_intf.prepare_msghdr(&msg_hdr, &ivec);
         rc = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
+        fprintf(stderr, "Received end_fill pkt.\n");
         assert(rc == HOT_TXN_PKT_BYTES);
         exec.p4_switch.process_reply_txn(&pr.first, pr.second, true);
     }

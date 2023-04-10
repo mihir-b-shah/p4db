@@ -15,6 +15,7 @@
 #include <iostream>
 #include <mutex>
 #include <netinet/in.h>
+#include <poll.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/types.h>

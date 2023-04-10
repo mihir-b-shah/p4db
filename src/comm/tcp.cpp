@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <climits>
 #include <errno.h>
-#include <sys/epoll.h>
 
 static constexpr size_t MAX_NODES = 10;
 
@@ -36,13 +35,12 @@ TCPCommunicator::TCPCommunicator() {
     node_sockfds.resize(config.num_nodes);
     recv_buffer = Pkt_t::alloc();
 
-    /*  Set up a topology where I, node_id, am the client for [0,node_id),
-        and the server for [node_id+1,num_nodes). I can't connect to myself.
-        So in a 3 node system, node 0 will call accept twice, node 1 will call
-        accept once then connect once, node 2 will call connect twice. 
-        
-        So I need server_addr's for each connection I am the server for. 
-        And then, repeat in reverse. */
+    //  Set up a topology where I, node_id, am the client for [0,node_id),
+    //  and the server for [node_id+1,num_nodes). I can't connect to myself.
+    //  So in a 3 node system, node 0 will call accept twice, node 1 will call
+    //  accept once then connect once, node 2 will call connect twice. 
+    //  So I need server_addr's for each connection I am the server for. 
+    //  And then, repeat in reverse.
 
     assert(config.num_nodes <= MAX_NODES);
 
@@ -67,6 +65,7 @@ TCPCommunicator::TCPCommunicator() {
     for (size_t n = 1+config.node_id; n<config.num_nodes; ++n) {
         socklen_t client_addr_len = sizeof(client_addrs[n]);
         int client_sock = accept(parent_sock, (sockaddr*) &client_addrs[n], &client_addr_len);
+        assert(client_sock >= 0);
 
 	    int opt_val = 1;
 	    rc = setsockopt(client_sock, SOL_TCP, TCP_NODELAY, &opt_val, sizeof(opt_val));
@@ -75,7 +74,6 @@ TCPCommunicator::TCPCommunicator() {
         size_t j;
         for (j = 0; j<config.num_nodes; ++j) {
             if (strcmp(inet_ntoa(client_addrs[n].sin_addr), config.servers[j].ip.c_str()) == 0) {
-                fprintf(stderr, "Set sockfds[%lu]\n", j);
                 node_sockfds[j] = client_sock;
                 break;
             }
@@ -113,7 +111,6 @@ TCPCommunicator::TCPCommunicator() {
                 assert(false && "Invalid connect()");
             }
         }
-        fprintf(stderr, "Set sockfds[%lu]\n", n);
         node_sockfds[n] = sockfd;
     }
 }
@@ -130,7 +127,6 @@ void TCPCommunicator::set_handler(MessageHandler* handler) {
         while (!token.stop_requested()) {
             auto pkt = receive();
             if (!pkt) {
-                //  End of all streams.
                 continue;
             }
             handler->handle(pkt);
@@ -145,7 +141,7 @@ void TCPCommunicator::send(msg::node_t target, Pkt_t*& pkt, uint32_t) {
 void TCPCommunicator::send(msg::node_t target, Pkt_t*& pkt) {
     //  Can't send to myself.
     assert(target < node_sockfds.size() && ((uint32_t) target) != node_id);
-    fprintf(stderr, "Sent pkt to tgt=%u.\n", (uint32_t) target);
+    // fprintf(stderr, "Sent pkt to tgt=%u.\n", (uint32_t) target);
     int len = ::send(node_sockfds[(uint32_t) target], (const void*) &pkt->buffer[0], MSG_SIZE, 0);
     assert(len == MSG_SIZE);
     pkt->free();
@@ -166,6 +162,18 @@ TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
             continue;
         }
 
+        int len = recv(node_sockfds[i], recv_buffer, MSG_SIZE, 0);
+        if (len == 0) {
+            break;
+        } else {
+            assert(len == MSG_SIZE);
+            found = true;
+            break;
+        }
+
+        /*
+        TODO, this will crash for nodes>2. Use an epoll-based approach.
+
         int len = recv(node_sockfds[i], recv_buffer, MSG_SIZE, MSG_DONTWAIT);
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             // errno set -> nothing available, spin+come back -> doesn't mean anything about len.
@@ -176,10 +184,11 @@ TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
             fprintf(stderr, "Recv pkt from src=%lu.\n", i);
             assert(len == MSG_SIZE);
             found = true;
-            /*  Is this safe? Will we starve later sockets? Probably not, as long as the sockets aren't
-                sending at sustained peak rate */
+            //  Is this safe? Will we starve later sockets? Probably not, as long as the sockets aren't
+            //  sending at sustained peak rate
             break;
         }
+        */
     }
 
     if (!found) {
