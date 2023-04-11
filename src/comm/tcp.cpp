@@ -23,6 +23,14 @@ static constexpr size_t MAX_NODES = 10;
 static constexpr size_t MSG_SIZE = 100;
 static_assert(MSG_SIZE <= PacketBuffer::BUF_SIZE);
 
+static void set_sock_timeout(int sockfd) {
+    struct timeval tv;
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+    int rc = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (void**) &tv, sizeof(tv));
+    assert(rc == 0);
+}
+
 TCPCommunicator::TCPCommunicator() {
     auto& config = Config::instance();
     int rc;
@@ -74,6 +82,7 @@ TCPCommunicator::TCPCommunicator() {
         size_t j;
         for (j = 0; j<config.num_nodes; ++j) {
             if (strcmp(inet_ntoa(client_addrs[n].sin_addr), config.servers[j].ip.c_str()) == 0) {
+                set_sock_timeout(client_sock);
                 node_sockfds[j] = client_sock;
                 break;
             }
@@ -111,6 +120,7 @@ TCPCommunicator::TCPCommunicator() {
                 assert(false && "Invalid connect()");
             }
         }
+        set_sock_timeout(sockfd);
         node_sockfds[n] = sockfd;
     }
 }
@@ -165,6 +175,8 @@ TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
         int len = recv(node_sockfds[i], recv_buffer, MSG_SIZE, 0);
         if (len == 0) {
             break;
+        } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            continue;
         } else {
             assert(len == MSG_SIZE);
             found = true;

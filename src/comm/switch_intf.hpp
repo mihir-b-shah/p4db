@@ -18,6 +18,8 @@
 
 static constexpr uint16_t P4DB_ETHER_TYPE = 0x88b5;
 static constexpr size_t MAC_ADDR_BYTES = 6;
+static constexpr size_t N_SECS_TIMEOUT = 5;
+static constexpr size_t N_NSECS_TIMEOUT = 0;
 
 struct switch_intf_t {
     int sockfd;

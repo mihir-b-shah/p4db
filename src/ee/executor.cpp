@@ -283,7 +283,13 @@ void TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& arg) {
     ssize_t sent = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
     assert(sent == HOT_TXN_PKT_BYTES);
     ssize_t received = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
-    assert(received == HOT_TXN_PKT_BYTES);
+
+    if (received == -1) {
+        assert(errno == EAGAIN || errno == EWOULDBLOCK);
+        this->n_dropped += 1;
+    } else {
+        assert(received == HOT_TXN_PKT_BYTES);
+    }
 }
 
 static void reset_db_batch(Database* db) {
@@ -393,6 +399,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
     tb.n_commits = 0;
     tb.n_aborts = 0;
+    tb.n_dropped = 0;
     tb.n_cold_fallbacks = 0;
 
 	for (size_t i = 0; i<txns.size(); i+=batch_tgt) {
@@ -448,6 +455,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
     printf("worker %u, n_(accel)_commits: %lu\n", WorkerContext::get().tid, tb.n_commits);
     printf("worker %u, n_(accel)_aborts: %lu\n", WorkerContext::get().tid, tb.n_aborts);
+    printf("worker %u, n_(accel)_packet_drops: %lu\n", WorkerContext::get().tid, tb.n_dropped);
     printf("worker %u, n_cold_fallbacks: %lu\n", WorkerContext::get().tid, tb.n_cold_fallbacks);
 }
 

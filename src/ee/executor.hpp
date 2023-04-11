@@ -72,6 +72,7 @@ struct TxnExecutor {
     // stats
     size_t n_commits;
     size_t n_aborts;
+    size_t n_dropped;
     size_t n_cold_fallbacks;
 
     TxnExecutor(Database& db)

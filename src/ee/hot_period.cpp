@@ -89,6 +89,10 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     gen_start_end_packets(start_fill, end_fill, exec, layout);
     int rc;
 
+    struct timespec timeout;
+    timeout.tv_sec = N_SECS_TIMEOUT;
+    timeout.tv_nsec = N_NSECS_TIMEOUT;
+
     for (auto& pr : start_fill) {
         struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
         struct msghdr msg_hdr;
@@ -96,7 +100,6 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         rc = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
         assert(rc == HOT_TXN_PKT_BYTES);
     }
-    fprintf(stderr, "Wait for %lu\n", start_fill.size());
     for (auto& pr : start_fill) {
         // just overwrite the buffer, don't need it now.
         // the recv is just to make sure the packets came back.
@@ -104,8 +107,14 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         struct msghdr msg_hdr;
         sw_intf.prepare_msghdr(&msg_hdr, &ivec);
         rc = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
-        fprintf(stderr, "Received start_fill pkt.\n");
-        assert(rc == HOT_TXN_PKT_BYTES);
+
+        //  Just silently drop packet for now...
+        if (rc == -1) {
+            assert(errno == EAGAIN || errno == EWOULDBLOCK);
+            exec.n_dropped += 1;
+        } else {
+            assert(rc == HOT_TXN_PKT_BYTES);
+        }
     }
 
     exec.db.msg_handler->barrier.wait_nodes();
@@ -129,10 +138,13 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
 
         ssize_t sent = sendmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0);
         assert(sent == q_p-window_start);
-        ssize_t received = recvmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0, NULL);
-        assert(received == q_p-window_start);
-        fprintf(stderr, "Received %ld\n", received);
-        
+
+        ssize_t received = recvmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0, &timeout);
+        if (received < q_p-window_start) {
+            //  Overcounts n_dropped by 1 if recieved=-1, who cares...
+            exec.n_dropped += q_p - window_start - received;
+        }
+
         if (q[window_start].mini_batch_num + 1 == q[q_p].mini_batch_num || q_p == q_size) {
             // fprintf(stderr, "mb %u: %lu\n", q[window_start].mini_batch_num, q_p-start_mb_i);
             start_mb_i = q_p;
@@ -148,7 +160,6 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         assert(rc == HOT_TXN_PKT_BYTES);
     }
 
-    fprintf(stderr, "Wait for %lu\n", end_fill.size());
     for (auto& pr : end_fill) {
         // just overwrite the buffer, don't need it now.
         // the recv is just to make sure the packets came back.
@@ -156,9 +167,14 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         struct msghdr msg_hdr;
         sw_intf.prepare_msghdr(&msg_hdr, &ivec);
         rc = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
-        fprintf(stderr, "Received end_fill pkt.\n");
-        assert(rc == HOT_TXN_PKT_BYTES);
-        exec.p4_switch.process_reply_txn(&pr.first, pr.second, true);
+
+        if (rc == -1) {
+            assert(errno == EAGAIN || errno == EWOULDBLOCK);
+            exec.n_dropped += 1;
+        } else {
+            assert(rc == HOT_TXN_PKT_BYTES);
+            exec.p4_switch.process_reply_txn(&pr.first, pr.second, true);
+        }
     }
 
     pool.clear();
