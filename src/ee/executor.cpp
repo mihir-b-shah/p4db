@@ -8,8 +8,15 @@
 #include <mutex>
 #include <thread>
 #include <pthread.h>
+#include <ctime>
 #include <limits>
 #include <optional>
+
+uint64_t micros_diff(struct timespec* t_start, struct timespec* t_end) {
+    uint64_t s_micros = ((((uint64_t) t_start->tv_sec) * 1000000000) + t_start->tv_nsec) / 1000;
+    uint64_t e_micros = ((((uint64_t) t_end->tv_sec) * 1000000000) + t_end->tv_nsec) / 1000;
+    return e_micros-s_micros;
+}
 	
 RC TxnExecutor::my_execute(Txn& arg, void** packet_fill) {
 	arg.id.field.valid = true;
@@ -378,6 +385,11 @@ void single_db_section(void* arg) {
 }
 
 void txn_executor(Database& db, std::vector<Txn>& txns) {
+    int rc;
+    struct timespec ts_begin;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_begin);
+    assert(rc == 0);
+
 	auto& config = Config::instance();
     TxnExecutor tb{db};
 	size_t node_id = config.node_id;
@@ -442,21 +454,39 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
         // thread 0 is the leader thread.
         if (thread_id == 0) {
+            struct timespec ts_start;
+            rc = clock_gettime(CLOCK_REALTIME, &ts_start);
+            assert(rc == 0);
+
             db.wait_sched_ready();
+
+            __sync_synchronize();
             run_hot_period(tb, layout);
             db.update_alloc(1+batch_num);
 
             db.hot_send_q.done_sending();
             __sync_synchronize();
+
+            struct timespec ts_end;
+            rc = clock_gettime(CLOCK_REALTIME, &ts_end);
+            assert(rc == 0);
+
+            fprintf(stderr, "Hot micros: %lu\n", micros_diff(&ts_start, &ts_end));
         }
 
         db.batch_bar.wait(&tb);
 	}
 
+    struct timespec ts_final;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_final);
+    assert(rc == 0);
+
     printf("worker %u, n_(accel)_commits: %lu\n", WorkerContext::get().tid, tb.n_commits);
     printf("worker %u, n_(accel)_aborts: %lu\n", WorkerContext::get().tid, tb.n_aborts);
     printf("worker %u, n_(accel)_packet_drops: %lu\n", WorkerContext::get().tid, tb.n_dropped);
     printf("worker %u, n_cold_fallbacks: %lu\n", WorkerContext::get().tid, tb.n_cold_fallbacks);
+
+    fprintf(stderr, "Total micros: %lu\n", micros_diff(&ts_begin, &ts_final));
 }
 
 void orig_txn_executor(Database& db, std::vector<Txn>& txns) {

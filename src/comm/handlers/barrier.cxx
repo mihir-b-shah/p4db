@@ -14,19 +14,32 @@
 static void critical_wait(void* arg) {
 	barrier_handler_arg_t* bar_arg = (barrier_handler_arg_t*) arg;
 	bar_arg->handler->my_wait(bar_arg);
-    //  Only works for n=2 nodes
 	__atomic_add_fetch(&bar_arg->handler->received, -1, __ATOMIC_SEQ_CST);
+	//  TODO __atomic_store_n(&bar_arg->handler->received, 0, __ATOMIC_SEQ_CST);
 }
 
 BarrierHandler::BarrierHandler(Communicator* comm) : comm(comm), received(0),
 	local_barrier(Config::instance().num_txn_workers, critical_wait, true) {
     num_nodes = comm->num_nodes;
+    //  that is, all nodes except me
+    all_nodes_mask = ((1 << comm->num_nodes) - 1) & (~(1 << comm->node_id));
 }
 
 //	This function is only ever called from the single network thread.
 void BarrierHandler::handle(msg::Barrier* msg) {
-    fprintf(stderr, "Received bar: %u\n", msg->num);
-	__atomic_add_fetch(&received, 1, __ATOMIC_SEQ_CST);
+	q.emplace(msg->sender);
+	size_t q_size = q.size();
+	for (size_t i = 0; i<q_size; ++i) {
+		uint32_t sender = (uint32_t) q.front().sender;
+		if (__atomic_load_n(&received, __ATOMIC_SEQ_CST) & (1 << sender)) {
+            fprintf(stderr, "(1) Received msg from %u\n", sender);
+			q.push(q.front());
+		} else {
+            fprintf(stderr, "(2) Received msg from %u\n", sender);
+			__atomic_add_fetch(&received, 1 << sender, __ATOMIC_SEQ_CST);
+		}
+		q.pop();
+	}
 }
 
 void BarrierHandler::my_wait(barrier_handler_arg_t* bar_arg) {
@@ -35,30 +48,25 @@ void BarrierHandler::my_wait(barrier_handler_arg_t* bar_arg) {
             auto pkt = comm->make_pkt();
             auto msg = pkt->ctor<msg::Barrier>();
             msg->sender = comm->node_id;
-            msg->num = bar_arg->id;
-            fprintf(stderr, "Sent bar: %u\n", msg->num);
             comm->send(msg::node_t{i}, pkt);
         }
 	}
+    fprintf(stderr, "Sent for barrier, received=%lu.\n", received);
 	//	TODO: is seq cst necessary here? They used relaxed.
-	while (__atomic_load_n(&received, __ATOMIC_SEQ_CST) != (comm->num_nodes-1)) {
+	while (__atomic_load_n(&received, __ATOMIC_SEQ_CST) != all_nodes_mask) {
 		__builtin_ia32_pause();
 	}
 }
 
-static uint32_t id_ctr = 1;
-
 void BarrierHandler::wait_workers() {
 	barrier_handler_arg_t arg;
 	arg.handler = this;
-    arg.id = __atomic_fetch_add(&id_ctr, 1, __ATOMIC_SEQ_CST);
 	local_barrier.wait(&arg);
 }
 
 void BarrierHandler::wait_nodes() {
 	barrier_handler_arg_t arg;
 	arg.handler = this;
-    arg.id = __atomic_fetch_add(&id_ctr, 1, __ATOMIC_SEQ_CST);
 	critical_wait(&arg);
     __sync_synchronize();
 }

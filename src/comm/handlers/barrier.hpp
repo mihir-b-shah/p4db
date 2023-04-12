@@ -9,12 +9,10 @@
 #include <pthread.h>
 
 struct BarrierHandler;
-class Database;
-
-typedef void (*single_fn_t)(Database* db);
 
 struct barrier_handler_arg_t {
 	BarrierHandler* handler;
+    uint32_t id;
 };
 
 struct queued_msg_t {

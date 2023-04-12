@@ -74,7 +74,9 @@ struct Base : crtp<T>, public Header {
 
 struct Init : public Base<Init, Type::INIT> {};
 
-struct Barrier : public Base<Barrier, Type::BARRIER> {};
+struct Barrier : public Base<Barrier, Type::BARRIER> {
+    uint32_t num;
+};
 
 // used by all 4 tuple interaction messages
 struct TupleMsgHeader {
