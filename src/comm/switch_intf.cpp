@@ -87,13 +87,11 @@ void switch_intf_t::setup() {
         inet_aton((const char*) switch_server.ip.c_str(), &addr.ip_addr.sin_addr);
     }
 
-    /*
     struct timeval tv;
     tv.tv_sec = N_SECS_TIMEOUT;
     tv.tv_usec = N_NSECS_TIMEOUT/1000;
     int rc = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (void**) &tv, sizeof(tv));
     assert(rc == 0);
-    */
 }
 
 void switch_intf_t::prepare_msghdr(struct msghdr* msg_hdr, struct iovec* ivec) {

@@ -82,7 +82,7 @@ TCPCommunicator::TCPCommunicator() {
         size_t j;
         for (j = 0; j<config.num_nodes; ++j) {
             if (strcmp(inet_ntoa(client_addrs[n].sin_addr), config.servers[j].ip.c_str()) == 0) {
-                set_sock_timeout(client_sock);
+                // set_sock_timeout(client_sock);
                 node_sockfds[j] = client_sock;
                 break;
             }
@@ -120,7 +120,7 @@ TCPCommunicator::TCPCommunicator() {
                 assert(false && "Invalid connect()");
             }
         }
-        set_sock_timeout(sockfd);
+        // set_sock_timeout(sockfd);
         node_sockfds[n] = sockfd;
     }
 }
@@ -175,32 +175,15 @@ TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
         int len = recv(node_sockfds[i], recv_buffer, MSG_SIZE, 0);
         if (len == 0) {
             break;
+        /*
         } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
             continue;
-        } else {
-            assert(len == MSG_SIZE);
-            found = true;
-            break;
-        }
-
-        /*
-        TODO, this will crash for nodes>2. Use an epoll-based approach.
-
-        int len = recv(node_sockfds[i], recv_buffer, MSG_SIZE, MSG_DONTWAIT);
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            // errno set -> nothing available, spin+come back -> doesn't mean anything about len.
-            continue;
-        } else if (len == 0) {
-            break;
-        } else {
-            fprintf(stderr, "Recv pkt from src=%lu.\n", i);
-            assert(len == MSG_SIZE);
-            found = true;
-            //  Is this safe? Will we starve later sockets? Probably not, as long as the sockets aren't
-            //  sending at sustained peak rate
-            break;
-        }
         */
+        } else {
+            assert(len == MSG_SIZE);
+            found = true;
+            break;
+        }
     }
 
     if (!found) {

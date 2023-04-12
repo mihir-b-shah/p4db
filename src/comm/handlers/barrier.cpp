@@ -25,7 +25,6 @@ BarrierHandler::BarrierHandler(Communicator* comm) : comm(comm), received(0),
 
 //	This function is only ever called from the single network thread.
 void BarrierHandler::handle(msg::Barrier* msg) {
-    fprintf(stderr, "Received bar: %u\n", msg->num);
 	__atomic_add_fetch(&received, 1, __ATOMIC_SEQ_CST);
 }
 
@@ -36,7 +35,6 @@ void BarrierHandler::my_wait(barrier_handler_arg_t* bar_arg) {
             auto msg = pkt->ctor<msg::Barrier>();
             msg->sender = comm->node_id;
             msg->num = bar_arg->id;
-            fprintf(stderr, "Sent bar: %u\n", msg->num);
             comm->send(msg::node_t{i}, pkt);
         }
 	}
