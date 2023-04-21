@@ -14,16 +14,11 @@
 #include <arpa/inet.h>
 
 static constexpr size_t BUF_SIZE = 1500;
-
-static FILE* packet_log_f = NULL;
 static size_t n_received = 0;
 
 static void sig_int_handler(int sig) {
     assert(sig == SIGINT);
-    assert(packet_log_f != NULL);
     fprintf(stderr, "Received %lu packets, closing.\n", __atomic_load_n(&n_received, __ATOMIC_SEQ_CST));
-    fclose(packet_log_f);
-    fprintf(stderr, "Close finished.\n");
     exit(0);
 }
 
@@ -56,8 +51,6 @@ int main(int argc, char** argv) {
     struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
     
-    packet_log_f = fopen("/tmp/packet_trace.raw", "w");
-
     char buf[BUF_SIZE];
     int prev_msg_size = -1;
 
@@ -67,10 +60,13 @@ int main(int argc, char** argv) {
         if (prev_msg_size == -1) {
             printf("msg_size: %d\n", nr);
         }
+
         assert(nr > 0 && (prev_msg_size == -1 || nr == prev_msg_size));
         prev_msg_size = nr;
+	/*
         rc = fwrite(buf, 1, (size_t) nr, packet_log_f);
         assert(rc == (size_t) nr);
+	*/
 
         int ns = sendto(sockfd, buf, nr, 0, (struct sockaddr*) &client_addr, client_len);
         assert(ns > 0);

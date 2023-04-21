@@ -82,7 +82,6 @@ static void gen_start_end_packets(std::vector<std::pair<Txn, void*>>& start_fill
 }
 
 void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
-	/*
     switch_intf_t& sw_intf = Config::instance().sw_intf;
 
     std::vector<std::pair<Txn, void*>> start_fill;
@@ -155,7 +154,6 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
             // fprintf(stderr, "mb %u: %lu\n", q[window_start].mini_batch_num, q_p-start_mb_i);
             start_mb_i = q_p;
             exec.db.msg_handler->barrier.wait_nodes();
-	    exit(0);
         }
     }
 
@@ -186,6 +184,5 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     }
 
     pool.clear();
-    */
     exec.db.msg_handler->barrier.wait_nodes();
 }

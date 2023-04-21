@@ -72,8 +72,8 @@ public class Generic {
 				}
 			}
 
-			String fname = String.format("node%d_S%d_z%d_N%d_n%d_k%d_txns.csv",
-				i, N_NODES, K_ZIPF, N_TXNS, N_OPS, N_KEYS);
+			String fname = String.format("node%d_S%d_z%d_N%d_n%d_k%d_f%d_txns.csv",
+				i, N_NODES, K_ZIPF, N_TXNS, N_OPS, N_KEYS, FRAC_DIST_TXNS);
 			PrintWriter outFile = new PrintWriter(new File(fname));
 
 			for (long[] txn : nodeTxns) {
@@ -114,8 +114,8 @@ public class Generic {
 			return Integer.compare(e2.getValue(), e1.getValue());
 		});
 
-		String dist_fname = String.format("dist_S%d_z%d_N%d_n%d_k%d.txt",
-			N_NODES, K_ZIPF, N_TXNS, N_OPS, N_KEYS);
+		String dist_fname = String.format("dist_S%d_z%d_N%d_n%d_k%d_f%d.txt",
+			N_NODES, K_ZIPF, N_TXNS, N_OPS, N_KEYS, FRAC_DIST_TXNS);
 		PrintWriter dist_pw = new PrintWriter(new File(dist_fname));
 		for (Map.Entry<Long, Integer> entry : sortedFreqs) {
 			dist_pw.printf("%d:%d\n", entry.getKey(), entry.getValue());
