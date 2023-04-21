@@ -118,10 +118,9 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     }
 
     exec.db.msg_handler->barrier.wait_nodes();
-    fprintf(stderr, "Made it past start_fill.\n");
 
     //  TODO MAX=100 is causing packet drops??
-    constexpr size_t MAX_IN_FLIGHT = 50;
+    constexpr size_t MAX_IN_FLIGHT = 200;
 
     size_t q_size = exec.db.hot_send_q.send_q_tail;
     hot_send_q_t::hot_txn_entry_t* q = exec.db.hot_send_q.send_q;
@@ -140,9 +139,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         ssize_t sent = sendmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0);
         assert(sent == q_p-window_start);
 
-        fprintf(stderr, "Before-Recvmmsg.\n");
         ssize_t received = recvmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0, NULL);
-        fprintf(stderr, "After-Recvmmsg. %u %u %lu %lu\n", q[window_start].mini_batch_num + 1, q[q_p].mini_batch_num, q_p, q_size);
         assert(q_p == q_size || q[window_start].mini_batch_num <= q[q_p].mini_batch_num);
 
         if (received < q_p-window_start) {

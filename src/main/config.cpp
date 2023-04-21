@@ -113,7 +113,7 @@ void Config::parse_cli(int argc, char** argv) {
     }
     switch_id = servers.size();
     // candyland
-    servers.emplace_back(Server{"128.83.144.8", 4004, {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}); // switch
+    servers.emplace_back(Server{"192.168.10.15", 4004, {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}); // switch
 
     num_txns = result.as<uint64_t>("num_txns");
 	table_size = result.as<uint64_t>("table_size");

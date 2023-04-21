@@ -12,7 +12,7 @@ void pin_worker(uint32_t core) {
 
     cpu_set_t mask;
     CPU_ZERO(&mask);
-    CPU_SET(core, &mask);
+    CPU_SET(2*core, &mask);
     
     pthread_t pid = pthread_self();
     int rc = pthread_setaffinity_np(pid, sizeof(cpu_set_t), &mask);
