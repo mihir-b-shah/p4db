@@ -384,6 +384,10 @@ void single_db_section(void* arg) {
     assert(tb->db.hot_send_q.send_q_tail == 0);
 }
 
+extern uint64_t wait_workers_time[32];
+extern uint64_t wait_nodes_time[32];
+extern uint64_t crit_wait_time[32];
+
 void txn_executor(Database& db, std::vector<Txn>& txns) {
     int rc;
     struct timespec ts_begin;
@@ -485,6 +489,9 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
     printf("worker %u, n_(accel)_aborts: %lu\n", WorkerContext::get().tid, tb.n_aborts);
     printf("worker %u, n_(accel)_packet_drops: %lu\n", WorkerContext::get().tid, tb.n_dropped);
     printf("worker %u, n_cold_fallbacks: %lu\n", WorkerContext::get().tid, tb.n_cold_fallbacks);
+    printf("worker %u, barrier_wait_micros: %lu\n", WorkerContext::get().tid, crit_wait_time[WorkerContext::get().tid]);
+    printf("worker %u, ww_micros: %lu\n", WorkerContext::get().tid, wait_workers_time[WorkerContext::get().tid]);
+    printf("worker %u, wn_micros: %lu\n", WorkerContext::get().tid, wait_nodes_time[WorkerContext::get().tid]);
 
     fprintf(stderr, "Total micros: %lu\n", micros_diff(&ts_begin, &ts_final));
 }
@@ -502,6 +509,7 @@ void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
 	assert(txns.size() % batch_tgt == 0);
     tb.my_txns = &txns;
 
+    fprintf(stderr, "Starting main txns.\n");
     for (size_t i = 0; i<txns.size(); ++i) {
         extract_hot_cold(tb.kvs, txns[i], config.decl_layout);
         assert(txns[i].init_done);
@@ -510,5 +518,7 @@ void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
             tb.leftover_txns.push(i);
         }
     }
+    fprintf(stderr, "Finished main txns.\n");
     tb.run_leftover_txns();
+    fprintf(stderr, "Finished leftover txns.\n");
 }

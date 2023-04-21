@@ -13,7 +13,7 @@ constexpr bool USE_FLOW_ORDER = true;
 constexpr bool ORIG_MODE = false;
 constexpr bool USE_1PASS_PKTS = true;
 constexpr bool DO_SCHED = true;
-constexpr bool RAW_PACKETS = false;
+constexpr bool RAW_PACKETS = true;
 
 namespace error {
 
@@ -34,7 +34,7 @@ constexpr size_t MIN_MINI_BATCH_THR_SIZE = 50;
 constexpr size_t MAX_PASSES_ACCEL = 1;
 constexpr size_t MAX_OPS_PASS2_ACCEL = 8;
 constexpr size_t MAX_HOT_OPS = 8;
-constexpr size_t N_REGS = 72; // 20
+constexpr size_t N_REGS = 72;
 constexpr size_t N_SW_LOCKS = 32;
 
 // cross-check with sched.cpp

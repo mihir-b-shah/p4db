@@ -65,6 +65,7 @@ TCPCommunicator::TCPCommunicator() {
 	my_addr.sin_port = htons(config.servers[config.node_id].port);
 	my_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	rc = bind(parent_sock, (sockaddr*) &my_addr, sizeof(my_addr));
+	printf("err: %d\n", errno);
     assert(rc == 0);
 	rc = listen(parent_sock, config.num_nodes+5);
     assert(rc == 0);
@@ -172,7 +173,7 @@ TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
             continue;
         }
 
-        int len = recv(node_sockfds[i], recv_buffer, MSG_SIZE, 0);
+        int len = recv(node_sockfds[i], recv_buffer, MSG_SIZE, MSG_WAITALL);
         if (len == 0) {
             break;
         /*
@@ -180,6 +181,9 @@ TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
             continue;
         */
         } else {
+		if (len != MSG_SIZE) {
+			printf("len: %d, errno: %d\n", len, errno);
+		}
             assert(len == MSG_SIZE);
             found = true;
             break;

@@ -1,8 +1,19 @@
 
 #include "barrier.hpp"
 #include "main/config.hpp"
-
+#include <ctime>
+#include "utils/context.hpp"
 #include <algorithm>
+
+uint64_t wait_workers_time[32] = {};
+uint64_t wait_nodes_time[32] = {};
+uint64_t crit_wait_time[32] = {};
+
+static uint64_t micros_diff(struct timespec* t_start, struct timespec* t_end) {
+    uint64_t s_micros = ((((uint64_t) t_start->tv_sec) * 1000000000) + t_start->tv_nsec) / 1000;
+    uint64_t e_micros = ((((uint64_t) t_end->tv_sec) * 1000000000) + t_end->tv_nsec) / 1000;
+    return e_micros-s_micros;
+}
 
 /*	Subtracting n, like is done in p4db's version of this file, at line 49, I think is incorrect.
 	Situation is when I am waiting for a response from one node. But, since my sends have been received
@@ -29,6 +40,11 @@ void BarrierHandler::handle(msg::Barrier* msg) {
 }
 
 void BarrierHandler::my_wait(barrier_handler_arg_t* bar_arg) {
+    int rc;
+    struct timespec ts_begin;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_begin);
+    assert(rc == 0);
+
 	for (uint32_t i = 0; i < num_nodes; ++i) {
         if (i != comm->node_id) {
             auto pkt = comm->make_pkt();
@@ -42,21 +58,55 @@ void BarrierHandler::my_wait(barrier_handler_arg_t* bar_arg) {
 	while (__atomic_load_n(&received, __ATOMIC_SEQ_CST) != (comm->num_nodes-1)) {
 		__builtin_ia32_pause();
 	}
+
+    struct timespec ts_end;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_end);
+    assert(rc == 0);
+
+    if (WorkerContext::context != nullptr) {
+        crit_wait_time[WorkerContext::get().tid] += micros_diff(&ts_begin, &ts_end);
+    }
 }
 
 static uint32_t id_ctr = 1;
 
 void BarrierHandler::wait_workers() {
+    int rc;
+    struct timespec ts_begin;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_begin);
+    assert(rc == 0);
+
 	barrier_handler_arg_t arg;
 	arg.handler = this;
     arg.id = __atomic_fetch_add(&id_ctr, 1, __ATOMIC_SEQ_CST);
 	local_barrier.wait(&arg);
+
+    struct timespec ts_end;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_end);
+    assert(rc == 0);
+
+    if (WorkerContext::context != nullptr) {
+        wait_workers_time[WorkerContext::get().tid] += micros_diff(&ts_begin, &ts_end);
+    }
 }
 
 void BarrierHandler::wait_nodes() {
+    int rc;
+    struct timespec ts_begin;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_begin);
+    assert(rc == 0);
+
 	barrier_handler_arg_t arg;
 	arg.handler = this;
     arg.id = __atomic_fetch_add(&id_ctr, 1, __ATOMIC_SEQ_CST);
 	critical_wait(&arg);
     __sync_synchronize();
+
+    struct timespec ts_end;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_end);
+    assert(rc == 0);
+
+    if (WorkerContext::context != nullptr) {
+        wait_nodes_time[WorkerContext::get().tid] += micros_diff(&ts_begin, &ts_end);
+    }
 }

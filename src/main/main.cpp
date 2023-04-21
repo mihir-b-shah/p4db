@@ -88,4 +88,5 @@ int main(int argc, char** argv) {
     }
     db.msg_handler->barrier.wait_nodes();
     printf("Completed.\n");
+    exit(0);
 }

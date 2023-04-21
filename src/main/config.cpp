@@ -95,8 +95,8 @@ void Config::parse_cli(int argc, char** argv) {
 		}
 	} else {
 		sched_server = Server("128.83.144.8", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
-        servers.emplace_back("128.83.144.118", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
-        servers.emplace_back("128.83.144.182", 4001, (eth_addr_t) {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
+        servers.emplace_back("192.168.10.14", 4002, (eth_addr_t) {0xE8, 0xEB, 0xD3, 0xF7, 0x5F, 0x1F});
+        servers.emplace_back("192.168.10.15", 4003, (eth_addr_t) {0xE8, 0xEB, 0xD3, 0xF7, 0x6C, 0x27});
 	}
 
     if (servers.size() < num_nodes) {

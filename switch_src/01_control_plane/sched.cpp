@@ -88,6 +88,12 @@ int main(int argc, char** argv) {
     assert(epfd >= 0);
     struct epoll_event evs[N_NODES];
 
+    struct sockaddr_in sock_name;
+    socklen_t sock_namelen = sizeof(sock_name);
+    rc = getsockname(sockfd, (struct sockaddr*) &sock_name, &sock_namelen);
+    assert(rc == 0);
+    printf("sock_name: %s\n", inet_ntoa(sock_name.sin_addr));
+
     for (size_t n = 0; n<N_NODES; ++n) {
         socklen_t client_addr_len = sizeof(client_addrs[n]);
         int client_sock = accept(sockfd, (struct sockaddr*) &client_addrs[n], &client_addr_len);
@@ -133,7 +139,7 @@ int main(int argc, char** argv) {
         info.sock_fds.insert(ready_fd);
         info.expected_n_fds = req->tenant_num_nodes;
 
-        printf("Req->batch_num: %u\n", req->batch_num);
+        printf("Req->batch_num: %u, req->blk_to_free: %u\n", req->batch_num, req->blk_to_free);
         if (tenant_info[req->tenant_id].cached.batch_num != req->batch_num) {
             if (req->blk_to_free != NO_BLOCK) {
                 // free req->block_to_free

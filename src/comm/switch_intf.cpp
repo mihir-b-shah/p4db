@@ -26,7 +26,7 @@
     Unless I'm misunderstanding- maybe revisit this? */
 
 //	IEEE 802 marks this as an ether_type reserved for experimental/private use.
-static const char* intf_name = "XXX";
+static const char* intf_name = "lo";
 
 // whatever interface is connected to p4 switch
 static int get_iface_id(int sock, const char* intf_name) {
@@ -87,11 +87,13 @@ void switch_intf_t::setup() {
         inet_aton((const char*) switch_server.ip.c_str(), &addr.ip_addr.sin_addr);
     }
 
+    /*
     struct timeval tv;
     tv.tv_sec = N_SECS_TIMEOUT;
     tv.tv_usec = N_NSECS_TIMEOUT/1000;
     int rc = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (void**) &tv, sizeof(tv));
     assert(rc == 0);
+    */
 }
 
 void switch_intf_t::prepare_msghdr(struct msghdr* msg_hdr, struct iovec* ivec) {
@@ -104,5 +106,8 @@ void switch_intf_t::prepare_msghdr(struct msghdr* msg_hdr, struct iovec* ivec) {
     if constexpr (!RAW_PACKETS) {
         msg_hdr->msg_name = &addr.ip_addr;
         msg_hdr->msg_namelen = sizeof(addr.ip_addr);
+    } else {
+	    msg_hdr->msg_name = NULL;
+	    msg_hdr->msg_namelen = 0;
     }
 }

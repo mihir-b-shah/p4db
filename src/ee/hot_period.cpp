@@ -82,6 +82,7 @@ static void gen_start_end_packets(std::vector<std::pair<Txn, void*>>& start_fill
 }
 
 void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
+	/*
     switch_intf_t& sw_intf = Config::instance().sw_intf;
 
     std::vector<std::pair<Txn, void*>> start_fill;
@@ -118,7 +119,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     }
 
     exec.db.msg_handler->barrier.wait_nodes();
-    // fprintf(stderr, "Made it past start_fill.\n");
+    fprintf(stderr, "Made it past start_fill.\n");
 
     //  TODO MAX=100 is causing packet drops??
     constexpr size_t MAX_IN_FLIGHT = 50;
@@ -140,9 +141,9 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         ssize_t sent = sendmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0);
         assert(sent == q_p-window_start);
 
-        // fprintf(stderr, "Before-Recvmmsg.\n");
-        ssize_t received = recvmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0, &timeout);
-        // fprintf(stderr, "After-Recvmmsg. %u %u %lu %lu\n", q[window_start].mini_batch_num + 1, q[q_p].mini_batch_num, q_p, q_size);
+        fprintf(stderr, "Before-Recvmmsg.\n");
+        ssize_t received = recvmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0, NULL);
+        fprintf(stderr, "After-Recvmmsg. %u %u %lu %lu\n", q[window_start].mini_batch_num + 1, q[q_p].mini_batch_num, q_p, q_size);
         assert(q_p == q_size || q[window_start].mini_batch_num <= q[q_p].mini_batch_num);
 
         if (received < q_p-window_start) {
@@ -154,6 +155,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
             // fprintf(stderr, "mb %u: %lu\n", q[window_start].mini_batch_num, q_p-start_mb_i);
             start_mb_i = q_p;
             exec.db.msg_handler->barrier.wait_nodes();
+	    exit(0);
         }
     }
 
@@ -184,5 +186,6 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     }
 
     pool.clear();
+    */
     exec.db.msg_handler->barrier.wait_nodes();
 }
