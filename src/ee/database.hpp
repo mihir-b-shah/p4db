@@ -16,10 +16,11 @@
 
 #include <sys/uio.h>
 
-static constexpr size_t HOT_TXN_PKT_BYTES = (USE_1PASS_PKTS && RAW_PACKETS) ? 440 :
-                                            (USE_1PASS_PKTS && !RAW_PACKETS) ? 398 :
-                                            (!USE_1PASS_PKTS && RAW_PACKETS) ? 144 :
-                                            (!USE_1PASS_PKTS && !RAW_PACKETS) ? 102 : 0;
+#if defined(RAW_PACKETS)
+static constexpr size_t HOT_TXN_PKT_BYTES = USE_1PASS_PKTS ? 440 : 144;
+#else
+static constexpr size_t HOT_TXN_PKT_BYTES = USE_1PASS_PKTS ? 398 : 102;
+#endif
 
 struct hot_send_q_t {
 	struct hot_txn_entry_t {

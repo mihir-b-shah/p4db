@@ -43,12 +43,12 @@ struct __attribute__((packed)) generic_instr_t {
 };
 
 struct __attribute__((packed)) network_hdr_t {
-    /*
+    #if defined(RAW_PACKETS)
     uint8_t dst_mac[MAC_ADDR_BYTES];
     uint8_t src_mac[MAC_ADDR_BYTES];
     uint16_t ether_type;
     uint8_t ipv4_udp_unused[28];
-    */
+    #endif
     uint8_t uid[sizeof(UID_HDR)];
 };
 
@@ -81,11 +81,11 @@ static void fill_reg_instr(const std::pair<Txn::OP, TupleLocation>& pr, generic_
 
 static void fill_network_hdr(network_hdr_t* hdr) {
     static Config* conf = &Config::instance();
-    /*
+    #if defined(RAW_PACKETS)
     memcpy(&hdr->dst_mac, &conf->servers[conf->switch_id].mac.addr_bytes, MAC_ADDR_BYTES);
     memcpy(&hdr->src_mac, &conf->servers[conf->node_id].mac.addr_bytes, MAC_ADDR_BYTES);
     hdr->ether_type = htons(P4DB_ETHER_TYPE);
-    */
+    #endif
     memcpy(&hdr->uid[0], UID_HDR, sizeof(UID_HDR));
 }
 

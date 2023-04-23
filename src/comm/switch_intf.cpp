@@ -65,27 +65,27 @@ void switch_intf_t::setup() {
     auto& conf = Config::instance();
     auto& switch_server = conf.servers[conf.switch_id];
 
-    if constexpr (RAW_PACKETS) {
-        if (geteuid() != 0) {
-            assert(false && "Run with root privileges.\n");
-        }
-
-	    sockfd = socket(AF_PACKET, SOCK_RAW, htons(P4DB_ETHER_TYPE));
-        assert(sockfd >= 0);
-
-        int iface_id = get_iface_id(sockfd, intf_name);
-        setup_sockaddr_ll(iface_id, &addr.mac_addr);
-        set_rx_promisc(iface_id, sockfd);
-        int rc = bind(sockfd, (struct sockaddr*) &addr.mac_addr, sizeof(sockaddr_ll));
-        assert(rc == 0);
-    } else {
-        sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-        assert(sockfd >= 0);
-
-        addr.ip_addr.sin_family = AF_INET;
-        addr.ip_addr.sin_port = htons(switch_server.port);
-        inet_aton((const char*) switch_server.ip.c_str(), &addr.ip_addr.sin_addr);
+    #if defined(RAW_PACKETS)
+    if (geteuid() != 0) {
+        assert(false && "Run with root privileges.\n");
     }
+
+    sockfd = socket(AF_PACKET, SOCK_RAW, htons(P4DB_ETHER_TYPE));
+    assert(sockfd >= 0);
+
+    int iface_id = get_iface_id(sockfd, intf_name);
+    setup_sockaddr_ll(iface_id, &addr.mac_addr);
+    set_rx_promisc(iface_id, sockfd);
+    int rc = bind(sockfd, (struct sockaddr*) &addr.mac_addr, sizeof(sockaddr_ll));
+    assert(rc == 0);
+    #else
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    assert(sockfd >= 0);
+
+    addr.ip_addr.sin_family = AF_INET;
+    addr.ip_addr.sin_port = htons(switch_server.port);
+    inet_aton((const char*) switch_server.ip.c_str(), &addr.ip_addr.sin_addr);
+    #endif
 
     /*
     struct timeval tv;
@@ -103,11 +103,11 @@ void switch_intf_t::prepare_msghdr(struct msghdr* msg_hdr, struct iovec* ivec) {
     msg_hdr->msg_controllen = 0;
     msg_hdr->msg_flags = 0;
 
-    if constexpr (!RAW_PACKETS) {
-        msg_hdr->msg_name = &addr.ip_addr;
-        msg_hdr->msg_namelen = sizeof(addr.ip_addr);
-    } else {
-	    msg_hdr->msg_name = NULL;
-	    msg_hdr->msg_namelen = 0;
-    }
+    #if defined(RAW_PACKETS)
+    msg_hdr->msg_name = NULL;
+    msg_hdr->msg_namelen = 0;
+    #else
+    msg_hdr->msg_name = &addr.ip_addr;
+    msg_hdr->msg_namelen = sizeof(addr.ip_addr);
+    #endif
 }

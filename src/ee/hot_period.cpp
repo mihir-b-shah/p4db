@@ -100,22 +100,6 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         rc = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
         assert(rc == HOT_TXN_PKT_BYTES);
     }
-    for (auto& pr : start_fill) {
-        // just overwrite the buffer, don't need it now.
-        // the recv is just to make sure the packets came back.
-        struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
-        struct msghdr msg_hdr;
-        sw_intf.prepare_msghdr(&msg_hdr, &ivec);
-        rc = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
-
-        //  Just silently drop packet for now...
-        if (rc == -1) {
-            assert(errno == EAGAIN || errno == EWOULDBLOCK);
-            exec.n_dropped += 1;
-        } else {
-            assert(rc == HOT_TXN_PKT_BYTES);
-        }
-    }
 
     exec.db.msg_handler->barrier.wait_nodes();
 

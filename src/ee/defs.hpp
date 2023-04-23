@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <iostream>
 
+// #define RAW_PACKETS
+
 constexpr auto PERIODIC_CSV_FILENAME = "periodic.csv";
 constexpr bool DYNAMIC_IPS = false;
 constexpr bool CHECK_DISJOINT_KEYS = false;
@@ -13,7 +15,6 @@ constexpr bool USE_FLOW_ORDER = true;
 constexpr bool ORIG_MODE = false;
 constexpr bool USE_1PASS_PKTS = true;
 constexpr bool DO_SCHED = true;
-constexpr bool RAW_PACKETS = false;
 
 namespace error {
 
