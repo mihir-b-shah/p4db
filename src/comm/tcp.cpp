@@ -24,14 +24,6 @@ static constexpr size_t MAX_NODES = 10;
 static constexpr size_t MSG_SIZE = 100;
 static_assert(MSG_SIZE <= PacketBuffer::BUF_SIZE);
 
-static void set_sock_timeout(int sockfd) {
-    struct timeval tv;
-    tv.tv_sec = 5;
-    tv.tv_usec = 0;
-    int rc = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (void**) &tv, sizeof(tv));
-    assert(rc == 0);
-}
-
 static uint64_t calls_recv = 0;
 static uint64_t micros_recv = 0;
 void tcp_stats() {
@@ -39,6 +31,12 @@ void tcp_stats() {
 }
 static uint64_t get_micros(struct timespec tv) {
 	return (tv.tv_sec * 1000000) + (tv.tv_nsec / 1000);
+}
+
+static void realloc_bufs(TCPCommunicator* comm) {
+    for (size_t i = 0; i<N_RECV_BUFFERS; ++i) {
+        comm->recv_buffers[i] = PacketBuffer::alloc();
+    }
 }
 
 TCPCommunicator::TCPCommunicator() {
@@ -52,7 +50,7 @@ TCPCommunicator::TCPCommunicator() {
     mh_tid = config.num_txn_workers;
 
     node_sockfds.resize(config.num_nodes);
-    recv_buffer = Pkt_t::alloc();
+    realloc_bufs(this);
 
     //  Set up a topology where I, node_id, am the client for [0,node_id),
     //  and the server for [node_id+1,num_nodes). I can't connect to myself.
@@ -146,12 +144,16 @@ void TCPCommunicator::set_handler(MessageHandler* handler) {
         uint32_t core = config.num_txn_workers;
         printf("Pinning tcp core on %u\n", core);
         pin_worker(core);
+        std::vector<Pkt_t*> pkts;
+        pkts.reserve(N_RECV_BUFFERS);
+
         while (!token.stop_requested()) {
-            auto pkt = receive();
-            if (!pkt) {
-                continue;
+            pkts.resize(0);
+            receive(pkts);
+
+            for (Pkt_t* pkt : pkts) {
+                handler->handle(pkt);
             }
-            handler->handle(pkt);
         }
     });
 }
@@ -174,7 +176,7 @@ TCPCommunicator::Pkt_t* TCPCommunicator::make_pkt() {
     return PacketBuffer::alloc();
 }
 
-TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
+void TCPCommunicator::receive(std::vector<Pkt_t*>& pkts) {
     /*  We initialize recv_buffer in constructor, and give it a fresh buffer every time it is
         consumed here. This is single-threaded, so it should be safe. */
     assert(node_sockfds.size() == 2);
@@ -187,13 +189,24 @@ TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
 
     //  SO_RCVLOWAT=1 byte on most applications, so specifying a larger MSG_SIZE is ok.
     int len = 0;
+    char buf[MSG_SIZE * N_RECV_BUFFERS];
+
     while (true) {
-        rc = recv(sock, recv_buffer+len, MSG_SIZE-len, 0);
+        rc = recv(sock, &buf[0]+len, N_RECV_BUFFERS*MSG_SIZE-len, 0);
         assert(rc >= 0);
         len += rc;
-        if (len == MSG_SIZE) {
+        if (len % MSG_SIZE == 0) {
             break;
         }
+    }
+
+    assert(len % MSG_SIZE == 0);
+    // now copy into the different buffers.
+    size_t n_filled = len/MSG_SIZE;
+    for (size_t i = 0; i<n_filled; ++i) {
+        memcpy((void*) &recv_buffers[i]->buffer[0], &buf[0] + MSG_SIZE*i, MSG_SIZE);
+        recv_buffers[i]->len = 0;
+        pkts.push_back(recv_buffers[i]);
     }
 
 	struct timespec ts_end;
@@ -202,10 +215,5 @@ TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
 
 	micros_recv += get_micros(ts_end) - get_micros(ts_start);	
 	calls_recv += 1;
-
-    assert(len == MSG_SIZE);
-    TCPCommunicator::Pkt_t* msg = recv_buffer;
-    msg->len = 0;
-    recv_buffer = Pkt_t::alloc();
-    return msg;
+    realloc_bufs(this);
 }

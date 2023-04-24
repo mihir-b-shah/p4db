@@ -24,13 +24,15 @@
 
 struct MessageHandler;
 
+static constexpr size_t N_RECV_BUFFERS = 1;
+
 /*  No need to protect the socket with a lock-
     https://stackoverflow.com/questions/1981372/are-parallel-calls-to-send-recv-on-the-same-socket-valid/1981439#1981439 */
 class TCPCommunicator {
 public:
     using Pkt_t = PacketBuffer;
     
-    Pkt_t* recv_buffer;
+    Pkt_t* recv_buffers[N_RECV_BUFFERS];
     std::vector<int> node_sockfds;
     MessageHandler* handler = nullptr;
     std::jthread thread;
@@ -50,5 +52,5 @@ public:
     PacketBuffer* make_pkt();
 
 private:
-    PacketBuffer* receive();
+    void receive(std::vector<Pkt_t*>& pkts);
 };
