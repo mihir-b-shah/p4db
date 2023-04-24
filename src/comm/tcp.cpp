@@ -177,19 +177,24 @@ TCPCommunicator::Pkt_t* TCPCommunicator::make_pkt() {
 TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
     /*  We initialize recv_buffer in constructor, and give it a fresh buffer every time it is
         consumed here. This is single-threaded, so it should be safe. */
-
-    bool found = false;
-    for (size_t i = 0; i<node_sockfds.size(); ++i) {
-        if (i == node_id) {
-            continue;
-        }
+    assert(node_sockfds.size() == 2);
+    int sock = node_id == 0 ? node_sockfds[1] : node_sockfds[0];
 
 	int rc;
 	struct timespec ts_start;
 	rc = clock_gettime(CLOCK_MONOTONIC, &ts_start);
 	assert(rc == 0);
 
-        int len = recv(node_sockfds[i], recv_buffer, MSG_SIZE, MSG_WAITALL);
+    //  SO_RCVLOWAT=1 byte on most applications, so specifying a larger MSG_SIZE is ok.
+    int len = 0;
+    while (true) {
+        rc = recv(sock, recv_buffer+len, MSG_SIZE-len, 0);
+        assert(rc >= 0);
+        len += rc;
+        if (len == MSG_SIZE) {
+            break;
+        }
+    }
 
 	struct timespec ts_end;
 	rc = clock_gettime(CLOCK_MONOTONIC, &ts_end);
@@ -198,29 +203,9 @@ TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
 	micros_recv += get_micros(ts_end) - get_micros(ts_start);	
 	calls_recv += 1;
 
-        if (len == 0) {
-            break;
-        /*
-        } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            continue;
-        */
-        } else {
-		if (len != MSG_SIZE) {
-			printf("len: %d, errno: %d\n", len, errno);
-		}
-            assert(len == MSG_SIZE);
-            found = true;
-            break;
-        }
-    }
-
-    if (!found) {
-        return nullptr;
-    } else {
-        TCPCommunicator::Pkt_t* msg = recv_buffer;
-        //  Don't know, so just init it to catch bugs.
-        msg->len = 0;
-        recv_buffer = Pkt_t::alloc();
-        return msg;
-    }
+    assert(len == MSG_SIZE);
+    TCPCommunicator::Pkt_t* msg = recv_buffer;
+    msg->len = 0;
+    recv_buffer = Pkt_t::alloc();
+    return msg;
 }
