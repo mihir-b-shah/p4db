@@ -12,6 +12,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <cassert>
+#include <ctime>
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
@@ -31,7 +32,17 @@ static void set_sock_timeout(int sockfd) {
     assert(rc == 0);
 }
 
+static uint64_t calls_recv = 0;
+static uint64_t micros_recv = 0;
+void tcp_stats() {
+	printf("calls: %lu, micros: %lu\n", calls_recv, micros_recv);
+}
+static uint64_t get_micros(struct timespec tv) {
+	return (tv.tv_sec * 1000000) + (tv.tv_nsec / 1000);
+}
+
 TCPCommunicator::TCPCommunicator() {
+    atexit(tcp_stats);
     auto& config = Config::instance();
     int rc;
 
@@ -173,7 +184,20 @@ TCPCommunicator::Pkt_t* TCPCommunicator::receive() {
             continue;
         }
 
+	int rc;
+	struct timespec ts_start;
+	rc = clock_gettime(CLOCK_MONOTONIC, &ts_start);
+	assert(rc == 0);
+
         int len = recv(node_sockfds[i], recv_buffer, MSG_SIZE, MSG_WAITALL);
+
+	struct timespec ts_end;
+	rc = clock_gettime(CLOCK_MONOTONIC, &ts_end);
+	assert(rc == 0);
+
+	micros_recv += get_micros(ts_end) - get_micros(ts_start);	
+	calls_recv += 1;
+
         if (len == 0) {
             break;
         /*
