@@ -86,14 +86,12 @@ void switch_intf_t::setup() {
 	treq.tp_block_size = 4096;
 	treq.tp_block_nr = 5000;
 	treq.tp_frame_nr = 20000;
-	rc = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &treq, sizeof(treq));
+	rc = setsockopt(sockfd, SOL_PACKET, PACKET_RX_RING, &treq, sizeof(treq));
 	assert(rc == 0);
 
 	size_t ring_size = treq.tp_block_nr * treq.tp_block_size;
-	char* rings = (char*) mmap(NULL, 2*ring_size, PROT_READ | PROT_WRITE, MAP_SHARED, sock, 0);
-	char* rx_ring = rings;
+	char* rx_ring = (char*) mmap(NULL, ring_size, PROT_READ | PROT_WRITE, MAP_SHARED, sockfd, 0);
 	size_t rx_ring_idx = 0;
-	char* rx_ring_p = rx_ring;
     
     sw_recv_thr = std::thread([&, this](){
         const WorkerContext::guard worker_ctx;

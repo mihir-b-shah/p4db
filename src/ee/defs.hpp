@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <iostream>
 
-// #define RAW_PACKETS
+#define RAW_PACKETS
 
 constexpr auto PERIODIC_CSV_FILENAME = "periodic.csv";
 constexpr bool DYNAMIC_IPS = false;

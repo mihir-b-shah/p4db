@@ -501,6 +501,13 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 }
 
 void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
+    int rc;
+
+    struct timespec ts_begin;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_begin);
+    assert(rc == 0);
+
+
 	auto& config = Config::instance();
     TxnExecutor tb{db};
 
@@ -525,4 +532,12 @@ void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
     fprintf(stderr, "Finished main txns.\n");
     tb.run_leftover_txns();
     fprintf(stderr, "Finished leftover txns.\n");
+
+    struct timespec ts_final;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_final);
+    assert(rc == 0);
+
+    if (WorkerContext::get().tid == 0) {
+    	fprintf(stderr, "Total micros: %lu\n", micros_diff(&ts_begin, &ts_final));
+    }
 }
