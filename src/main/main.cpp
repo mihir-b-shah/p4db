@@ -41,6 +41,11 @@ int main(int argc, char** argv) {
 	load_txns(config);
 
     Database db(config.num_txn_workers);
+    config.db = &db;
+
+    // setup switch connection
+    config.sw_intf.setup();
+
 	auto table = db.make_table<StructTable>(KV::TABLE_NAME, config.table_size);
 	for (uint64_t i = 0; i < config.table_size; i++) {
 		db_key_t index;

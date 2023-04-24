@@ -23,6 +23,8 @@ static constexpr size_t N_NSECS_TIMEOUT = 0;
 
 struct switch_intf_t {
     int sockfd;
+    std::thread sw_recv_thr;
+
     union {
         struct sockaddr_in ip_addr;
         struct sockaddr_ll mac_addr;

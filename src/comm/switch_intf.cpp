@@ -11,6 +11,7 @@
 #include <array>
 #include <utility>
 #include <errno.h>
+#include <sched.h>
 
 #include <cstdlib>
 #include <cstdint>
@@ -76,8 +77,48 @@ void switch_intf_t::setup() {
     int iface_id = get_iface_id(sockfd, intf_name);
     setup_sockaddr_ll(iface_id, &addr.mac_addr);
     set_rx_promisc(iface_id, sockfd);
+
     int rc = bind(sockfd, (struct sockaddr*) &addr.mac_addr, sizeof(sockaddr_ll));
     assert(rc == 0);
+
+	struct tpacket_req treq = {0};
+	treq.tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + 14) + TPACKET_ALIGN(944);
+	treq.tp_block_size = 4096;
+	treq.tp_block_nr = 5000;
+	treq.tp_frame_nr = 20000;
+	rc = setsockopt(sock, SOL_PACKET, PACKET_RX_RING, &treq, sizeof(treq));
+	assert(rc == 0);
+
+	size_t ring_size = treq.tp_block_nr * treq.tp_block_size;
+	char* rings = (char*) mmap(NULL, 2*ring_size, PROT_READ | PROT_WRITE, MAP_SHARED, sock, 0);
+	char* rx_ring = rings;
+	size_t rx_ring_idx = 0;
+	char* rx_ring_p = rx_ring;
+    
+    sw_recv_thr = std::thread([&, this](){
+        const WorkerContext::guard worker_ctx;
+        uint32_t core = conf.num_txn_workers;
+        printf("Pinning sw intf recv core on %u\n", core);
+        pin_worker(core);
+        Database* db = conf.db;
+
+        while (true) {
+            char* rx_ring_p = rx_ring + treq.tp_frame_size * rx_ring_idx;
+            volatile struct tpacket_hdr* tphdr = (struct tpacket_hdr*) rx_ring_p;
+            asm volatile("lfence" ::: "memory");
+
+            while ((tphdr->tp_status & TP_STATUS_USER) == 0) {
+                __builtin_ia32_pause();
+            }
+            tphdr->tp_status = TP_STATUS_KERNEL;
+            asm volatile ("sfence" ::: "memory");
+
+            rx_ring_idx = (rx_ring_idx + 1) % treq.tp_frame_nr;
+
+            //  TODO: smh, on the last #end_fill packets, update the db via exec.p4_switch.process_reply
+        }
+    });
+
     #else
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     assert(sockfd >= 0);
@@ -85,6 +126,7 @@ void switch_intf_t::setup() {
     addr.ip_addr.sin_family = AF_INET;
     addr.ip_addr.sin_port = htons(switch_server.port);
     inet_aton((const char*) switch_server.ip.c_str(), &addr.ip_addr.sin_addr);
+    assert(false && "UDP no longer supported.");
     #endif
 
     /*

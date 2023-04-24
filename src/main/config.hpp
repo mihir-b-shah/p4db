@@ -11,6 +11,8 @@
 
 #include <vector>
 
+class Database;
+
 class Config : public HeapSingleton<Config> {
     friend class HeapSingleton<Config>;
 
@@ -21,6 +23,7 @@ protected:
 public:
     void parse_cli(int argc, char** argv);
 
+    Database* db;
     std::vector<Server> servers = {};
     Server sched_server;
     switch_intf_t sw_intf;

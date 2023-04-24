@@ -100,10 +100,11 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         rc = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
         assert(rc == HOT_TXN_PKT_BYTES);
     }
-    
-    constexpr size_t MAX_IN_FLIGHT = 200;
 
     exec.db.msg_handler->barrier.wait_nodes();
+
+    //  TODO MAX=100 is causing packet drops??
+    constexpr size_t MAX_IN_FLIGHT = 200;
 
     size_t q_size = exec.db.hot_send_q.send_q_tail;
     hot_send_q_t::hot_txn_entry_t* q = exec.db.hot_send_q.send_q;
@@ -121,9 +122,17 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
 
         ssize_t sent = sendmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0);
         assert(sent == q_p-window_start);
+
+        ssize_t received = recvmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0, NULL);
         assert(q_p == q_size || q[window_start].mini_batch_num <= q[q_p].mini_batch_num);
 
+        if (received < q_p-window_start) {
+            //  Overcounts n_dropped by 1 if recieved=-1, who cares...
+            exec.n_dropped += q_p - window_start - received;
+        }
+
         if (q[window_start].mini_batch_num + 1 == q[q_p].mini_batch_num || q_p == q_size) {
+            // fprintf(stderr, "mb %u: %lu\n", q[window_start].mini_batch_num, q_p-start_mb_i);
             start_mb_i = q_p;
             exec.db.msg_handler->barrier.wait_nodes();
         }
@@ -135,6 +144,24 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         sw_intf.prepare_msghdr(&msg_hdr, &ivec);
         rc = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
         assert(rc == HOT_TXN_PKT_BYTES);
+    }
+
+    // fprintf(stderr, "Made it to end_fill.\n");
+    for (auto& pr : end_fill) {
+        // just overwrite the buffer, don't need it now.
+        // the recv is just to make sure the packets came back.
+        struct iovec ivec = {pr.second, HOT_TXN_PKT_BYTES};
+        struct msghdr msg_hdr;
+        sw_intf.prepare_msghdr(&msg_hdr, &ivec);
+        rc = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
+
+        if (rc == -1) {
+            assert(errno == EAGAIN || errno == EWOULDBLOCK);
+            exec.n_dropped += 1;
+        } else {
+            assert(rc == HOT_TXN_PKT_BYTES);
+            exec.p4_switch.process_reply_txn(&pr.first, pr.second, true);
+        }
     }
 
     pool.clear();
