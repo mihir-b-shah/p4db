@@ -20,6 +20,9 @@ static uint64_t micros_diff(struct timespec* t_start, struct timespec* t_end) {
 }
 	
 RC TxnExecutor::my_execute(Txn& arg, void** packet_fill) {
+	int rc = clock_gettime(CLOCK_MONOTONIC, &ts_txn_begin);
+	assert(rc == 0);
+
 	arg.id.field.valid = true;
 	assert(arg.id.field.mini_batch_id == mini_batch_num);
 	// acquire all locks first, ex and shared. Can rollback within loop
@@ -83,13 +86,17 @@ RC TxnExecutor::my_execute(Txn& arg, void** packet_fill) {
 
 	*packet_fill = db.hot_send_q.alloc_slot(mini_batch_num, &arg);
 	// locks automatically released
-	return commit();
+	RC ret = commit();
+
+	struct timespec ts_curr;
+	rc = clock_gettime(CLOCK_MONOTONIC, &ts_curr);
+	assert(rc == 0);
+	t_commit += micros_diff(&ts_txn_begin, &ts_curr);
+
+	return ret;
 }
 
 RC TxnExecutor::execute(Txn& arg) {
-	int rc = clock_gettime(CLOCK_MONOTONIC, &ts_txn_begin);
-	assert(rc == 0);
-
 	arg.id.field.valid = false;
 	ts = ts_factory.get();
 	// std::stringstream ss;
@@ -163,11 +170,6 @@ RC TxnExecutor::commit() {
 
 	log.commit(ts);
 	mempool.clear();
-
-	rc = clock_gettime(CLOCK_MONOTONIC, &ts_curr);
-	assert(rc == 0);
-	t_commit += micros_diff(&ts_txn_begin, &ts_curr);
-
 	return RC::COMMIT;
 }
 
@@ -178,11 +180,6 @@ RC TxnExecutor::rollback() {
 	// for (int i = 0; i < 128; ++i) { // abort backoff
 	//     __builtin_ia32_pause();
 	// }
-
-	struct timespec ts_curr;
-	int rc = clock_gettime(CLOCK_MONOTONIC, &ts_curr);
-	assert(rc == 0);
-	t_abort += micros_diff(&ts_txn_begin, &ts_curr);
 
 	return RC::ROLLBACK;
 }
