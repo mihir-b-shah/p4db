@@ -19,6 +19,8 @@
 #include <cstdint>
 #include <climits>
 #include <errno.h>
+#include <vector>
+#include <algorithm>
 
 static constexpr size_t MAX_NODES = 10;
 
@@ -26,8 +28,13 @@ static_assert(MSG_SIZE <= PacketBuffer::BUF_SIZE);
 
 static uint64_t calls_recv = 0;
 static uint64_t micros_recv = 0;
+static uint64_t len_recv = 0;
+static std::vector<uint64_t> len_dist;
+
 void tcp_stats() {
-	printf("calls: %lu, micros: %lu\n", calls_recv, micros_recv);
+	std::sort(len_dist.begin(), len_dist.end());
+	printf("calls: %lu, micros: %lu, len: %lu\n", calls_recv, micros_recv, len_recv);
+	printf("1%%:: %lu, 10%%: %lu, 50%%: %lu, 90%%: %lu, 99%%: %lu\n", len_dist[len_dist.size()/100], len_dist[len_dist.size()/10], len_dist[len_dist.size()/2], len_dist[9*len_dist.size()/10], len_dist[99*len_dist.size()/100]);
 }
 static uint64_t get_micros(struct timespec tv) {
 	return (tv.tv_sec * 1000000) + (tv.tv_nsec / 1000);
@@ -40,6 +47,7 @@ static void realloc_bufs(TCPCommunicator* comm) {
 }
 
 TCPCommunicator::TCPCommunicator() {
+     len_dist.reserve(1000000);
     atexit(tcp_stats);
     auto& config = Config::instance();
     int rc;
@@ -213,7 +221,10 @@ void TCPCommunicator::receive(std::vector<Pkt_t*>& pkts) {
 	rc = clock_gettime(CLOCK_MONOTONIC, &ts_end);
 	assert(rc == 0);
 
+    realloc_bufs(this);
+
 	micros_recv += get_micros(ts_end) - get_micros(ts_start);	
 	calls_recv += 1;
-    realloc_bufs(this);
+	len_recv += len;
+	len_dist.push_back(len);
 }

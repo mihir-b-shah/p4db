@@ -11,8 +11,9 @@
 #include <ctime>
 #include <limits>
 #include <optional>
+#include <ctime>
 
-uint64_t micros_diff(struct timespec* t_start, struct timespec* t_end) {
+static uint64_t micros_diff(struct timespec* t_start, struct timespec* t_end) {
     uint64_t s_micros = ((((uint64_t) t_start->tv_sec) * 1000000000) + t_start->tv_nsec) / 1000;
     uint64_t e_micros = ((((uint64_t) t_end->tv_sec) * 1000000000) + t_end->tv_nsec) / 1000;
     return e_micros-s_micros;
@@ -142,9 +143,21 @@ RC TxnExecutor::execute(Txn& arg) {
 	return commit();
 }
 
+static constexpr size_t LOGGING_REPLICATION_DELAY_US = 20;
 RC TxnExecutor::commit() {
 	// TODO: log should not clear until the end of a batch.
 	// TODO: now, the undolog has in the future both the value,last_acq fields to be written.
+
+	// do logging
+	struct timespec ts_now, ts_curr;
+	int rc = clock_gettime(CLOCK_MONOTONIC, &ts_now);
+	assert(rc == 0);
+
+	do {
+		int rc = clock_gettime(CLOCK_MONOTONIC, &ts_curr);
+		assert(rc == 0);
+	} while (micros_diff(&ts_now, &ts_curr) < LOGGING_REPLICATION_DELAY_US);
+
 	log.commit(ts);
 	mempool.clear();
 	return RC::COMMIT;
