@@ -1,5 +1,6 @@
 #include "tcp.hpp"
 
+#include "comm/msg.hpp"
 #include "main/config.hpp"
 #include "msg_handler.hpp"
 #include "utils/context.hpp"
@@ -21,7 +22,6 @@
 
 static constexpr size_t MAX_NODES = 10;
 
-static constexpr size_t MSG_SIZE = 100;
 static_assert(MSG_SIZE <= PacketBuffer::BUF_SIZE);
 
 static uint64_t calls_recv = 0;

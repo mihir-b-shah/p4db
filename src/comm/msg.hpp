@@ -6,6 +6,7 @@
 
 #include <cstdint>
 
+static constexpr size_t MSG_SIZE = 72;
 
 namespace msg {
 
@@ -71,12 +72,13 @@ struct Base : crtp<T>, public Header {
     }
 };
 
-
 struct Init : public Base<Init, Type::INIT> {};
+static_assert(sizeof(Init) <= MSG_SIZE);
 
 struct Barrier : public Base<Barrier, Type::BARRIER> {
     uint32_t num;
 };
+static_assert(sizeof(Barrier) <= MSG_SIZE);
 
 // used by all 4 tuple interaction messages
 struct TupleMsgHeader {
@@ -92,6 +94,7 @@ struct TupleGetReq : public Base<TupleGetReq, Type::TUPLE_GET_REQ>, public Tuple
     TupleGetReq(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode, TxnId me)
         : TupleMsgHeader{ts, tid, rid, mode}, me_pack(me.get_packed()) {}
 };
+static_assert(sizeof(TupleGetReq) <= MSG_SIZE);
 
 struct TupleGetRes : public Base<TupleGetRes, Type::TUPLE_GET_RES>, public TupleMsgHeader {
 	uint32_t last_acq_pack;
@@ -108,6 +111,7 @@ struct TupleGetRes : public Base<TupleGetRes, Type::TUPLE_GET_RES>, public Tuple
         return sizeof(TupleGetRes) + tuple_size;
     }
 };
+static_assert(sizeof(TupleGetRes) <= MSG_SIZE);
 
 struct TuplePutReq : public Base<TuplePutReq, Type::TUPLE_PUT_REQ>, public TupleMsgHeader {
 	uint32_t last_acq_pack;
@@ -124,11 +128,12 @@ struct TuplePutReq : public Base<TuplePutReq, Type::TUPLE_PUT_REQ>, public Tuple
         return sizeof(TuplePutReq) + tuple_size;
     }
 };
-
+static_assert(sizeof(TuplePutReq) <= MSG_SIZE);
 
 struct TuplePutRes : public Base<TuplePutRes, Type::TUPLE_PUT_RES>, public TupleMsgHeader {
     TuplePutRes(timestamp_t ts, p4db::table_t tid, db_key_t rid, AccessMode mode)
         : TupleMsgHeader{ts, tid, rid, mode} {}
 };
+static_assert(sizeof(TuplePutRes) <= MSG_SIZE);
 
 } // namespace msg

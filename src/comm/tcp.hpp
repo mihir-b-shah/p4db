@@ -24,7 +24,7 @@
 
 struct MessageHandler;
 
-static constexpr size_t N_RECV_BUFFERS = 1;
+static constexpr size_t N_RECV_BUFFERS = 10;
 
 /*  No need to protect the socket with a lock-
     https://stackoverflow.com/questions/1981372/are-parallel-calls-to-send-recv-on-the-same-socket-valid/1981439#1981439 */
