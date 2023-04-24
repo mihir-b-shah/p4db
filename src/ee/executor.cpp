@@ -87,6 +87,9 @@ RC TxnExecutor::my_execute(Txn& arg, void** packet_fill) {
 }
 
 RC TxnExecutor::execute(Txn& arg) {
+	int rc = clock_gettime(CLOCK_MONOTONIC, &ts_txn_begin);
+	assert(rc == 0);
+
 	arg.id.field.valid = false;
 	ts = ts_factory.get();
 	// std::stringstream ss;
@@ -160,6 +163,11 @@ RC TxnExecutor::commit() {
 
 	log.commit(ts);
 	mempool.clear();
+
+	rc = clock_gettime(CLOCK_MONOTONIC, &ts_curr);
+	assert(rc == 0);
+	t_commit += micros_diff(&ts_txn_begin, &ts_curr);
+
 	return RC::COMMIT;
 }
 
@@ -170,6 +178,11 @@ RC TxnExecutor::rollback() {
 	// for (int i = 0; i < 128; ++i) { // abort backoff
 	//     __builtin_ia32_pause();
 	// }
+
+	struct timespec ts_curr;
+	int rc = clock_gettime(CLOCK_MONOTONIC, &ts_curr);
+	assert(rc == 0);
+	t_abort += micros_diff(&ts_txn_begin, &ts_curr);
 
 	return RC::ROLLBACK;
 }
@@ -426,11 +439,6 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 
 	scheduler_t sched(&tb);
 
-    tb.n_commits = 0;
-    tb.n_aborts = 0;
-    tb.n_dropped = 0;
-    tb.n_cold_fallbacks = 0;
-
 	for (size_t i = 0; i<txns.size(); i+=batch_tgt) {
 		size_t batch_num = i/batch_tgt;
 		sched.sched_batch(txns, i, i+batch_tgt);
@@ -498,18 +506,18 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
     rc = clock_gettime(CLOCK_REALTIME, &ts_final);
     assert(rc == 0);
 
-    /*
-    printf("worker %u, n_(accel)_commits: %lu\n", WorkerContext::get().tid, tb.n_commits);
-    printf("worker %u, n_(accel)_aborts: %lu\n", WorkerContext::get().tid, tb.n_aborts);
-    printf("worker %u, n_(accel)_packet_drops: %lu\n", WorkerContext::get().tid, tb.n_dropped);
-    printf("worker %u, n_cold_fallbacks: %lu\n", WorkerContext::get().tid, tb.n_cold_fallbacks);
-    printf("worker %u, barrier_wait_micros: %lu\n", WorkerContext::get().tid, crit_wait_time[WorkerContext::get().tid]);
-    printf("worker %u, ww_micros: %lu\n", WorkerContext::get().tid, wait_workers_time[WorkerContext::get().tid]);
-    printf("worker %u, wn_micros: %lu\n", WorkerContext::get().tid, wait_nodes_time[WorkerContext::get().tid]);
-    */
-
     if (WorkerContext::get().tid == 0) {
-	    fprintf(stderr, "Total micros: %lu\n", micros_diff(&ts_begin, &ts_final));
+
+	    printf("worker %u, n_(accel)_commits: %lu\n", WorkerContext::get().tid, tb.n_commits);
+	    printf("worker %u, n_(accel)_aborts: %lu\n", WorkerContext::get().tid, tb.n_aborts);
+	    printf("worker %u, n_(accel)_packet_drops: %lu\n", WorkerContext::get().tid, tb.n_dropped);
+	    printf("worker %u, n_cold_fallbacks: %lu\n", WorkerContext::get().tid, tb.n_cold_fallbacks);
+	    printf("worker %u, barrier_wait_micros: %lu\n", WorkerContext::get().tid, crit_wait_time[WorkerContext::get().tid]);
+	    printf("worker %u, ww_micros: %lu\n", WorkerContext::get().tid, wait_workers_time[WorkerContext::get().tid]);
+	    printf("worker %u, wn_micros: %lu\n", WorkerContext::get().tid, wait_nodes_time[WorkerContext::get().tid]);
+	    printf("Total micros: %lu\n", micros_diff(&ts_begin, &ts_final));
+	    printf("t_commit: %lu\n", tb.t_commit);
+	    printf("t_abort: %lu\n", tb.t_abort);
     }
 }
 
