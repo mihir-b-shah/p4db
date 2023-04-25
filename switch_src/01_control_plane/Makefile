@@ -33,7 +33,7 @@ p4: $(PROG).$(P4TARGET)
 CPPFLAGS = -I$(SDE_INSTALL)/include -DSDE_INSTALL=\"$(SDE_INSTALL)\" \
            #-DPROG_NAME=\"$(PROG)\"
 CXXFLAGS = -g -O3 -std=c++17 -Wall -Wextra -Werror -MMD -MF $@.d
-BF_LIBS  = -L$(SDE_INSTALL)/lib -lbf_switchd_lib -ldriver -lbfutils -lbfsys
+BF_LIBS  = -L$(SDE_INSTALL)/lib -ldriver -lbfutils 
 LDLIBS   = $(BF_LIBS) -lm -ldl -lpthread
 LDFLAGS  = -Wl,-rpath,$(SDE_INSTALL)/lib
 

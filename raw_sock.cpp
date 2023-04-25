@@ -21,12 +21,15 @@
 static constexpr uint16_t P4DB_ETHER_TYPE = 0x88b5;
 static constexpr size_t MAC_ADDR_SIZE = 6;
 static constexpr size_t WINDOW_SIZE = 1;
+static constexpr uint8_t UID_HDR[] = {0xBE, 0x87, 0xEF, 0x7E, 0x61, 0x3C, 0x4B, 0x33, 0x82, 0xEB, 0x90, 0x66, 0x3A, 0x40, 0x3D, 0xAE};
 
 struct __attribute__((packed)) packet_t {
 	uint8_t dst_addr[MAC_ADDR_SIZE];
 	uint8_t src_addr[MAC_ADDR_SIZE];
 	uint16_t ether_type;
-	char body[40];
+	uint8_t junk[28];
+	uint8_t uid_hdr[16];
+	char body[382];
 };
 
 static uint64_t get_micros(struct timespec tv) {
@@ -75,7 +78,7 @@ int main() {
 	int sock = socket(AF_PACKET, SOCK_RAW, htons(P4DB_ETHER_TYPE));
 	assert(sock >= 0);
 
-	int iface_id = get_iface_id(sock, "lo");
+	int iface_id = get_iface_id(sock, "veth28");
 	struct sockaddr_ll switch_addr;
 	setup_sockaddr_ll(iface_id, &switch_addr);
 	set_rx_promisc(iface_id, sock);
@@ -83,10 +86,13 @@ int main() {
 
 	packet_t pkt;
 	memset(&pkt, 0, sizeof(pkt));
-	pkt.ether_type = htons(P4DB_ETHER_TYPE);
+	uint8_t src_mac[6] = {0xa6, 0x1e, 0x49, 0x36, 0x39, 0x4c};
+	uint8_t dst_mac[6] = {0xce, 0x79, 0xeb, 0xf4, 0x8e, 0xc3};
 
-	const char* msg = "Rats are nice pets!\n";
-	strcpy(&pkt.body[0], msg);
+	memcpy(&pkt.dst_addr[0], &dst_mac[0], 6);
+	memcpy(&pkt.src_addr[0], &src_mac[0], 6);
+	pkt.ether_type = htons(P4DB_ETHER_TYPE);
+	memcpy(&pkt.uid_hdr[0], &UID_HDR[0], 16);
 
 	struct iovec iov;
 	iov.iov_base = &pkt;
@@ -103,15 +109,8 @@ int main() {
 	size_t tx_ct = 0;
 	size_t rx_ct = 0;
 	size_t recv_len = 0;
+	tx_ct += sendmmsg(sock, &window[0], WINDOW_SIZE, 0);
 
-	for (size_t i = 0; i<100; ++i) {
-		tx_ct += sendmmsg(sock, &window[0], WINDOW_SIZE, 0);
-		rx_ct += recvmmsg(sock, &window[0], WINDOW_SIZE, 0, NULL);
-
-		for (size_t j = 0; j<WINDOW_SIZE; ++j) {
-			recv_len += window[j].msg_len;
-		}
-	}
 	struct timespec tv_end;
 	assert(clock_gettime(CLOCK_REALTIME, &tv_end) == 0);
 
