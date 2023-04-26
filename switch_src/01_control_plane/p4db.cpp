@@ -1,6 +1,5 @@
 #include <array>
-#include <experimental/source_location>
-#include <getopt.h>
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -28,11 +27,9 @@ extern "C" {
 
 #define INIT_STATUS_TCP_PORT 7777
 
-inline void check_status(bf_status_t status, const std::experimental::source_location& location = std::experimental::source_location::current()) {
+inline void check_status(bf_status_t status) {
     if (status != BF_SUCCESS) {
-        std::stringstream err;
-        err << location.file_name() << ":" << location.line() << " got error: " << bf_err_str(status) << '\n';
-        throw std::runtime_error(err.str());
+	assert(false);
     }
 }
 

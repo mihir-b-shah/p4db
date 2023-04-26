@@ -28,5 +28,9 @@ function dma_setup() {
     sudo mount -t hugetlbfs nodev /mnt/huge
 }
 
+set -e
+
 dma_setup
-make && sudo ./p4db my_p4db
+export RUNPATH="$RUNPATH:$SDE_INSTALL/lib/"
+sudo strace -f ./p4db my_p4db
+#sudo ./p4db my_p4db
