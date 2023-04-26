@@ -159,6 +159,8 @@ void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
         pkt->is_second_pass = 0;
         pkt->n_failed = 0;
     }
+
+    fwrite(comm_pkt, HOT_TXN_PKT_BYTES, 1, packets);
 }
 
 void SwitchInfo::process_reply_txn(const Txn* txn, void* in_pkt_raw, bool write) {
