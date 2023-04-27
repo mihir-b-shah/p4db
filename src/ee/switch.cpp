@@ -86,7 +86,7 @@ static void fill_network_hdr(network_hdr_t* hdr) {
     memcpy(&hdr->src_mac, &conf->servers[conf->node_id].mac.addr_bytes, MAC_ADDR_BYTES);
     hdr->ether_type = htons(P4DB_ETHER_TYPE);
     #endif
-    memcpy(&hdr->uid[0], UID_HDR, sizeof(UID_HDR));
+    memcpy(&hdr->uid[0], &UID_HDR[0], sizeof(UID_HDR));
 }
 
 void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
@@ -111,7 +111,7 @@ void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
             pkt->padded_instrs[i].reg_instr.idx_perm_mask = 0;
         }
         for (size_t i = N_INSTRS_PADDED; i<N_REGS; ++i) {
-            pkt->normal_instrs[i].idx_perm_mask = 0;
+            pkt->normal_instrs[i - N_INSTRS_PADDED].idx_perm_mask = 0;
         }
 
         for (size_t p = 0; p<N_OPS && txn.hot_ops_pass1[p].first.mode != AccessMode::INVALID; ++p) {
@@ -120,7 +120,7 @@ void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
             if (pr.second.reg_array_id < N_INSTRS_PADDED) {
                 instr = &pkt->padded_instrs[pr.second.reg_array_id].reg_instr;
             } else {
-                instr = &pkt->normal_instrs[pr.second.reg_array_id];
+                instr = &pkt->normal_instrs[pr.second.reg_array_id - N_INSTRS_PADDED];
             }
             
             /*  TODO kind of pointless, since we are getting back the physical offset this way, after
@@ -160,7 +160,9 @@ void SwitchInfo::make_txn(const Txn& txn, void* comm_pkt) {
         pkt->n_failed = 0;
     }
 
-    fwrite(comm_pkt, HOT_TXN_PKT_BYTES, 1, packets);
+
+
+    // fwrite(comm_pkt, HOT_TXN_PKT_BYTES, 1, packets);
 }
 
 void SwitchInfo::process_reply_txn(const Txn* txn, void* in_pkt_raw, bool write) {

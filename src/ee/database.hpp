@@ -84,7 +84,7 @@ public:
     void wait_sched_ready();
 
 public:
-    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), hot_send_q(BATCH_SIZE_TGT * n_threads), batch_bar(n_threads, single_db_section, false) {
+    Database(size_t n_threads) : n_threads(n_threads), thr_batch_done_ct(0), hot_send_q(BATCH_SIZE_TGT), batch_bar(n_threads, single_db_section, false) {
         comm = std::make_unique<Communicator>();
         msg_handler = std::make_unique<MessageHandler>(*this, comm.get());
         msg_handler->init.wait();

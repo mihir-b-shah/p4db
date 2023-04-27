@@ -27,7 +27,7 @@
     Unless I'm misunderstanding- maybe revisit this? */
 
 //	IEEE 802 marks this as an ether_type reserved for experimental/private use.
-static const char* intf_name = "lo";
+static const char* intf_name = "ens3f0np0";
 
 // whatever interface is connected to p4 switch
 static int get_iface_id(int sock, const char* intf_name) {
@@ -62,7 +62,13 @@ switch_intf_t::switch_intf_t() : sockfd(0) {
     memset(&addr, 0, sizeof(addr));
 }
 
+static volatile size_t rx_total = 0;
+static void print_stats() {
+	printf("rx_total_sw: %lu\n", rx_total);
+}
+
 void switch_intf_t::setup() {
+    atexit(print_stats);
     auto& conf = Config::instance();
     auto& switch_server = conf.servers[conf.switch_id];
 
@@ -91,14 +97,14 @@ void switch_intf_t::setup() {
 
 	size_t ring_size = treq.tp_block_nr * treq.tp_block_size;
 	char* rx_ring = (char*) mmap(NULL, ring_size, PROT_READ | PROT_WRITE, MAP_SHARED, sockfd, 0);
-	size_t rx_ring_idx = 0;
     
-    sw_recv_thr = std::thread([&, this](){
+    sw_recv_thr = std::thread([=, this, &conf, &switch_server](){
         const WorkerContext::guard worker_ctx;
         uint32_t core = conf.num_txn_workers;
         printf("Pinning sw intf recv core on %u\n", core);
         pin_worker(core);
         Database* db = conf.db;
+	size_t rx_ring_idx = 0;
 
         while (true) {
             char* rx_ring_p = rx_ring + treq.tp_frame_size * rx_ring_idx;
@@ -113,6 +119,7 @@ void switch_intf_t::setup() {
 
             rx_ring_idx = (rx_ring_idx + 1) % treq.tp_frame_nr;
 
+	    rx_total += 1;
             //  TODO: smh, on the last #end_fill packets, update the db via exec.p4_switch.process_reply
         }
     });
