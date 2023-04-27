@@ -19,6 +19,8 @@ static uint64_t micros_diff(struct timespec* t_start, struct timespec* t_end) {
     return e_micros-s_micros;
 }
 
+static constexpr size_t SLOW_TX_DELAY = 40; //us
+
 /*  TODO Why does the switch process get different # of txns? Can't be drops, since
     otherwise this would stall. I speculate it is b/c we choose not to accelerate txns
     that don't fit in our batches- which is based on non-deterministic multithreading effects. */
@@ -132,7 +134,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
 	do {
 		rc = clock_gettime(CLOCK_MONOTONIC, &ts_curr);
 		assert(rc == 0);
-	} while (micros_diff(&ts_now, &ts_curr) < 80);
+	} while (micros_diff(&ts_now, &ts_curr) < SLOW_TX_DELAY);
 
         ssize_t sent = sendmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0);
         assert(sent == q_p-window_start);
