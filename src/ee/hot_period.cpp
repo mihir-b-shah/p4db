@@ -11,6 +11,13 @@
 #include <utility>
 
 #include <errno.h>
+#include <ctime>
+
+static uint64_t micros_diff(struct timespec* t_start, struct timespec* t_end) {
+    uint64_t s_micros = ((((uint64_t) t_start->tv_sec) * 1000000000) + t_start->tv_nsec) / 1000;
+    uint64_t e_micros = ((((uint64_t) t_end->tv_sec) * 1000000000) + t_end->tv_nsec) / 1000;
+    return e_micros-s_micros;
+}
 
 /*  TODO Why does the switch process get different # of txns? Can't be drops, since
     otherwise this would stall. I speculate it is b/c we choose not to accelerate txns
@@ -118,6 +125,14 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
             sw_intf.prepare_msghdr(&mmsghdrs[q_p-window_start].msg_hdr, &q[q_p].iov);
             q_p += 1;
         }
+
+	struct timespec ts_now, ts_curr;
+	rc = clock_gettime(CLOCK_MONOTONIC, &ts_now);
+	assert(rc == 0);
+	do {
+		rc = clock_gettime(CLOCK_MONOTONIC, &ts_curr);
+		assert(rc == 0);
+	} while (micros_diff(&ts_now, &ts_curr) < 80);
 
         ssize_t sent = sendmmsg(sw_intf.sockfd, &mmsghdrs[0], q_p-window_start, 0);
         assert(sent == q_p-window_start);

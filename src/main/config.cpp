@@ -112,7 +112,7 @@ void Config::parse_cli(int argc, char** argv) {
         verify = result.as<bool>("verify");
     }
     switch_id = servers.size();
-    servers.emplace_back("192.168.10.15", 4004, (eth_addr_t) {0xE8, 0xEB, 0xD3, 0xF7, 0x6C, 0x26});
+    servers.emplace_back("192.168.10.14", 4004, (eth_addr_t) {0xE8, 0xEB, 0xD3, 0xF7, 0x5F, 0x1E});
 
     num_txns = result.as<uint64_t>("num_txns");
 	table_size = result.as<uint64_t>("table_size");

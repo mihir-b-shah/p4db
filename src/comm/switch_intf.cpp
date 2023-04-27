@@ -100,7 +100,7 @@ void switch_intf_t::setup() {
     
     sw_recv_thr = std::thread([=, this, &conf, &switch_server](){
         const WorkerContext::guard worker_ctx;
-        uint32_t core = conf.num_txn_workers;
+        uint32_t core = conf.num_txn_workers+1;
         printf("Pinning sw intf recv core on %u\n", core);
         pin_worker(core);
         Database* db = conf.db;
