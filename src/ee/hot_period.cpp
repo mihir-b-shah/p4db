@@ -117,7 +117,6 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     size_t q_size = exec.db.hot_send_q.send_q_tail;
     hot_send_q_t::hot_txn_entry_t* q = exec.db.hot_send_q.send_q;
     size_t q_p = 0;
-    size_t start_mb_i = 0;
     struct mmsghdr mmsghdrs[MAX_IN_FLIGHT];
 
     while (q_p < q_size) {
@@ -140,9 +139,11 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         assert(sent == q_p-window_start);
         assert(q_p == q_size || q[window_start].mini_batch_num <= q[q_p].mini_batch_num);
 
-        if (q[window_start].mini_batch_num + 1 == q[q_p].mini_batch_num || q_p == q_size) {
-            start_mb_i = q_p;
-            exec.db.msg_handler->barrier.wait_nodes();
+        if (q[window_start].mini_batch_num < q[q_p].mini_batch_num || q_p == q_size) {
+            size_t end_mb = q_p == q_size ? exec.mini_batch_num : q[q_p].mini_batch_num;
+            for (size_t i = q[window_start].mini_batch_num; i < end_mb; ++i) {
+                exec.db.msg_handler->barrier.wait_nodes();
+            }
         }
     }
 
