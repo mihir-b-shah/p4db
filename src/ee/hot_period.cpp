@@ -90,6 +90,8 @@ static void gen_start_end_packets(std::vector<std::pair<Txn, void*>>& start_fill
     }
 }
 
+static uint32_t past_mb_num = 1;
+
 void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     switch_intf_t& sw_intf = Config::instance().sw_intf;
 
@@ -118,6 +120,12 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
     hot_send_q_t::hot_txn_entry_t* q = exec.db.hot_send_q.send_q;
     size_t q_p = 0;
     struct mmsghdr mmsghdrs[MAX_IN_FLIGHT];
+
+    if (q_size > 0 || q[0].mini_batch_num > past_mb_num) {
+	for (size_t i = past_mb_num; i<q[0].mini_batch_num; ++i) {
+	    exec.db.msg_handler->barrier.wait_nodes();
+	}
+    }
 
     while (q_p < q_size) {
         size_t window_start = q_p;
@@ -155,6 +163,7 @@ void run_hot_period(TxnExecutor& exec, DeclusteredLayout* layout) {
         assert(rc == HOT_TXN_PKT_BYTES);
     }
 
+    past_mb_num = exec.mini_batch_num;
     pool.clear();
     exec.db.msg_handler->barrier.wait_nodes();
 }
