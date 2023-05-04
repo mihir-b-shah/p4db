@@ -26,7 +26,7 @@ constexpr bool DUMP_SWITCH_PKTS = false;
 
 
 // all workload-dependent.
-constexpr int N_OPS = 8;
+constexpr int N_OPS = 16;
 constexpr size_t MAX_TIMES_ACCEL_ABORT = 1;
 constexpr size_t REMOTE_FRAC = 10;
 constexpr size_t BATCH_SIZE_TGT = 100000;
