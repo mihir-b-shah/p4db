@@ -12,7 +12,7 @@
 
 // Have arenas of blocks
 static constexpr size_t N_UNIFIED_SLOTS = 2048;
-static constexpr size_t SLOTS_PER_BLOCK = 8;
+static constexpr size_t SLOTS_PER_BLOCK = 16;
 static constexpr size_t N_BLOCKS = N_UNIFIED_SLOTS / SLOTS_PER_BLOCK;
 static constexpr size_t N_MAX_TENANTS = 150;
 static constexpr tenant_id_t NO_TENANT = 0;

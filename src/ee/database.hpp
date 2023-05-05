@@ -17,7 +17,7 @@
 #include <sys/uio.h>
 
 #if defined(RAW_PACKETS)
-static constexpr size_t HOT_TXN_PKT_BYTES = USE_1PASS_PKTS ? 440 : 144;
+static constexpr size_t HOT_TXN_PKT_BYTES = USE_1PASS_PKTS ? (180 + ((N_REGS-20)*5)) : 144;
 #else
 static constexpr size_t HOT_TXN_PKT_BYTES = USE_1PASS_PKTS ? 398 : 102;
 #endif
