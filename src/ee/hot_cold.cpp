@@ -40,6 +40,7 @@ void extract_hot_cold(StructTable* table, Txn& txn, DeclusteredLayout* layout) {
 				if (hot_info.second.lock_pos != DeclusteredLayout::NO_LOCK) {
 					txn.locks_check.set(hot_info.second.lock_pos);
 				}
+            } else if (ORIG_MODE) {
 			} else if (MAX_PASSES_ACCEL == 2 && !reg_usage_2.test(hot_info.second.reg_array_id) && n_pass2_ops < MAX_OPS_PASS2_ACCEL) {
 				reg_usage_2.set(hot_info.second.reg_array_id);
 				n_pass2_ops += 1;
