@@ -87,42 +87,44 @@ void switch_intf_t::setup() {
     int rc = bind(sockfd, (struct sockaddr*) &addr.mac_addr, sizeof(sockaddr_ll));
     assert(rc == 0);
 
-	struct tpacket_req treq = {0};
-	treq.tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + 14) + TPACKET_ALIGN(944);
-	treq.tp_block_size = 4096;
-	treq.tp_block_nr = 5000;
-	treq.tp_frame_nr = 20000;
-	rc = setsockopt(sockfd, SOL_PACKET, PACKET_RX_RING, &treq, sizeof(treq));
-	assert(rc == 0);
+    if (!ORIG_MODE) {
+        struct tpacket_req treq = {0};
+        treq.tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + 14) + TPACKET_ALIGN(944);
+        treq.tp_block_size = 4096;
+        treq.tp_block_nr = 5000;
+        treq.tp_frame_nr = 20000;
+        rc = setsockopt(sockfd, SOL_PACKET, PACKET_RX_RING, &treq, sizeof(treq));
+        assert(rc == 0);
 
-	size_t ring_size = treq.tp_block_nr * treq.tp_block_size;
-	char* rx_ring = (char*) mmap(NULL, ring_size, PROT_READ | PROT_WRITE, MAP_SHARED, sockfd, 0);
-    
-    sw_recv_thr = std::thread([=, this, &conf, &switch_server](){
-        const WorkerContext::guard worker_ctx;
-        uint32_t core = conf.num_txn_workers+1;
-        printf("Pinning sw intf recv core on %u\n", core);
-        pin_worker(core);
-        Database* db = conf.db;
-	size_t rx_ring_idx = 0;
+        size_t ring_size = treq.tp_block_nr * treq.tp_block_size;
+        char* rx_ring = (char*) mmap(NULL, ring_size, PROT_READ | PROT_WRITE, MAP_SHARED, sockfd, 0);
+        
+        sw_recv_thr = std::thread([=, this, &conf, &switch_server](){
+            const WorkerContext::guard worker_ctx;
+            uint32_t core = conf.num_txn_workers+1;
+            printf("Pinning sw intf recv core on %u\n", core);
+            pin_worker(core);
+            Database* db = conf.db;
+        size_t rx_ring_idx = 0;
 
-        while (true) {
-            char* rx_ring_p = rx_ring + treq.tp_frame_size * rx_ring_idx;
-            volatile struct tpacket_hdr* tphdr = (struct tpacket_hdr*) rx_ring_p;
-            asm volatile("lfence" ::: "memory");
+            while (true) {
+                char* rx_ring_p = rx_ring + treq.tp_frame_size * rx_ring_idx;
+                volatile struct tpacket_hdr* tphdr = (struct tpacket_hdr*) rx_ring_p;
+                asm volatile("lfence" ::: "memory");
 
-            while ((tphdr->tp_status & TP_STATUS_USER) == 0) {
-                __builtin_ia32_pause();
+                while ((tphdr->tp_status & TP_STATUS_USER) == 0) {
+                    __builtin_ia32_pause();
+                }
+                tphdr->tp_status = TP_STATUS_KERNEL;
+                asm volatile ("sfence" ::: "memory");
+
+                rx_ring_idx = (rx_ring_idx + 1) % treq.tp_frame_nr;
+
+            rx_total += 1;
+                //  TODO: smh, on the last #end_fill packets, update the db via exec.p4_switch.process_reply
             }
-            tphdr->tp_status = TP_STATUS_KERNEL;
-            asm volatile ("sfence" ::: "memory");
-
-            rx_ring_idx = (rx_ring_idx + 1) % treq.tp_frame_nr;
-
-	    rx_total += 1;
-            //  TODO: smh, on the last #end_fill packets, update the db via exec.p4_switch.process_reply
-        }
-    });
+        });
+    }
 
     #else
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);

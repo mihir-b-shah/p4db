@@ -301,8 +301,6 @@ TupleFuture<KV>* TxnExecutor::insert(StructTable* table) {
 }
 
 void TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& arg) {
-    assert(ORIG_MODE && !USE_1PASS_PKTS);
-
     char buf[HOT_TXN_PKT_BYTES];
     p4_switch.make_txn(arg, &buf[0]);
 
