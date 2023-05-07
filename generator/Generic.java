@@ -17,7 +17,7 @@ public class Generic {
 	static final int N_TXNS = 1_000_000;
 	static final int N_NODES = 2;
 	static final int N_KEYS = 10_000_000;
-	static final int FRAC_DIST_TXNS = 20;
+	static final int FRAC_DIST_TXNS = 0;
 
 	static String getTxnLine(long[] arr) {
 		StringBuilder line = new StringBuilder();
