@@ -201,7 +201,7 @@ void TCPCommunicator::receive(std::vector<Pkt_t*>& pkts) {
 
     while (true) {
         rc = recv(sock, &buf[0]+len, N_RECV_BUFFERS*MSG_SIZE-len, 0);
-        assert(rc >= 0);
+	if (rc < 0) continue;
         len += rc;
         if (len % MSG_SIZE == 0) {
             break;
@@ -224,7 +224,7 @@ void TCPCommunicator::receive(std::vector<Pkt_t*>& pkts) {
     realloc_bufs(this);
 
 	micros_recv += get_micros(ts_end) - get_micros(ts_start);	
-	calls_recv += 1;
+	calls_recv += n_filled;
 	len_recv += len;
 	len_dist.push_back(len);
 }

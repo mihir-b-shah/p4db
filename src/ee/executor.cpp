@@ -153,7 +153,7 @@ RC TxnExecutor::execute(Txn& arg) {
 	return commit();
 }
 
-static constexpr size_t LOGGING_REPLICATION_DELAY_US = 20;
+static constexpr size_t DELAY_US = 0;
 RC TxnExecutor::commit() {
 	// TODO: log should not clear until the end of a batch.
 	// TODO: now, the undolog has in the future both the value,last_acq fields to be written.
@@ -166,7 +166,7 @@ RC TxnExecutor::commit() {
 	do {
 		int rc = clock_gettime(CLOCK_MONOTONIC, &ts_curr);
 		assert(rc == 0);
-	} while (micros_diff(&ts_now, &ts_curr) < LOGGING_REPLICATION_DELAY_US);
+	} while (micros_diff(&ts_now, &ts_curr) < DELAY_US);
 
 	log.commit(ts);
 	mempool.clear();
@@ -388,7 +388,8 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<tx
 void TxnExecutor::run_leftover_txns() {
     /*  TODO potential livelock problems, what if two txns on different nodes keep aborting each
         other, and the leftover queues on both are very small, so they have no chance to separate? */
-    while (!leftover_txns.empty()) {
+    size_t n_orig = leftover_txns.size();
+    while (leftover_txns.size() > n_orig/100) {
         txn_pos_t e = leftover_txns.front();
         Txn& txn = entry_to_txn(this, e);
         RC result = execute(txn);
@@ -397,6 +398,7 @@ void TxnExecutor::run_leftover_txns() {
         }
         leftover_txns.pop();
     }
+    while (leftover_txns.size() > 0) leftover_txns.pop();
 }
 
 void single_db_section(void* arg) {

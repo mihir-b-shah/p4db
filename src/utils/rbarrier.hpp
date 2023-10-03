@@ -15,18 +15,22 @@ class reusable_barrier_t {
 public:
 	reusable_barrier_t(size_t n_threads, middle_func mf, bool single) : enter_ct(0), exit_ct(0), n_threads(n_threads), mf(mf), single(single) {}
 
-	void wait(void* arg) {
+    void wait(void* arg) {
         //  Start with this, optimize later
         __sync_synchronize();
 
-        if (__atomic_add_fetch(&enter_ct, 1, __ATOMIC_SEQ_CST) == n_threads) {
-            mf(arg);
+	uint32_t my_enter_ct = __atomic_add_fetch(&enter_ct, 1, __ATOMIC_SEQ_CST);
+        if (my_enter_ct == n_threads) {
             enter_ct = 0;
         } else {
             while (enter_ct != 0) {
                 __builtin_ia32_pause();
             }
         }
+
+	if (!single || my_enter_ct == n_threads) {
+            mf(arg);
+	}
 
         if (__atomic_add_fetch(&exit_ct, 1, __ATOMIC_SEQ_CST) == n_threads) {
             exit_ct = 0;
@@ -37,7 +41,7 @@ public:
         }
 
         __sync_synchronize();
-	}
+    }
 
 private:
     alignas(CACHE_LINE_BYTES) uint32_t enter_ct;
