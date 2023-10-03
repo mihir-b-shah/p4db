@@ -5,6 +5,7 @@
 #include "utils/context.hpp"
 #include <algorithm>
 
+std::vector<uint64_t> wait_workers_times[32];
 uint64_t wait_workers_time[32] = {};
 uint64_t wait_nodes_time[32] = {};
 uint64_t crit_wait_time[32] = {};
@@ -87,6 +88,7 @@ void BarrierHandler::wait_workers() {
 
     if (WorkerContext::context != nullptr) {
         wait_workers_time[WorkerContext::get().tid] += micros_diff(&ts_begin, &ts_end);
+        wait_workers_times[WorkerContext::get().tid].push_back(micros_diff(&ts_begin, &ts_end));
     }
 }
 

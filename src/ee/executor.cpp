@@ -54,6 +54,11 @@ RC TxnExecutor::my_execute(Txn& arg, void** packet_fill) {
 
 		if (!ops[i]) {
             // fprintf(stderr, "R mb=%u thr=%u id=%lu k=%lu(%d)\n", mini_batch_num, WorkerContext::get().tid, arg.loader_id, op.id, prio);
+
+			struct timespec ts_curr;
+			rc = clock_gettime(CLOCK_MONOTONIC, &ts_curr);
+			assert(rc == 0);
+			t_abort += micros_diff(&ts_txn_begin, &ts_curr);
 			return rollback();
 		} else {
             // fprintf(stderr, "C mb=%u thr=%u id=%lu k=%lu(%d)\n", mini_batch_num, WorkerContext::get().tid, arg.loader_id, op.id, prio);
@@ -111,6 +116,7 @@ RC TxnExecutor::execute(Txn& arg) {
 		} else if (op.mode == AccessMode::READ) {
 			ops[i] = read(kvs, op, arg.id);
 		} else {
+			// fprintf(stderr, "i: %lu, id: %lu\n", i, arg.loader_id);
 			assert(ORIG_MODE && op.mode == AccessMode::INVALID);
 			break;
 		}
@@ -250,6 +256,11 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op, TxnId
 	char* rv = (char*) &loc_info.is_local;
 	assert(*rv == 1 || *rv == 0);
 	if (loc_info.is_local) {
+		int rc;
+		struct timespec ts_send_s, ts_send_f;
+		rc = clock_gettime(CLOCK_MONOTONIC, &ts_send_s);
+		assert(rc == 0);
+
 		auto future = mempool.allocate<Future_t>();
 		future->last_acq = id;
 		future->tuple = nullptr;
@@ -262,6 +273,11 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op, TxnId
 		if (!future->get()) [[unlikely]] {
 			return nullptr;
 		}
+
+		rc = clock_gettime(CLOCK_MONOTONIC, &ts_send_f);
+		assert(rc == 0);
+		t_local += micros_diff(&ts_send_s, &ts_send_f);
+
 		return future;
 	}
 
@@ -276,11 +292,21 @@ TupleFuture<KV>* TxnExecutor::write(StructTable* table, const Txn::OP& op, TxnId
 	//printf("LINE:%d Inserting for msg_id=%lu, future=%p\n", __LINE__, msg_id.value, future);
 	db.msg_handler->add_future(msg_id, future);
 
+	int rc;
+	struct timespec ts_send_s, ts_send_f;
+	rc = clock_gettime(CLOCK_MONOTONIC, &ts_send_s);
+	assert(rc == 0);
+
 	db.comm->send(loc_info.target, pkt, tid);
 	log.add_remote_write(future, loc_info.target);
 	if (!future->get()) [[unlikely]] {
 		return nullptr;
 	}
+
+	rc = clock_gettime(CLOCK_MONOTONIC, &ts_send_f);
+	assert(rc == 0);
+	t_comm += micros_diff(&ts_send_s, &ts_send_f);
+	
 	return future;
 }
 
@@ -308,9 +334,19 @@ void TxnExecutor::atomic(SwitchInfo& p4_switch, const Txn& arg) {
     struct msghdr msg_hdr;
     sw_intf.prepare_msghdr(&msg_hdr, &ivec);
 
+    struct timespec ts_bef;
+    int rc = clock_gettime(CLOCK_REALTIME, &ts_bef);
+    assert(rc == 0);
+
     ssize_t sent = sendmsg(sw_intf.sockfd, &msg_hdr, 0);
     assert(sent == HOT_TXN_PKT_BYTES);
     ssize_t received = recvmsg(sw_intf.sockfd, &msg_hdr, 0);
+
+    struct timespec ts_aft;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_aft);
+    assert(rc == 0);
+
+    t_send += micros_diff(&ts_bef, &ts_aft);
 
     if (received == -1) {
         assert(errno == EAGAIN || errno == EWOULDBLOCK);
@@ -324,6 +360,8 @@ static void reset_db_batch(Database* db) {
 	// __atomic_store_n(&db->thr_batch_done_ct, 0, __ATOMIC_SEQ_CST);
     // db->hot_send_q.done_sending();
 }
+
+static size_t accel_time = 0;
 
 void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<txn_pos_t>& q) {
     assert(q.empty() == false);
@@ -339,7 +377,13 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<tx
     if (txn.do_accel) {
         //	TODO note this buffer is malloc-ed, seems excessive.
         void* pkt_buf;
+
+	struct timespec ts_exec_s, ts_exec_f;
+	clock_gettime(CLOCK_MONOTONIC, &ts_exec_s);
         RC res = my_execute(txn, &pkt_buf);
+	clock_gettime(CLOCK_MONOTONIC, &ts_exec_f);
+	accel_time += micros_diff(&ts_exec_s, &ts_exec_f);
+
         if (res == ROLLBACK) {
             this->n_aborts += 1;
             txn.n_aborts += 1;
@@ -359,11 +403,12 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<tx
                     txn.cold_ops[cold_p--] = txn.hot_ops_pass1[p].first;
                 }
                 // everything should be back.
+                // assert(txn.cold_ops[N_OPS-1].mode != AccessMode::INVALID);
                 assert(txn.cold_ops[cold_p].mode != AccessMode::INVALID);
                 txn.do_accel = false;
                 this->n_cold_fallbacks += 1;
 
-                // fprintf(stderr, "Txn %lu leftover\n", txn.loader_id);
+                // printf("Txn %lu leftover\n", txn.loader_id);
                 leftover_txns.push(e);
             }
         } else {
@@ -379,7 +424,7 @@ void TxnExecutor::run_txn(scheduler_t& sched, bool enqueue_aborts, std::queue<tx
             p4_switch.make_txn(txn, pkt_buf);
         }
     } else {
-        // fprintf(stderr, "Txn %lu leftover\n", txn.loader_id);
+        // printf("Txn %lu leftover\n", txn.loader_id);
         this->n_cold_fallbacks += 1;
         leftover_txns.push(e);
     }
@@ -395,7 +440,7 @@ void TxnExecutor::run_leftover_txns() {
         RC result = execute(txn);
         if (result == ROLLBACK) {
             leftover_txns.push(e);
-        }
+	}
         leftover_txns.pop();
     }
     while (leftover_txns.size() > 0) leftover_txns.pop();
@@ -403,13 +448,25 @@ void TxnExecutor::run_leftover_txns() {
 
 void single_db_section(void* arg) {
     TxnExecutor* tb = (TxnExecutor*) arg;
+
+    struct timespec ts_begin;
+    int rc = clock_gettime(CLOCK_MONOTONIC, &ts_begin);
+    assert(rc == 0);
+
     tb->run_leftover_txns();
     assert(tb->db.hot_send_q.send_q_tail == 0);
+
+    struct timespec ts_end;
+    rc = clock_gettime(CLOCK_MONOTONIC, &ts_end);
+    assert(rc == 0);
+    tb->t_leftover += micros_diff(&ts_begin, &ts_end);
 }
 
+extern std::vector<uint64_t> wait_workers_times[32];
 extern uint64_t wait_workers_time[32];
 extern uint64_t wait_nodes_time[32];
 extern uint64_t crit_wait_time[32];
+extern uint64_t log_wait_time[32];
 
 void txn_executor(Database& db, std::vector<Txn>& txns) {
     int rc;
@@ -449,6 +506,11 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
                 sched.process_touched(tb.mini_batch_num);
             }
 
+	    struct timespec ts_bef_bar;
+	    rc = clock_gettime(CLOCK_MONOTONIC, &ts_bef_bar);
+	    assert(rc == 0);
+
+	    size_t old_time = accel_time;
             while (txn_num < mini_batch_tgt && !q.empty()) {
                 /*
                 txn_pos_t e = q.front();
@@ -460,6 +522,14 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
                 txn_num += 1;
             }
             tb.mini_batch_num += 1;
+
+	    struct timespec ts_aft_bar;
+	    rc = clock_gettime(CLOCK_MONOTONIC, &ts_aft_bar);
+	    assert(rc == 0);
+
+	    tb.t_btwn.push_back(accel_time - old_time);
+		// micros_diff(&ts_bef_bar, &ts_aft_bar));
+
 			db.msg_handler->barrier.wait_workers();
         }
 
@@ -511,11 +581,24 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 	    printf("worker %u, n_cold_fallbacks: %lu\n", WorkerContext::get().tid, tb.n_cold_fallbacks);
 	    printf("worker %u, barrier_wait_micros: %lu\n", WorkerContext::get().tid, crit_wait_time[WorkerContext::get().tid]);
 	    printf("worker %u, ww_micros: %lu\n", WorkerContext::get().tid, wait_workers_time[WorkerContext::get().tid]);
+	   
+	    std::vector<uint64_t>& wwts = wait_workers_times[WorkerContext::get().tid];
+	    std::sort(wwts.begin(), wwts.end());
+
+	    std::vector<uint64_t>& t_btwn = tb.t_btwn;
+	    std::sort(t_btwn.begin(), t_btwn.end());
+	    
+	    printf("worker %u, n_btwn: %lu, min: %lu, 10%%: %lu, 50%%: %lu, 60%%: %lu, 70%%: %lu, 80%%: %lu, 90%%: %lu, 99%%: %lu, max: %lu\n", WorkerContext::get().tid, t_btwn.size(), t_btwn[0], t_btwn[t_btwn.size()/10], t_btwn[t_btwn.size()/2], t_btwn[3*t_btwn.size()/5], t_btwn[7*t_btwn.size()/10], t_btwn[4*t_btwn.size()/5], t_btwn[9*t_btwn.size()/10], t_btwn[99*t_btwn.size()/100], t_btwn[t_btwn.size()-1]);
+	    printf("worker %u, n_ww_micros: %lu, min: %lu, 10%%: %lu, 50%%: %lu, 60%%: %lu, 70%%: %lu, 80%%: %lu, 90%%: %lu, 99%%: %lu, max: %lu\n", WorkerContext::get().tid, wwts.size(), wwts[0], wwts[wwts.size()/10], wwts[wwts.size()/2], wwts[3*wwts.size()/5], wwts[7*wwts.size()/10], wwts[4*wwts.size()/5], wwts[9*wwts.size()/10], wwts[99*wwts.size()/100], wwts[wwts.size()-1]);
 	    printf("worker %u, wn_micros: %lu\n", WorkerContext::get().tid, wait_nodes_time[WorkerContext::get().tid]);
 	    printf("Total micros: %lu\n", micros_diff(&ts_begin, &ts_final));
 	    printf("t_commit: %lu\n", tb.t_commit);
 	    printf("t_abort: %lu\n", tb.t_abort);
-    }
+	    printf("t_comm: %lu\n", tb.t_comm);
+	    printf("t_local: %lu\n", tb.t_local);
+	    printf("t_leftover: %lu\n", tb.t_leftover);
+	    printf("worker %u, log_wait_micros: %lu\n", WorkerContext::get().tid, log_wait_time[WorkerContext::get().tid]);
+     }
 }
 
 void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
@@ -547,7 +630,17 @@ void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
             tb.leftover_txns.push(i);
         }
     }
+
+    struct timespec ts_mid;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_mid);
+    assert(rc == 0);
+
     fprintf(stderr, "Finished main txns.\n");
+
+    struct timespec ts_mid2;
+    rc = clock_gettime(CLOCK_REALTIME, &ts_mid2);
+    assert(rc == 0);
+
     tb.run_leftover_txns();
     fprintf(stderr, "Finished leftover txns.\n");
 
@@ -556,6 +649,16 @@ void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
     assert(rc == 0);
 
     if (WorkerContext::get().tid == 0) {
-    	fprintf(stderr, "Total micros: %lu\n", micros_diff(&ts_begin, &ts_final));
+    	fprintf(stderr, "worker %u, Total micros: %lu\n", WorkerContext::get().tid, micros_diff(&ts_begin, &ts_final));
+	fprintf(stderr, "worker %u, t_send: %lu\n", WorkerContext::get().tid, tb.t_send);
+    printf("worker %u, barrier_wait_micros: %lu\n", WorkerContext::get().tid, crit_wait_time[WorkerContext::get().tid]);
+    printf("worker %u, ww_micros: %lu\n", WorkerContext::get().tid, wait_workers_time[WorkerContext::get().tid]);
+    printf("worker %u, wn_micros: %lu\n", WorkerContext::get().tid, wait_nodes_time[WorkerContext::get().tid]);
+	    printf("t_comm: %lu\n", tb.t_comm);
+	    printf("t_local: %lu\n", tb.t_local);
+	    printf("t_mid: %lu\n", micros_diff(&ts_begin, &ts_mid));
+	    printf("t_mid2: %lu\n", micros_diff(&ts_begin, &ts_mid2));
+	    printf("t_leftover: %lu\n", tb.t_leftover);
+	    printf("worker %u, log_wait_micros: %lu\n", WorkerContext::get().tid, log_wait_time[WorkerContext::get().tid]);
     }
 }

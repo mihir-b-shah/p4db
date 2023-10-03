@@ -74,13 +74,18 @@ struct TxnExecutor {
     size_t n_aborts;
     size_t n_dropped;
     size_t n_cold_fallbacks;
+    std::vector<uint64_t> t_btwn;
     uint64_t t_commit;
     uint64_t t_abort;
+    uint64_t t_local;
+    uint64_t t_leftover;
+    uint64_t t_send;
+    uint64_t t_comm;
 
     struct timespec ts_txn_begin;
 
     TxnExecutor(Database& db)
-        : p4_switch(db.comm->node_id), db(db), log(db.comm.get()), sw_intf(Config::instance().sw_intf), tid(WorkerContext::get().tid), mini_batch_num(1), my_txns(nullptr), n_commits(0), n_aborts(0), n_dropped(0), n_cold_fallbacks(0), t_commit(0), t_abort(0) {
+        : p4_switch(db.comm->node_id), db(db), log(db.comm.get()), sw_intf(Config::instance().sw_intf), tid(WorkerContext::get().tid), mini_batch_num(1), my_txns(nullptr), n_commits(0), n_aborts(0), n_dropped(0), n_cold_fallbacks(0), t_commit(0), t_abort(0), t_local(0), t_leftover(0), t_send(0), t_comm(0) {
         db.get_casted(KV::TABLE_NAME, kvs);
         p4_switch.table = kvs;
 	}
