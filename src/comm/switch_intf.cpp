@@ -19,6 +19,8 @@
 #include <cstring>
 #include <cassert>
 
+#include "main/node_info.h"
+
 /*  The switch sockfd right now is just to talk to the simulated switch. In the real setup,
     I want to send to anyone connected by the switch (the switch will then send a reply...)
 
@@ -27,7 +29,6 @@
     Unless I'm misunderstanding- maybe revisit this? */
 
 //	IEEE 802 marks this as an ether_type reserved for experimental/private use.
-static const char* intf_name = "ens3f0np0";
 
 // whatever interface is connected to p4 switch
 static int get_iface_id(int sock, const char* intf_name) {

@@ -1,3 +1,4 @@
 instacart/*.csv
 ycsb/*.csv
 periodic.csv
+src/main/node_info.h
