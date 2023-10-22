@@ -122,6 +122,7 @@ RC TxnExecutor::execute(Txn& arg) {
 		}
 
 		if (!ops[i]) {
+            this->n_aborts += 1;
 			return rollback();
 		}
 		++i;
@@ -132,12 +133,14 @@ RC TxnExecutor::execute(Txn& arg) {
 		if (op.mode == AccessMode::WRITE) {
 			auto x = ops[i]->get();
 			if (!x) {
+                this->n_aborts += 1;
 				return rollback();
 			}
 			x->value = op.value;
 		} else if (op.mode == AccessMode::READ) {
 			const auto x = ops[i]->get();
 			if (!x) {
+                this->n_aborts += 1;
 				return rollback();
 			}
 			const auto value = x->value;
@@ -156,6 +159,7 @@ RC TxnExecutor::execute(Txn& arg) {
 	}
 
 	// locks automatically released
+    this->n_commits += 1;
 	return commit();
 }
 
