@@ -112,7 +112,7 @@ void Config::parse_cli(int argc, char** argv) {
         verify = result.as<bool>("verify");
     }
     switch_id = servers.size();
-    servers.push_back(servers[node_id ^ 1]);
+    servers.push_back(servers[node_id]);
 
     num_txns = result.as<uint64_t>("num_txns");
 	table_size = result.as<uint64_t>("table_size");
