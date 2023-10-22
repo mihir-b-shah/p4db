@@ -651,6 +651,8 @@ void orig_txn_executor(Database& db, std::vector<Txn>& txns) {
     if (WorkerContext::get().tid == 0) {
     	fprintf(stderr, "worker %u, Total micros: %lu\n", WorkerContext::get().tid, micros_diff(&ts_begin, &ts_final));
 	fprintf(stderr, "worker %u, t_send: %lu\n", WorkerContext::get().tid, tb.t_send);
+    printf("worker %u, n_(accel)_commits: %lu\n", WorkerContext::get().tid, tb.n_commits);
+    printf("worker %u, n_(accel)_aborts: %lu\n", WorkerContext::get().tid, tb.n_aborts);
     printf("worker %u, barrier_wait_micros: %lu\n", WorkerContext::get().tid, crit_wait_time[WorkerContext::get().tid]);
     printf("worker %u, ww_micros: %lu\n", WorkerContext::get().tid, wait_workers_time[WorkerContext::get().tid]);
     printf("worker %u, wn_micros: %lu\n", WorkerContext::get().tid, wait_nodes_time[WorkerContext::get().tid]);
