@@ -102,8 +102,8 @@ int main(int argc, char** argv) {
                 per_core_txns[i].push_back(redist.back());
                 redist.pop_back();
             }
+            printf("per_core_txns[%d].size() = %d\n", i, per_core_txns[i].size());
         }
-        printf("per_core_txns[%d].size() = %d\n", i, per_core_txns[i].size());
     }
 
     for (uint32_t i = 0; i<config.num_txn_workers; ++i) {

@@ -532,7 +532,7 @@ void txn_executor(Database& db, std::vector<Txn>& txns) {
 	    assert(rc == 0);
 
 	    tb.t_btwn.push_back(accel_time - old_time);
-		// micros_diff(&ts_bef_bar, &ts_aft_bar));
+		fprintf(stderr, "T %d %d %d\n", WorkerContext::get().tid, tb.mini_batch_num, micros_diff(&ts_bef_bar, &ts_aft_bar));
 
 			db.msg_handler->barrier.wait_workers();
         }
