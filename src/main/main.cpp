@@ -68,9 +68,34 @@ int main(int argc, char** argv) {
 	for (size_t i = 0; i<config.num_txn_workers; ++i) {
 		per_core_txns[i].reserve(config.trace_txns.size() / config.num_txn_workers);
 	}
+
+    size_t* n_remote = new size_t[config.num_txn_workers];
+    for (size_t i = 0; i<config.num_txn_workers; ++i) {
+        n_remote[i] = 0;
+    }
+
+
 	for (size_t i = 0; i<config.num_txns; ++i) {
-		per_core_txns[i % config.num_txn_workers].push_back(config.trace_txns[i]);
+        Txn& txn = config.trace_txns[i];
+        size_t n_rem = 0;
+        for (size_t j = 0; j<N_OPS; ++j) {
+            n_rem += !table->part_info.location(txn.cold_ops[j].id).is_local;
+        }
+        size_t arg_min = 0;
+        for (size_t j = 0; j<config.num_txn_workers; ++j) {
+            if (n_remote[arg_min] > n_remote[j]) {
+                arg_min = j;
+            }
+        }
+        n_remote[arg_min] = n_rem;
+		per_core_txns[arg_min].push_back(config.trace_txns[i]);
 	}
+
+    for (size_t i = 0; i<config.num_txn_workers; ++i) {
+        printf("per_core_txns[%d].size() = %d\n", i, per_core_txns[i].size());
+    }
+    exit(0);
+
     for (uint32_t i = 0; i<config.num_txn_workers; ++i) {
         workers.emplace_back(std::thread([&, i]() {
             const WorkerContext::guard worker_ctx;
