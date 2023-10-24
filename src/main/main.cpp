@@ -87,14 +87,24 @@ int main(int argc, char** argv) {
                 arg_min = j;
             }
         }
-        n_remote[arg_min] = n_rem;
+        n_remote[arg_min] += n_rem;
 		per_core_txns[arg_min].push_back(config.trace_txns[i]);
 	}
 
-    for (size_t i = 0; i<config.num_txn_workers; ++i) {
+    std::vector<Txn> redist;
+    for (size_t t = 0; t < 2; ++t) {
+        for (size_t i = 0; i<config.num_txn_workers; ++i) {
+            while (per_core_txns[i].size() > config.num_txns / config.num_txn_workers) {
+                redist.push_back(per_core_txns[i].back());
+                per_core_txns[i].pop_back();
+            }
+            while (redist.size() > 0 && per_core_txns[i].size() < config.num_txns / config.num_txn_workers) {
+                per_core_txns[i].push_back(redist.back());
+                redist.pop_back();
+            }
+        }
         printf("per_core_txns[%d].size() = %d\n", i, per_core_txns[i].size());
     }
-    exit(0);
 
     for (uint32_t i = 0; i<config.num_txn_workers; ++i) {
         workers.emplace_back(std::thread([&, i]() {
